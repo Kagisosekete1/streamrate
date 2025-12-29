@@ -1,23 +1,106 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Image, Send } from "lucide-react";
+import { ArrowLeft, Image, Send, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const CreatePost = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, profile } = useAuth();
   const [content, setContent] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = () => {
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!user) {
+      toast({
+        title: "Please sign in",
+        description: "You need to be signed in to create a post.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!content.trim()) {
       toast({
         title: "Empty post",
         description: "Write something to share with your fans!",
         variant: "destructive",
       });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    let imageUrl = null;
+
+    // Upload image if selected
+    if (imageFile) {
+      const fileExt = imageFile.name.split(".").pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from("post-images")
+        .upload(fileName, imageFile);
+
+      if (uploadError) {
+        toast({
+          title: "Image upload failed",
+          description: uploadError.message,
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("post-images")
+        .getPublicUrl(fileName);
+
+      imageUrl = urlData.publicUrl;
+    }
+
+    // Create post
+    const { error } = await supabase.from("posts").insert({
+      user_id: user.id,
+      content: content.trim(),
+      image_url: imageUrl,
+    });
+
+    if (error) {
+      toast({
+        title: "Failed to create post",
+        description: error.message,
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
       return;
     }
 
@@ -41,10 +124,10 @@ const CreatePost = () => {
             variant="gaming"
             size="sm"
             onClick={handleSubmit}
-            disabled={!content.trim()}
+            disabled={!content.trim() || isSubmitting}
           >
             <Send className="w-4 h-4" />
-            Post
+            {isSubmitting ? "Posting..." : "Post"}
           </Button>
         </div>
       </header>
@@ -58,7 +141,7 @@ const CreatePost = () => {
         >
           <div className="flex items-start gap-3">
             <img
-              src="https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=200&h=200&fit=crop&crop=face"
+              src={profile?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
               alt="Your avatar"
               className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20"
             />
@@ -73,18 +156,47 @@ const CreatePost = () => {
             </div>
           </div>
 
+          {/* Image preview */}
+          {imagePreview && (
+            <div className="relative mt-4">
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="w-full rounded-lg max-h-64 object-cover"
+              />
+              <button
+                onClick={removeImage}
+                className="absolute top-2 right-2 w-8 h-8 rounded-full bg-background/80 flex items-center justify-center text-foreground hover:bg-background"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex items-center gap-4 pt-4 border-t border-border/30 mt-4">
-            <button className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              ref={fileInputRef}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+            >
               <Image className="w-5 h-5" />
-              <span className="text-sm">Photo</span>
+              <span className="text-sm">Upload Photo</span>
             </button>
           </div>
         </motion.div>
 
         {/* Tips */}
         <div className="mt-6 p-4 bg-secondary/50 rounded-xl border border-border/30">
-          <h3 className="text-sm font-semibold text-foreground mb-2">💡 Tips for great posts</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-2">
+            💡 Tips for great posts
+          </h3>
           <ul className="text-sm text-muted-foreground space-y-1">
             <li>• Share updates about your streams</li>
             <li>• Engage with your community</li>
