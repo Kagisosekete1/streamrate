@@ -1,39 +1,178 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, MapPin, Star, Users, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "@/components/StarRating";
 import { BottomNav } from "@/components/BottomNav";
-import { mockStreamers, mockReviews } from "@/data/mockData";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
+
+interface StreamerData {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  country: string | null;
+}
+
+interface Review {
+  id: string;
+  stars: number;
+  review_text: string | null;
+  created_at: string;
+  profiles: {
+    full_name: string | null;
+    avatar_url: string | null;
+  } | null;
+}
 
 const StreamerProfile = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [streamer, setStreamer] = useState<StreamerData | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [averageRating, setAverageRating] = useState(0);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [isFollowing, setIsFollowing] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const streamer = mockStreamers.find((s) => s.id === id);
+  useEffect(() => {
+    if (id) {
+      fetchStreamerData();
+    }
+  }, [id, user]);
 
-  if (!streamer) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Streamer not found</p>
-      </div>
-    );
-  }
+  const fetchStreamerData = async () => {
+    if (!id) return;
 
-  const handleSubmitReview = () => {
-    if (rating === 0) {
-      toast({
-        title: "Please select a rating",
-        variant: "destructive",
+    // Fetch streamer profile
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url, bio, country")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (profileError || !profileData) {
+      console.error("Error fetching streamer:", profileError);
+      setLoading(false);
+      return;
+    }
+
+    setStreamer(profileData);
+
+    // Fetch reviews
+    const { data: reviewsData } = await supabase
+      .from("ratings")
+      .select(`
+        id,
+        stars,
+        review_text,
+        created_at,
+        profiles:fan_id (full_name, avatar_url)
+      `)
+      .eq("streamer_id", id)
+      .order("created_at", { ascending: false });
+
+    setReviews(reviewsData || []);
+
+    // Calculate average rating
+    if (reviewsData && reviewsData.length > 0) {
+      const avg =
+        reviewsData.reduce((sum, r) => sum + r.stars, 0) / reviewsData.length;
+      setAverageRating(Math.round(avg * 10) / 10);
+    }
+
+    // Fetch followers count
+    const { count } = await supabase
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("following_id", id);
+
+    setFollowersCount(count || 0);
+
+    // Check if user is following
+    if (user) {
+      const { data: followData } = await supabase
+        .from("follows")
+        .select("id")
+        .eq("follower_id", user.id)
+        .eq("following_id", id)
+        .maybeSingle();
+
+      setIsFollowing(!!followData);
+    }
+
+    setLoading(false);
+  };
+
+  const handleFollow = async () => {
+    if (!user) {
+      toast({ title: "Please sign in to follow", variant: "destructive" });
+      return;
+    }
+
+    if (!id) return;
+
+    if (isFollowing) {
+      await supabase
+        .from("follows")
+        .delete()
+        .eq("follower_id", user.id)
+        .eq("following_id", id);
+      setIsFollowing(false);
+      setFollowersCount((prev) => prev - 1);
+      toast({ title: "Unfollowed" });
+    } else {
+      await supabase.from("follows").insert({
+        follower_id: user.id,
+        following_id: id,
       });
+      setIsFollowing(true);
+      setFollowersCount((prev) => prev + 1);
+      toast({ title: "Following!" });
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!user) {
+      toast({ title: "Please sign in to review", variant: "destructive" });
+      return;
+    }
+
+    if (rating === 0) {
+      toast({ title: "Please select a rating", variant: "destructive" });
+      return;
+    }
+
+    if (!id) return;
+
+    setIsSubmitting(true);
+
+    const { error } = await supabase.from("ratings").upsert(
+      {
+        streamer_id: id,
+        fan_id: user.id,
+        stars: rating,
+        review_text: reviewText.trim() || null,
+      },
+      {
+        onConflict: "streamer_id,fan_id",
+      }
+    );
+
+    if (error) {
+      toast({ title: "Failed to submit review", variant: "destructive" });
+      setIsSubmitting(false);
       return;
     }
 
@@ -44,16 +183,32 @@ const StreamerProfile = () => {
     setShowReviewForm(false);
     setRating(0);
     setReviewText("");
+    setIsSubmitting(false);
+    fetchStreamerData();
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse text-primary">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!streamer) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Streamer not found</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <header className="relative">
-        {/* Background gradient */}
         <div className="absolute inset-0 h-48 gradient-gaming opacity-30" />
-        
-        {/* Back button */}
+
         <button
           onClick={() => navigate(-1)}
           className="absolute top-4 left-4 z-10 w-10 h-10 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center"
@@ -61,7 +216,6 @@ const StreamerProfile = () => {
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
 
-        {/* Profile info */}
         <div className="relative pt-24 px-4 pb-6">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
@@ -69,18 +223,24 @@ const StreamerProfile = () => {
             className="flex flex-col items-center"
           >
             <img
-              src={streamer.profilePicture}
-              alt={streamer.name}
+              src={
+                streamer.avatar_url ||
+                "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&crop=face"
+              }
+              alt={streamer.full_name || "Streamer"}
               className="w-28 h-28 rounded-full object-cover ring-4 ring-primary/30 shadow-xl shadow-primary/20"
             />
-            <h1 className="mt-4 text-2xl font-bold text-foreground">{streamer.name}</h1>
-            <div className="flex items-center gap-1 text-muted-foreground mt-1">
-              <MapPin className="w-4 h-4" />
-              <span>{streamer.country}</span>
-            </div>
+            <h1 className="mt-4 text-2xl font-bold text-foreground">
+              {streamer.full_name || "Anonymous"}
+            </h1>
+            {streamer.country && (
+              <div className="flex items-center gap-1 text-muted-foreground mt-1">
+                <MapPin className="w-4 h-4" />
+                <span>{streamer.country}</span>
+              </div>
+            )}
           </motion.div>
 
-          {/* Stats */}
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -90,21 +250,27 @@ const StreamerProfile = () => {
             <div className="text-center">
               <div className="flex items-center justify-center gap-1">
                 <Star className="w-5 h-5 fill-primary text-primary" />
-                <span className="text-xl font-bold text-foreground">{streamer.averageRating}</span>
+                <span className="text-xl font-bold text-foreground">
+                  {averageRating || "N/A"}
+                </span>
               </div>
               <p className="text-xs text-muted-foreground">Rating</p>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-1">
                 <MessageCircle className="w-5 h-5 text-primary" />
-                <span className="text-xl font-bold text-foreground">{streamer.totalReviews}</span>
+                <span className="text-xl font-bold text-foreground">
+                  {reviews.length}
+                </span>
               </div>
               <p className="text-xs text-muted-foreground">Reviews</p>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-1">
                 <Users className="w-5 h-5 text-primary" />
-                <span className="text-xl font-bold text-foreground">12.5k</span>
+                <span className="text-xl font-bold text-foreground">
+                  {followersCount}
+                </span>
               </div>
               <p className="text-xs text-muted-foreground">Followers</p>
             </div>
@@ -113,22 +279,34 @@ const StreamerProfile = () => {
       </header>
 
       {/* Bio */}
-      <section className="px-4 py-4">
-        <div className="bg-card rounded-xl p-4 border border-border/50">
-          <h2 className="text-sm font-semibold text-muted-foreground mb-2">About</h2>
-          <p className="text-foreground/90">{streamer.bio}</p>
-        </div>
-      </section>
+      {streamer.bio && (
+        <section className="px-4 py-4">
+          <div className="bg-card rounded-xl p-4 border border-border/50">
+            <h2 className="text-sm font-semibold text-muted-foreground mb-2">
+              About
+            </h2>
+            <p className="text-foreground/90">{streamer.bio}</p>
+          </div>
+        </section>
+      )}
 
       {/* Actions */}
       <section className="px-4 py-2">
         <div className="flex gap-3">
-          <Button variant="gaming" className="flex-1" onClick={() => setShowReviewForm(true)}>
+          <Button
+            variant="gaming"
+            className="flex-1"
+            onClick={() => setShowReviewForm(true)}
+          >
             <Star className="w-4 h-4" />
             Rate & Review
           </Button>
-          <Button variant="outline" className="flex-1">
-            Follow
+          <Button
+            variant={isFollowing ? "outline" : "gaming"}
+            className="flex-1"
+            onClick={handleFollow}
+          >
+            {isFollowing ? "Following" : "Follow"}
           </Button>
         </div>
       </section>
@@ -152,21 +330,33 @@ const StreamerProfile = () => {
               className="w-full bg-card rounded-t-3xl p-6 border-t border-border"
             >
               <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-6" />
-              <h2 className="text-xl font-bold text-foreground mb-4">Rate {streamer.name}</h2>
-              
+              <h2 className="text-xl font-bold text-foreground mb-4">
+                Rate {streamer.full_name}
+              </h2>
+
               <div className="flex justify-center mb-6">
-                <StarRating rating={rating} size="lg" interactive onRatingChange={setRating} />
+                <StarRating
+                  rating={rating}
+                  size="lg"
+                  interactive
+                  onRatingChange={setRating}
+                />
               </div>
 
-              <Input
+              <textarea
                 placeholder="Write your review (optional)"
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
-                className="mb-4"
+                className="w-full min-h-[100px] rounded-lg border border-border bg-secondary/50 px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 mb-4"
               />
 
-              <Button variant="gaming" className="w-full" onClick={handleSubmitReview}>
-                Submit Review
+              <Button
+                variant="gaming"
+                className="w-full"
+                onClick={handleSubmitReview}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Submitting..." : "Submit Review"}
               </Button>
             </motion.div>
           </motion.div>
@@ -176,35 +366,52 @@ const StreamerProfile = () => {
       {/* Reviews */}
       <section className="px-4 py-4">
         <h2 className="text-lg font-semibold text-foreground mb-4">Reviews</h2>
-        <div className="space-y-3">
-          {mockReviews.map((review, index) => (
-            <motion.div
-              key={review.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="bg-card rounded-xl p-4 border border-border/50"
-            >
-              <div className="flex items-start gap-3">
-                <img
-                  src={review.userPicture}
-                  alt={review.userName}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium text-foreground">{review.userName}</h4>
-                    <StarRating rating={review.stars} size="sm" />
+        {reviews.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No reviews yet. Be the first!
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {reviews.map((review, index) => (
+              <motion.div
+                key={review.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-card rounded-xl p-4 border border-border/50"
+              >
+                <div className="flex items-start gap-3">
+                  <img
+                    src={
+                      review.profiles?.avatar_url ||
+                      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"
+                    }
+                    alt={review.profiles?.full_name || "User"}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-foreground">
+                        {review.profiles?.full_name || "Anonymous"}
+                      </h4>
+                      <StarRating rating={review.stars} size="sm" />
+                    </div>
+                    {review.review_text && (
+                      <p className="text-sm text-foreground/80 mt-2">
+                        {review.review_text}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {formatDistanceToNow(new Date(review.created_at), {
+                        addSuffix: true,
+                      })}
+                    </p>
                   </div>
-                  <p className="text-sm text-foreground/80 mt-2">{review.text}</p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {formatDistanceToNow(review.createdAt, { addSuffix: true })}
-                  </p>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </section>
 
       <BottomNav />

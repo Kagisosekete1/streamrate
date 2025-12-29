@@ -1,16 +1,165 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Gamepad2 } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { SearchBar } from "@/components/SearchBar";
 import { TrendingStreamer } from "@/components/TrendingStreamer";
 import { PostCard } from "@/components/PostCard";
-import { mockStreamers, mockPosts } from "@/data/mockData";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+
+interface Streamer {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  average_rating: number;
+}
+
+interface Post {
+  id: string;
+  content: string;
+  image_url: string | null;
+  created_at: string;
+  user_id: string;
+  profiles: {
+    full_name: string | null;
+    avatar_url: string | null;
+  } | null;
+  likes_count: number;
+  comments_count: number;
+  is_liked: boolean;
+}
 
 const Home = () => {
-  // Sort streamers by rating for trending
-  const trendingStreamers = [...mockStreamers]
-    .sort((a, b) => b.averageRating - a.averageRating)
-    .slice(0, 8);
+  const { user } = useAuth();
+  const [trendingStreamers, setTrendingStreamers] = useState<Streamer[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchData();
+
+    // Set up realtime subscription for posts
+    const channel = supabase
+      .channel("home-posts")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "posts",
+        },
+        () => {
+          fetchPosts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  const fetchData = async () => {
+    await Promise.all([fetchTrendingStreamers(), fetchPosts()]);
+    setLoading(false);
+  };
+
+  const fetchTrendingStreamers = async () => {
+    // Get all streamers
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "streamer");
+
+    const streamerIds = roleData?.map((r) => r.user_id) || [];
+
+    if (streamerIds.length === 0) return;
+
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url")
+      .in("id", streamerIds);
+
+    // Get ratings for each streamer
+    const streamersWithRatings = await Promise.all(
+      (profiles || []).map(async (profile) => {
+        const { data: ratings } = await supabase
+          .from("ratings")
+          .select("stars")
+          .eq("streamer_id", profile.id);
+
+        const avgRating =
+          ratings && ratings.length > 0
+            ? ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length
+            : 0;
+
+        return {
+          ...profile,
+          average_rating: Math.round(avgRating * 10) / 10,
+        };
+      })
+    );
+
+    // Sort by rating and take top 8
+    const sorted = streamersWithRatings
+      .sort((a, b) => b.average_rating - a.average_rating)
+      .slice(0, 8);
+
+    setTrendingStreamers(sorted);
+  };
+
+  const fetchPosts = async () => {
+    const { data: postsData } = await supabase
+      .from("posts")
+      .select(
+        `
+        id,
+        content,
+        image_url,
+        created_at,
+        user_id,
+        profiles:user_id (full_name, avatar_url)
+      `
+      )
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    // Get likes and comments counts
+    const postsWithCounts = await Promise.all(
+      (postsData || []).map(async (post) => {
+        const { count: likesCount } = await supabase
+          .from("post_likes")
+          .select("*", { count: "exact", head: true })
+          .eq("post_id", post.id);
+
+        const { count: commentsCount } = await supabase
+          .from("comments")
+          .select("*", { count: "exact", head: true })
+          .eq("post_id", post.id);
+
+        let isLiked = false;
+        if (user) {
+          const { data: likeData } = await supabase
+            .from("post_likes")
+            .select("id")
+            .eq("post_id", post.id)
+            .eq("user_id", user.id)
+            .maybeSingle();
+          isLiked = !!likeData;
+        }
+
+        return {
+          ...post,
+          likes_count: likesCount || 0,
+          comments_count: commentsCount || 0,
+          is_liked: isLiked,
+        };
+      })
+    );
+
+    setPosts(postsWithCounts);
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -34,25 +183,34 @@ const Home = () => {
           <h2 className="text-lg font-semibold text-foreground mb-4">
             🔥 Trending Streamers
           </h2>
-          <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex gap-4"
-            >
-              {trendingStreamers.map((streamer, index) => (
-                <TrendingStreamer
-                  key={streamer.id}
-                  id={streamer.id}
-                  name={streamer.name}
-                  profilePicture={streamer.profilePicture}
-                  rank={index + 1}
-                  averageRating={streamer.averageRating}
-                  index={index}
-                />
-              ))}
-            </motion.div>
-          </div>
+          {trendingStreamers.length === 0 ? (
+            <div className="text-center py-4 text-muted-foreground text-sm">
+              No streamers yet. Be the first to join!
+            </div>
+          ) : (
+            <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex gap-4"
+              >
+                {trendingStreamers.map((streamer, index) => (
+                  <TrendingStreamer
+                    key={streamer.id}
+                    id={streamer.id}
+                    name={streamer.full_name || "Anonymous"}
+                    profilePicture={
+                      streamer.avatar_url ||
+                      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"
+                    }
+                    rank={index + 1}
+                    averageRating={streamer.average_rating}
+                    index={index}
+                  />
+                ))}
+              </motion.div>
+            </div>
+          )}
         </section>
 
         {/* Feed */}
@@ -60,22 +218,37 @@ const Home = () => {
           <h2 className="text-lg font-semibold text-foreground mb-4">
             📰 Latest Posts
           </h2>
-          <div className="space-y-4">
-            {mockPosts.map((post, index) => (
-              <PostCard
-                key={post.id}
-                id={post.id}
-                streamerId={post.streamerId}
-                streamerName={post.streamerName}
-                streamerPicture={post.streamerPicture}
-                content={post.content}
-                likes={post.likes}
-                comments={post.comments}
-                createdAt={post.createdAt}
-                index={index}
-              />
-            ))}
-          </div>
+          {loading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Loading posts...
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No posts yet. Create the first one!
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {posts.map((post, index) => (
+                <PostCard
+                  key={post.id}
+                  id={post.id}
+                  streamerId={post.user_id}
+                  streamerName={post.profiles?.full_name || "Anonymous"}
+                  streamerPicture={
+                    post.profiles?.avatar_url ||
+                    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"
+                  }
+                  content={post.content}
+                  imageUrl={post.image_url}
+                  likes={post.likes_count}
+                  comments={post.comments_count}
+                  createdAt={new Date(post.created_at)}
+                  isLiked={post.is_liked}
+                  index={index}
+                />
+              ))}
+            </div>
+          )}
         </section>
       </main>
 

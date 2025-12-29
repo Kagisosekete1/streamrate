@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Gamepad2, Mail, Lock, User, ChevronRight, Tv, Users } from "lucide-react";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 type AuthMode = "login" | "signup";
 type UserRole = "fan" | "streamer";
@@ -13,40 +14,89 @@ type UserRole = "fan" | "streamer";
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, signIn, signUp, loading: authLoading } = useAuth();
   const [mode, setMode] = useState<AuthMode>("login");
   const [role, setRole] = useState<UserRole | null>(null);
   const [showRoleSelect, setShowRoleSelect] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user && !authLoading) {
+      navigate("/home");
+    }
+  }, [user, authLoading, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (mode === "signup" && !role) {
       setShowRoleSelect(true);
       return;
     }
 
-    // Demo login - in production this would connect to Supabase
-    toast({
-      title: mode === "login" ? "Welcome back!" : "Account created!",
-      description: "Redirecting to home...",
-    });
-    
-    setTimeout(() => navigate("/home"), 1000);
+    setIsSubmitting(true);
+
+    if (mode === "login") {
+      const { error } = await signIn(formData.email, formData.password);
+      if (error) {
+        toast({
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Welcome back!",
+          description: "Redirecting to home...",
+        });
+        navigate("/home");
+      }
+    }
+
+    setIsSubmitting(false);
   };
 
-  const handleRoleSelect = (selectedRole: UserRole) => {
+  const handleRoleSelect = async (selectedRole: UserRole) => {
     setRole(selectedRole);
+    setIsSubmitting(true);
+
+    const { error } = await signUp(
+      formData.email,
+      formData.password,
+      formData.name,
+      selectedRole
+    );
+
+    if (error) {
+      toast({
+        title: "Sign up failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
     toast({
       title: "Account created!",
       description: `Welcome as a ${selectedRole}!`,
     });
-    setTimeout(() => navigate("/home"), 1000);
+    navigate("/home");
+    setIsSubmitting(false);
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse text-primary">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
@@ -56,17 +106,17 @@ const Auth = () => {
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
 
       {/* Content */}
-      <div className="flex-1 flex flex-col px-6 py-12 relative z-10">
+      <div className="flex-1 flex flex-col justify-center px-6 py-12 relative z-10">
         {/* Logo */}
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="flex items-center gap-3 mb-12"
+          className="flex items-center justify-center gap-3 mb-8"
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <Gamepad2 className="w-5 h-5 text-primary-foreground" />
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+            <Gamepad2 className="w-6 h-6 text-primary-foreground" />
           </div>
-          <span className="text-xl font-bold gradient-text">StreamRate</span>
+          <span className="text-2xl font-bold gradient-text">StreamRate</span>
         </motion.div>
 
         <AnimatePresence mode="wait">
@@ -76,12 +126,12 @@ const Auth = () => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
-              className="flex-1"
+              className="max-w-sm mx-auto w-full"
             >
-              <h1 className="text-3xl font-bold text-foreground mb-2">
+              <h1 className="text-3xl font-bold text-foreground mb-2 text-center">
                 {mode === "login" ? "Welcome back" : "Create account"}
               </h1>
-              <p className="text-muted-foreground mb-8">
+              <p className="text-muted-foreground mb-8 text-center">
                 {mode === "login"
                   ? "Sign in to continue rating streamers"
                   : "Join the community today"}
@@ -134,11 +184,18 @@ const Auth = () => {
                     }
                     className="pl-10"
                     required
+                    minLength={6}
                   />
                 </div>
 
-                <Button type="submit" variant="gaming" size="lg" className="w-full mt-6">
-                  {mode === "login" ? "Sign In" : "Continue"}
+                <Button
+                  type="submit"
+                  variant="gaming"
+                  size="lg"
+                  className="w-full mt-6"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Please wait..." : mode === "login" ? "Sign In" : "Continue"}
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               </form>
@@ -159,12 +216,12 @@ const Auth = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="flex-1"
+              className="max-w-sm mx-auto w-full"
             >
-              <h1 className="text-3xl font-bold text-foreground mb-2">
+              <h1 className="text-3xl font-bold text-foreground mb-2 text-center">
                 Choose your role
               </h1>
-              <p className="text-muted-foreground mb-8">
+              <p className="text-muted-foreground mb-8 text-center">
                 What brings you to StreamRate?
               </p>
 
@@ -173,9 +230,11 @@ const Auth = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => handleRoleSelect("fan")}
+                  disabled={isSubmitting}
                   className={cn(
                     "w-full p-6 rounded-xl border-2 text-left transition-all",
-                    "bg-card hover:bg-card/80 border-border hover:border-primary/50"
+                    "bg-card hover:bg-card/80 border-border hover:border-primary/50",
+                    isSubmitting && "opacity-50 cursor-not-allowed"
                   )}
                 >
                   <div className="flex items-start gap-4">
@@ -195,9 +254,11 @@ const Auth = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => handleRoleSelect("streamer")}
+                  disabled={isSubmitting}
                   className={cn(
                     "w-full p-6 rounded-xl border-2 text-left transition-all",
-                    "bg-card hover:bg-card/80 border-border hover:border-accent/50"
+                    "bg-card hover:bg-card/80 border-border hover:border-accent/50",
+                    isSubmitting && "opacity-50 cursor-not-allowed"
                   )}
                 >
                   <div className="flex items-start gap-4">
@@ -216,7 +277,8 @@ const Auth = () => {
 
               <button
                 onClick={() => setShowRoleSelect(false)}
-                className="text-muted-foreground text-sm mt-6 hover:text-foreground transition-colors"
+                className="text-muted-foreground text-sm mt-6 hover:text-foreground transition-colors block mx-auto"
+                disabled={isSubmitting}
               >
                 ← Go back
               </button>
