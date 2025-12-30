@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { Gamepad2, Loader2 } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
@@ -7,6 +7,7 @@ import { TrendingStreamer } from "@/components/TrendingStreamer";
 import { PostCard } from "@/components/PostCard";
 import { NotificationBell } from "@/components/NotificationBell";
 import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
+import { NewPostsBanner } from "@/components/NewPostsBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
@@ -48,12 +49,15 @@ const Home = () => {
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [hasMoreFollowing, setHasMoreFollowing] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
+  const [newPostsCount, setNewPostsCount] = useState(0);
+  const latestPostId = useRef<string | null>(null);
 
   const handleRefresh = useCallback(async () => {
     setPosts([]);
     setFollowingPosts([]);
     setHasMorePosts(true);
     setHasMoreFollowing(true);
+    setNewPostsCount(0);
     await fetchData();
   }, [user]);
 
@@ -105,9 +109,9 @@ const Home = () => {
   useEffect(() => {
     fetchData();
 
-    // Set up realtime subscription for posts
+    // Set up realtime subscription for new posts
     const channel = supabase
-      .channel("home-posts")
+      .channel("home-posts-realtime")
       .on(
         "postgres_changes",
         {
@@ -115,9 +119,11 @@ const Home = () => {
           schema: "public",
           table: "posts",
         },
-        () => {
-          // Prepend new post instead of full refresh
-          handleRefresh();
+        (payload) => {
+          const newPostId = payload.new.id as string;
+          if (latestPostId.current && newPostId !== latestPostId.current) {
+            setNewPostsCount((prev) => prev + 1);
+          }
         }
       )
       .subscribe();
