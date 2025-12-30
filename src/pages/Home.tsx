@@ -7,6 +7,7 @@ import { TrendingStreamer } from "@/components/TrendingStreamer";
 import { PostCard } from "@/components/PostCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Streamer {
   id: string;
@@ -34,7 +35,9 @@ const Home = () => {
   const { user } = useAuth();
   const [trendingStreamers, setTrendingStreamers] = useState<Streamer[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [followingPosts, setFollowingPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("all");
 
   useEffect(() => {
     fetchData();
@@ -51,6 +54,7 @@ const Home = () => {
         },
         () => {
           fetchPosts();
+          if (user) fetchFollowingPosts();
         }
       )
       .subscribe();
@@ -61,12 +65,15 @@ const Home = () => {
   }, [user]);
 
   const fetchData = async () => {
-    await Promise.all([fetchTrendingStreamers(), fetchPosts()]);
+    await Promise.all([
+      fetchTrendingStreamers(),
+      fetchPosts(),
+      user ? fetchFollowingPosts() : Promise.resolve(),
+    ]);
     setLoading(false);
   };
 
   const fetchTrendingStreamers = async () => {
-    // Get all streamers
     const { data: roleData } = await supabase
       .from("user_roles")
       .select("user_id")
@@ -81,7 +88,6 @@ const Home = () => {
       .select("id, full_name, avatar_url")
       .in("id", streamerIds);
 
-    // Get ratings for each streamer
     const streamersWithRatings = await Promise.all(
       (profiles || []).map(async (profile) => {
         const { data: ratings } = await supabase
@@ -101,7 +107,6 @@ const Home = () => {
       })
     );
 
-    // Sort by rating and take top 8
     const sorted = streamersWithRatings
       .sort((a, b) => b.average_rating - a.average_rating)
       .slice(0, 8);
@@ -109,25 +114,34 @@ const Home = () => {
     setTrendingStreamers(sorted);
   };
 
-  const fetchPosts = async () => {
-    const { data: postsData } = await supabase
+  const fetchPostsWithProfiles = async (postIds: string[] | null = null) => {
+    let query = supabase
       .from("posts")
-      .select(
-        `
-        id,
-        content,
-        image_url,
-        created_at,
-        user_id,
-        profiles:user_id (full_name, avatar_url)
-      `
-      )
+      .select("id, content, image_url, created_at, user_id")
       .order("created_at", { ascending: false })
       .limit(20);
 
-    // Get likes and comments counts
+    if (postIds) {
+      if (postIds.length === 0) return [];
+      query = query.in("id", postIds);
+    }
+
+    const { data: postsData } = await query;
+
+    if (!postsData || postsData.length === 0) return [];
+
+    const userIds = [...new Set(postsData.map((p) => p.user_id))];
+    const { data: profilesData } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url")
+      .in("id", userIds);
+
+    const profilesMap = new Map(
+      (profilesData || []).map((p) => [p.id, p])
+    );
+
     const postsWithCounts = await Promise.all(
-      (postsData || []).map(async (post) => {
+      postsData.map(async (post) => {
         const { count: likesCount } = await supabase
           .from("post_likes")
           .select("*", { count: "exact", head: true })
@@ -149,8 +163,13 @@ const Home = () => {
           isLiked = !!likeData;
         }
 
+        const profile = profilesMap.get(post.user_id);
+
         return {
           ...post,
+          profiles: profile
+            ? { full_name: profile.full_name, avatar_url: profile.avatar_url }
+            : null,
           likes_count: likesCount || 0,
           comments_count: commentsCount || 0,
           is_liked: isLiked,
@@ -158,7 +177,129 @@ const Home = () => {
       })
     );
 
+    return postsWithCounts;
+  };
+
+  const fetchPosts = async () => {
+    const postsWithCounts = await fetchPostsWithProfiles();
     setPosts(postsWithCounts);
+  };
+
+  const fetchFollowingPosts = async () => {
+    if (!user) return;
+
+    const { data: followsData } = await supabase
+      .from("follows")
+      .select("following_id")
+      .eq("follower_id", user.id);
+
+    const followingIds = followsData?.map((f) => f.following_id) || [];
+
+    if (followingIds.length === 0) {
+      setFollowingPosts([]);
+      return;
+    }
+
+    const { data: postsData } = await supabase
+      .from("posts")
+      .select("id, content, image_url, created_at, user_id")
+      .in("user_id", followingIds)
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    if (!postsData || postsData.length === 0) {
+      setFollowingPosts([]);
+      return;
+    }
+
+    const userIds = [...new Set(postsData.map((p) => p.user_id))];
+    const { data: profilesData } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url")
+      .in("id", userIds);
+
+    const profilesMap = new Map(
+      (profilesData || []).map((p) => [p.id, p])
+    );
+
+    const postsWithCounts = await Promise.all(
+      postsData.map(async (post) => {
+        const { count: likesCount } = await supabase
+          .from("post_likes")
+          .select("*", { count: "exact", head: true })
+          .eq("post_id", post.id);
+
+        const { count: commentsCount } = await supabase
+          .from("comments")
+          .select("*", { count: "exact", head: true })
+          .eq("post_id", post.id);
+
+        let isLiked = false;
+        const { data: likeData } = await supabase
+          .from("post_likes")
+          .select("id")
+          .eq("post_id", post.id)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        isLiked = !!likeData;
+
+        const profile = profilesMap.get(post.user_id);
+
+        return {
+          ...post,
+          profiles: profile
+            ? { full_name: profile.full_name, avatar_url: profile.avatar_url }
+            : null,
+          likes_count: likesCount || 0,
+          comments_count: commentsCount || 0,
+          is_liked: isLiked,
+        };
+      })
+    );
+
+    setFollowingPosts(postsWithCounts);
+  };
+
+  const renderPosts = (postList: Post[], emptyMessage: string) => {
+    if (loading) {
+      return (
+        <div className="text-center py-8 text-muted-foreground">
+          Loading posts...
+        </div>
+      );
+    }
+
+    if (postList.length === 0) {
+      return (
+        <div className="text-center py-8 text-muted-foreground">
+          {emptyMessage}
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {postList.map((post, index) => (
+          <PostCard
+            key={post.id}
+            id={post.id}
+            streamerId={post.user_id}
+            streamerName={post.profiles?.full_name || "Anonymous"}
+            streamerPicture={
+              post.profiles?.avatar_url ||
+              "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"
+            }
+            content={post.content}
+            imageUrl={post.image_url}
+            likes={post.likes_count}
+            comments={post.comments_count}
+            createdAt={new Date(post.created_at)}
+            isLiked={post.is_liked}
+            index={index}
+          />
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -213,42 +354,35 @@ const Home = () => {
           )}
         </section>
 
-        {/* Feed */}
+        {/* Feed with Tabs */}
         <section className="py-4">
-          <h2 className="text-lg font-semibold text-foreground mb-4">
-            📰 Latest Posts
-          </h2>
-          {loading ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Loading posts...
-            </div>
-          ) : posts.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No posts yet. Create the first one!
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {posts.map((post, index) => (
-                <PostCard
-                  key={post.id}
-                  id={post.id}
-                  streamerId={post.user_id}
-                  streamerName={post.profiles?.full_name || "Anonymous"}
-                  streamerPicture={
-                    post.profiles?.avatar_url ||
-                    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"
-                  }
-                  content={post.content}
-                  imageUrl={post.image_url}
-                  likes={post.likes_count}
-                  comments={post.comments_count}
-                  createdAt={new Date(post.created_at)}
-                  isLiked={post.is_liked}
-                  index={index}
-                />
-              ))}
-            </div>
-          )}
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="w-full mb-4">
+              <TabsTrigger value="all" className="flex-1">
+                📰 All Posts
+              </TabsTrigger>
+              <TabsTrigger value="following" className="flex-1" disabled={!user}>
+                ❤️ Following
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="all">
+              {renderPosts(posts, "No posts yet. Create the first one!")}
+            </TabsContent>
+
+            <TabsContent value="following">
+              {!user ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Sign in to see posts from streamers you follow
+                </div>
+              ) : (
+                renderPosts(
+                  followingPosts,
+                  "No posts from people you follow. Start following streamers!"
+                )
+              )}
+            </TabsContent>
+          </Tabs>
         </section>
       </main>
 
