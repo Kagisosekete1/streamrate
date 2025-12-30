@@ -38,14 +38,7 @@ const PostDetail = () => {
 
     const { data: postData, error } = await supabase
       .from("posts")
-      .select(`
-        id,
-        content,
-        image_url,
-        created_at,
-        user_id,
-        profiles:user_id (full_name, avatar_url)
-      `)
+      .select("id, content, image_url, created_at, user_id")
       .eq("id", id)
       .maybeSingle();
 
@@ -55,7 +48,17 @@ const PostDetail = () => {
       return;
     }
 
-    setPost(postData);
+    // Fetch profile separately
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("full_name, avatar_url")
+      .eq("id", postData.user_id)
+      .maybeSingle();
+
+    setPost({
+      ...postData,
+      profiles: profileData,
+    });
 
     // Get counts
     const { count: likes } = await supabase

@@ -71,25 +71,45 @@ const StreamerProfile = () => {
     setStreamer(profileData);
 
     // Fetch reviews
-    const { data: reviewsData } = await supabase
+    const { data: ratingsData } = await supabase
       .from("ratings")
-      .select(`
-        id,
-        stars,
-        review_text,
-        created_at,
-        profiles:fan_id (full_name, avatar_url)
-      `)
+      .select("id, stars, review_text, created_at, fan_id")
       .eq("streamer_id", id)
       .order("created_at", { ascending: false });
 
-    setReviews(reviewsData || []);
+    if (ratingsData && ratingsData.length > 0) {
+      // Fetch profiles for all fans
+      const fanIds = [...new Set(ratingsData.map((r) => r.fan_id))];
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url")
+        .in("id", fanIds);
 
-    // Calculate average rating
-    if (reviewsData && reviewsData.length > 0) {
+      const profilesMap = new Map(
+        (profilesData || []).map((p) => [p.id, p])
+      );
+
+      const reviewsWithProfiles = ratingsData.map((r) => {
+        const profile = profilesMap.get(r.fan_id);
+        return {
+          id: r.id,
+          stars: r.stars,
+          review_text: r.review_text,
+          created_at: r.created_at,
+          profiles: profile
+            ? { full_name: profile.full_name, avatar_url: profile.avatar_url }
+            : null,
+        };
+      });
+
+      setReviews(reviewsWithProfiles);
+
+      // Calculate average rating
       const avg =
-        reviewsData.reduce((sum, r) => sum + r.stars, 0) / reviewsData.length;
+        ratingsData.reduce((sum, r) => sum + r.stars, 0) / ratingsData.length;
       setAverageRating(Math.round(avg * 10) / 10);
+    } else {
+      setReviews([]);
     }
 
     // Fetch followers count
