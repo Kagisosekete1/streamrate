@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Share2 } from "lucide-react";
+import { Heart, MessageCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { ShareMenu } from "@/components/ShareMenu";
 
 interface PostCardProps {
   id: string;
@@ -147,12 +148,7 @@ export const PostCard = ({
           <span className="text-sm">{comments}</span>
         </button>
 
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors ml-auto"
-        >
-          <Share2 className="w-5 h-5" />
-        </button>
+        <ShareMenu postId={id} title={content.slice(0, 50)} />
       </div>
     </motion.div>
   );

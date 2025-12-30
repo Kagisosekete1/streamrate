@@ -248,11 +248,8 @@ const Profile = () => {
             </div>
 
             <h1 className="mt-4 text-xl font-bold text-foreground">
-              {profile.full_name || "Anonymous"}
+              {profile.username || "Anonymous"}
             </h1>
-            {profile.username && (
-              <p className="text-muted-foreground text-sm">@{profile.username}</p>
-            )}
             <span className="px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-medium mt-1 capitalize">
               {userRole || "User"}
             </span>
@@ -347,12 +344,12 @@ const Profile = () => {
                 className="bg-card rounded-xl p-4 border border-border/50 cursor-pointer"
                 onClick={() => navigate(`/post/${post.id}`)}
               >
-                <p className="text-foreground/90 text-sm line-clamp-3">{post.content}</p>
+                <p className="text-foreground/90 text-sm leading-relaxed mb-4">{post.content}</p>
                 {post.image_url && (
                   <img
                     src={post.image_url}
                     alt="Post"
-                    className="w-full h-32 object-cover rounded-lg mt-3"
+                    className="w-full rounded-lg mb-4 max-h-64 object-cover"
                   />
                 )}
                 <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
@@ -396,19 +393,6 @@ const Profile = () => {
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1 block">
-                    Full Name
-                  </label>
-                  <Input
-                    value={editForm.full_name}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, full_name: e.target.value })
-                    }
-                    placeholder="Your name"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-1 block">
                     Username
                   </label>
                   <Input
@@ -416,7 +400,7 @@ const Profile = () => {
                     onChange={(e) =>
                       setEditForm({ ...editForm, username: e.target.value })
                     }
-                    placeholder="@username"
+                    placeholder="Your username"
                   />
                 </div>
 

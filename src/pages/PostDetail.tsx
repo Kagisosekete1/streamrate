@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Heart, Share2 } from "lucide-react";
+import { ArrowLeft, Heart } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { BottomNav } from "@/components/BottomNav";
 import { CommentSection } from "@/components/CommentSection";
+import { ShareMenu } from "@/components/ShareMenu";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -212,9 +213,7 @@ const PostDetail = () => {
               <span className="text-sm font-medium">{commentsCount} comments</span>
             </div>
 
-            <button className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors ml-auto">
-              <Share2 className="w-5 h-5" />
-            </button>
+            <ShareMenu postId={post.id} title={post.content.slice(0, 50)} />
           </div>
         </motion.div>
 
