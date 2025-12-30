@@ -1,12 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Gamepad2 } from "lucide-react";
+import { Gamepad2, Loader2 } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { SearchBar } from "@/components/SearchBar";
 import { TrendingStreamer } from "@/components/TrendingStreamer";
 import { PostCard } from "@/components/PostCard";
+import { NotificationBell } from "@/components/NotificationBell";
+import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Streamer {
@@ -31,13 +35,72 @@ interface Post {
   is_liked: boolean;
 }
 
+const POSTS_PER_PAGE = 10;
+
 const Home = () => {
   const { user } = useAuth();
   const [trendingStreamers, setTrendingStreamers] = useState<Streamer[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [followingPosts, setFollowingPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingMoreFollowing, setLoadingMoreFollowing] = useState(false);
+  const [hasMorePosts, setHasMorePosts] = useState(true);
+  const [hasMoreFollowing, setHasMoreFollowing] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
+
+  const handleRefresh = useCallback(async () => {
+    setPosts([]);
+    setFollowingPosts([]);
+    setHasMorePosts(true);
+    setHasMoreFollowing(true);
+    await fetchData();
+  }, [user]);
+
+  const { containerRef, isRefreshing, pullDistance, showIndicator } =
+    usePullToRefresh({
+      onRefresh: handleRefresh,
+    });
+
+  const loadMorePosts = useCallback(async () => {
+    if (loadingMore || !hasMorePosts) return;
+    setLoadingMore(true);
+
+    const offset = posts.length;
+    const newPosts = await fetchPostsWithProfiles(null, offset);
+
+    if (newPosts.length < POSTS_PER_PAGE) {
+      setHasMorePosts(false);
+    }
+    setPosts((prev) => [...prev, ...newPosts]);
+    setLoadingMore(false);
+  }, [loadingMore, hasMorePosts, posts.length]);
+
+  const loadMoreFollowingPosts = useCallback(async () => {
+    if (loadingMoreFollowing || !hasMoreFollowing || !user) return;
+    setLoadingMoreFollowing(true);
+
+    const offset = followingPosts.length;
+    const newPosts = await fetchFollowingPostsWithOffset(offset);
+
+    if (newPosts.length < POSTS_PER_PAGE) {
+      setHasMoreFollowing(false);
+    }
+    setFollowingPosts((prev) => [...prev, ...newPosts]);
+    setLoadingMoreFollowing(false);
+  }, [loadingMoreFollowing, hasMoreFollowing, followingPosts.length, user]);
+
+  const { loadMoreRef: loadMoreAllRef } = useInfiniteScroll({
+    onLoadMore: loadMorePosts,
+    hasMore: hasMorePosts,
+    isLoading: loadingMore,
+  });
+
+  const { loadMoreRef: loadMoreFollowingRef } = useInfiniteScroll({
+    onLoadMore: loadMoreFollowingPosts,
+    hasMore: hasMoreFollowing,
+    isLoading: loadingMoreFollowing,
+  });
 
   useEffect(() => {
     fetchData();
@@ -48,13 +111,13 @@ const Home = () => {
       .on(
         "postgres_changes",
         {
-          event: "*",
+          event: "INSERT",
           schema: "public",
           table: "posts",
         },
         () => {
-          fetchPosts();
-          if (user) fetchFollowingPosts();
+          // Prepend new post instead of full refresh
+          handleRefresh();
         }
       )
       .subscribe();
@@ -65,6 +128,7 @@ const Home = () => {
   }, [user]);
 
   const fetchData = async () => {
+    setLoading(true);
     await Promise.all([
       fetchTrendingStreamers(),
       fetchPosts(),
@@ -114,12 +178,15 @@ const Home = () => {
     setTrendingStreamers(sorted);
   };
 
-  const fetchPostsWithProfiles = async (postIds: string[] | null = null) => {
+  const fetchPostsWithProfiles = async (
+    postIds: string[] | null = null,
+    offset: number = 0
+  ) => {
     let query = supabase
       .from("posts")
       .select("id, content, image_url, created_at, user_id")
       .order("created_at", { ascending: false })
-      .limit(20);
+      .range(offset, offset + POSTS_PER_PAGE - 1);
 
     if (postIds) {
       if (postIds.length === 0) return [];
@@ -136,9 +203,7 @@ const Home = () => {
       .select("id, full_name, avatar_url")
       .in("id", userIds);
 
-    const profilesMap = new Map(
-      (profilesData || []).map((p) => [p.id, p])
-    );
+    const profilesMap = new Map((profilesData || []).map((p) => [p.id, p]));
 
     const postsWithCounts = await Promise.all(
       postsData.map(async (post) => {
@@ -181,12 +246,13 @@ const Home = () => {
   };
 
   const fetchPosts = async () => {
-    const postsWithCounts = await fetchPostsWithProfiles();
+    const postsWithCounts = await fetchPostsWithProfiles(null, 0);
     setPosts(postsWithCounts);
+    setHasMorePosts(postsWithCounts.length >= POSTS_PER_PAGE);
   };
 
-  const fetchFollowingPosts = async () => {
-    if (!user) return;
+  const fetchFollowingPostsWithOffset = async (offset: number = 0) => {
+    if (!user) return [];
 
     const { data: followsData } = await supabase
       .from("follows")
@@ -195,22 +261,16 @@ const Home = () => {
 
     const followingIds = followsData?.map((f) => f.following_id) || [];
 
-    if (followingIds.length === 0) {
-      setFollowingPosts([]);
-      return;
-    }
+    if (followingIds.length === 0) return [];
 
     const { data: postsData } = await supabase
       .from("posts")
       .select("id, content, image_url, created_at, user_id")
       .in("user_id", followingIds)
       .order("created_at", { ascending: false })
-      .limit(20);
+      .range(offset, offset + POSTS_PER_PAGE - 1);
 
-    if (!postsData || postsData.length === 0) {
-      setFollowingPosts([]);
-      return;
-    }
+    if (!postsData || postsData.length === 0) return [];
 
     const userIds = [...new Set(postsData.map((p) => p.user_id))];
     const { data: profilesData } = await supabase
@@ -218,9 +278,7 @@ const Home = () => {
       .select("id, full_name, avatar_url")
       .in("id", userIds);
 
-    const profilesMap = new Map(
-      (profilesData || []).map((p) => [p.id, p])
-    );
+    const profilesMap = new Map((profilesData || []).map((p) => [p.id, p]));
 
     const postsWithCounts = await Promise.all(
       postsData.map(async (post) => {
@@ -257,10 +315,22 @@ const Home = () => {
       })
     );
 
-    setFollowingPosts(postsWithCounts);
+    return postsWithCounts;
   };
 
-  const renderPosts = (postList: Post[], emptyMessage: string) => {
+  const fetchFollowingPosts = async () => {
+    const postsWithCounts = await fetchFollowingPostsWithOffset(0);
+    setFollowingPosts(postsWithCounts);
+    setHasMoreFollowing(postsWithCounts.length >= POSTS_PER_PAGE);
+  };
+
+  const renderPosts = (
+    postList: Post[],
+    emptyMessage: string,
+    loadMoreRef: React.RefObject<HTMLDivElement>,
+    isLoadingMore: boolean,
+    hasMore: boolean
+  ) => {
     if (loading) {
       return (
         <div className="text-center py-8 text-muted-foreground">
@@ -298,20 +368,49 @@ const Home = () => {
             index={index}
           />
         ))}
+
+        {/* Infinite scroll trigger */}
+        <div ref={loadMoreRef} className="h-1" />
+
+        {isLoadingMore && (
+          <div className="flex justify-center py-4">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        )}
+
+        {!hasMore && postList.length > 0 && (
+          <div className="text-center py-4 text-muted-foreground text-sm">
+            No more posts to load
+          </div>
+        )}
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div
+      ref={containerRef}
+      className="min-h-screen bg-background pb-20"
+    >
+      {/* Pull to refresh indicator */}
+      {showIndicator && (
+        <PullToRefreshIndicator
+          pullDistance={pullDistance}
+          isRefreshing={isRefreshing}
+        />
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border/50">
         <div className="px-4 py-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Gamepad2 className="w-4 h-4 text-primary-foreground" />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <Gamepad2 className="w-4 h-4 text-primary-foreground" />
+              </div>
+              <h1 className="text-xl font-bold gradient-text">StreamRate</h1>
             </div>
-            <h1 className="text-xl font-bold gradient-text">StreamRate</h1>
+            <NotificationBell />
           </div>
           <SearchBar placeholder="Search streamers, posts..." />
         </div>
@@ -367,7 +466,13 @@ const Home = () => {
             </TabsList>
 
             <TabsContent value="all">
-              {renderPosts(posts, "No posts yet. Create the first one!")}
+              {renderPosts(
+                posts,
+                "No posts yet. Create the first one!",
+                loadMoreAllRef,
+                loadingMore,
+                hasMorePosts
+              )}
             </TabsContent>
 
             <TabsContent value="following">
@@ -378,7 +483,10 @@ const Home = () => {
               ) : (
                 renderPosts(
                   followingPosts,
-                  "No posts from people you follow. Start following streamers!"
+                  "No posts from people you follow. Start following streamers!",
+                  loadMoreFollowingRef,
+                  loadingMoreFollowing,
+                  hasMoreFollowing
                 )
               )}
             </TabsContent>
