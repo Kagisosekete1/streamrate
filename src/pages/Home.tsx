@@ -12,7 +12,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Streamer {
   id: string;
@@ -42,21 +41,15 @@ const Home = () => {
   const { user } = useAuth();
   const [trendingStreamers, setTrendingStreamers] = useState<Streamer[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
-  const [followingPosts, setFollowingPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [loadingMoreFollowing, setLoadingMoreFollowing] = useState(false);
   const [hasMorePosts, setHasMorePosts] = useState(true);
-  const [hasMoreFollowing, setHasMoreFollowing] = useState(true);
-  const [activeTab, setActiveTab] = useState("all");
   const [newPostsCount, setNewPostsCount] = useState(0);
   const latestPostId = useRef<string | null>(null);
 
   const handleRefresh = useCallback(async () => {
     setPosts([]);
-    setFollowingPosts([]);
     setHasMorePosts(true);
-    setHasMoreFollowing(true);
     setNewPostsCount(0);
     await fetchData();
   }, [user]);
@@ -80,30 +73,10 @@ const Home = () => {
     setLoadingMore(false);
   }, [loadingMore, hasMorePosts, posts.length]);
 
-  const loadMoreFollowingPosts = useCallback(async () => {
-    if (loadingMoreFollowing || !hasMoreFollowing || !user) return;
-    setLoadingMoreFollowing(true);
-
-    const offset = followingPosts.length;
-    const newPosts = await fetchFollowingPostsWithOffset(offset);
-
-    if (newPosts.length < POSTS_PER_PAGE) {
-      setHasMoreFollowing(false);
-    }
-    setFollowingPosts((prev) => [...prev, ...newPosts]);
-    setLoadingMoreFollowing(false);
-  }, [loadingMoreFollowing, hasMoreFollowing, followingPosts.length, user]);
-
   const { loadMoreRef: loadMoreAllRef } = useInfiniteScroll({
     onLoadMore: loadMorePosts,
     hasMore: hasMorePosts,
     isLoading: loadingMore,
-  });
-
-  const { loadMoreRef: loadMoreFollowingRef } = useInfiniteScroll({
-    onLoadMore: loadMoreFollowingPosts,
-    hasMore: hasMoreFollowing,
-    isLoading: loadingMoreFollowing,
   });
 
   useEffect(() => {
@@ -135,11 +108,7 @@ const Home = () => {
 
   const fetchData = async () => {
     setLoading(true);
-    await Promise.all([
-      fetchTrendingStreamers(),
-      fetchPosts(),
-      user ? fetchFollowingPosts() : Promise.resolve(),
-    ]);
+    await Promise.all([fetchTrendingStreamers(), fetchPosts()]);
     setLoading(false);
   };
 
@@ -255,88 +224,12 @@ const Home = () => {
     const postsWithCounts = await fetchPostsWithProfiles(null, 0);
     setPosts(postsWithCounts);
     setHasMorePosts(postsWithCounts.length >= POSTS_PER_PAGE);
+    if (postsWithCounts.length > 0) {
+      latestPostId.current = postsWithCounts[0].id;
+    }
   };
 
-  const fetchFollowingPostsWithOffset = async (offset: number = 0) => {
-    if (!user) return [];
-
-    const { data: followsData } = await supabase
-      .from("follows")
-      .select("following_id")
-      .eq("follower_id", user.id);
-
-    const followingIds = followsData?.map((f) => f.following_id) || [];
-
-    if (followingIds.length === 0) return [];
-
-    const { data: postsData } = await supabase
-      .from("posts")
-      .select("id, content, image_url, created_at, user_id")
-      .in("user_id", followingIds)
-      .order("created_at", { ascending: false })
-      .range(offset, offset + POSTS_PER_PAGE - 1);
-
-    if (!postsData || postsData.length === 0) return [];
-
-    const userIds = [...new Set(postsData.map((p) => p.user_id))];
-    const { data: profilesData } = await supabase
-      .from("profiles")
-      .select("id, full_name, avatar_url")
-      .in("id", userIds);
-
-    const profilesMap = new Map((profilesData || []).map((p) => [p.id, p]));
-
-    const postsWithCounts = await Promise.all(
-      postsData.map(async (post) => {
-        const { count: likesCount } = await supabase
-          .from("post_likes")
-          .select("*", { count: "exact", head: true })
-          .eq("post_id", post.id);
-
-        const { count: commentsCount } = await supabase
-          .from("comments")
-          .select("*", { count: "exact", head: true })
-          .eq("post_id", post.id);
-
-        let isLiked = false;
-        const { data: likeData } = await supabase
-          .from("post_likes")
-          .select("id")
-          .eq("post_id", post.id)
-          .eq("user_id", user.id)
-          .maybeSingle();
-        isLiked = !!likeData;
-
-        const profile = profilesMap.get(post.user_id);
-
-        return {
-          ...post,
-          profiles: profile
-            ? { full_name: profile.full_name, avatar_url: profile.avatar_url }
-            : null,
-          likes_count: likesCount || 0,
-          comments_count: commentsCount || 0,
-          is_liked: isLiked,
-        };
-      })
-    );
-
-    return postsWithCounts;
-  };
-
-  const fetchFollowingPosts = async () => {
-    const postsWithCounts = await fetchFollowingPostsWithOffset(0);
-    setFollowingPosts(postsWithCounts);
-    setHasMoreFollowing(postsWithCounts.length >= POSTS_PER_PAGE);
-  };
-
-  const renderPosts = (
-    postList: Post[],
-    emptyMessage: string,
-    loadMoreRef: React.RefObject<HTMLDivElement>,
-    isLoadingMore: boolean,
-    hasMore: boolean
-  ) => {
+  const renderPosts = () => {
     if (loading) {
       return (
         <div className="text-center py-8 text-muted-foreground">
@@ -345,17 +238,17 @@ const Home = () => {
       );
     }
 
-    if (postList.length === 0) {
+    if (posts.length === 0) {
       return (
         <div className="text-center py-8 text-muted-foreground">
-          {emptyMessage}
+          No posts yet. Create the first one!
         </div>
       );
     }
 
     return (
       <div className="space-y-4">
-        {postList.map((post, index) => (
+        {posts.map((post, index) => (
           <PostCard
             key={post.id}
             id={post.id}
@@ -376,15 +269,15 @@ const Home = () => {
         ))}
 
         {/* Infinite scroll trigger */}
-        <div ref={loadMoreRef} className="h-1" />
+        <div ref={loadMoreAllRef} className="h-1" />
 
-        {isLoadingMore && (
+        {loadingMore && (
           <div className="flex justify-center py-4">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         )}
 
-        {!hasMore && postList.length > 0 && (
+        {!hasMorePosts && posts.length > 0 && (
           <div className="text-center py-4 text-muted-foreground text-sm">
             No more posts to load
           </div>
@@ -394,16 +287,18 @@ const Home = () => {
   };
 
   return (
-    <div
-      ref={containerRef}
-      className="min-h-screen bg-background pb-20"
-    >
+    <div ref={containerRef} className="min-h-screen bg-background pb-20">
       {/* Pull to refresh indicator */}
       {showIndicator && (
         <PullToRefreshIndicator
           pullDistance={pullDistance}
           isRefreshing={isRefreshing}
         />
+      )}
+
+      {/* New posts banner */}
+      {newPostsCount > 0 && (
+        <NewPostsBanner count={newPostsCount} onClick={handleRefresh} />
       )}
 
       {/* Header */}
@@ -459,44 +354,12 @@ const Home = () => {
           )}
         </section>
 
-        {/* Feed with Tabs */}
+        {/* Feed */}
         <section className="py-4">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="w-full mb-4">
-              <TabsTrigger value="all" className="flex-1">
-                📰 All Posts
-              </TabsTrigger>
-              <TabsTrigger value="following" className="flex-1" disabled={!user}>
-                ❤️ Following
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="all">
-              {renderPosts(
-                posts,
-                "No posts yet. Create the first one!",
-                loadMoreAllRef,
-                loadingMore,
-                hasMorePosts
-              )}
-            </TabsContent>
-
-            <TabsContent value="following">
-              {!user ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Sign in to see posts from streamers you follow
-                </div>
-              ) : (
-                renderPosts(
-                  followingPosts,
-                  "No posts from people you follow. Start following streamers!",
-                  loadMoreFollowingRef,
-                  loadingMoreFollowing,
-                  hasMoreFollowing
-                )
-              )}
-            </TabsContent>
-          </Tabs>
+          <h2 className="text-lg font-semibold text-foreground mb-4">
+            📰 Latest Posts
+          </h2>
+          {renderPosts()}
         </section>
       </main>
 

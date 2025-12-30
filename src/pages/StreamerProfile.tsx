@@ -14,6 +14,7 @@ import { formatDistanceToNow } from "date-fns";
 interface StreamerData {
   id: string;
   full_name: string | null;
+  username: string | null;
   avatar_url: string | null;
   bio: string | null;
   country: string | null;
@@ -58,7 +59,7 @@ const StreamerProfile = () => {
     // Fetch streamer profile
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
-      .select("id, full_name, avatar_url, bio, country")
+      .select("id, full_name, username, avatar_url, bio, country")
       .eq("id", id)
       .maybeSingle();
 
@@ -142,6 +143,12 @@ const StreamerProfile = () => {
     }
 
     if (!id) return;
+
+    // Prevent self-follow
+    if (user.id === id) {
+      toast({ title: "You cannot follow yourself", variant: "destructive" });
+      return;
+    }
 
     if (isFollowing) {
       await supabase
@@ -251,7 +258,7 @@ const StreamerProfile = () => {
               className="w-28 h-28 rounded-full object-cover ring-4 ring-primary/30 shadow-xl shadow-primary/20"
             />
             <h1 className="mt-4 text-2xl font-bold text-foreground">
-              {streamer.full_name || "Anonymous"}
+              {streamer.username || streamer.full_name || "Anonymous"}
             </h1>
             {streamer.country && (
               <div className="flex items-center gap-1 text-muted-foreground mt-1">
