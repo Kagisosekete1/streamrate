@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import { Gamepad2, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { SearchBar } from "@/components/SearchBar";
 import { TrendingStreamer } from "@/components/TrendingStreamer";
@@ -33,6 +33,7 @@ interface Post {
   likes_count: number;
   comments_count: number;
   is_liked: boolean;
+  is_bookmarked: boolean;
 }
 
 const POSTS_PER_PAGE = 10;
@@ -193,6 +194,7 @@ const Home = () => {
           .eq("post_id", post.id);
 
         let isLiked = false;
+        let isBookmarked = false;
         if (user) {
           const { data: likeData } = await supabase
             .from("post_likes")
@@ -201,6 +203,14 @@ const Home = () => {
             .eq("user_id", user.id)
             .maybeSingle();
           isLiked = !!likeData;
+
+          const { data: bookmarkData } = await supabase
+            .from("bookmarks")
+            .select("id")
+            .eq("post_id", post.id)
+            .eq("user_id", user.id)
+            .maybeSingle();
+          isBookmarked = !!bookmarkData;
         }
 
         const profile = profilesMap.get(post.user_id);
@@ -213,6 +223,7 @@ const Home = () => {
           likes_count: likesCount || 0,
           comments_count: commentsCount || 0,
           is_liked: isLiked,
+          is_bookmarked: isBookmarked,
         };
       })
     );
@@ -264,7 +275,9 @@ const Home = () => {
             comments={post.comments_count}
             createdAt={new Date(post.created_at)}
             isLiked={post.is_liked}
+            isBookmarked={post.is_bookmarked}
             index={index}
+            onDelete={() => setPosts((prev) => prev.filter((p) => p.id !== post.id))}
           />
         ))}
 
@@ -306,9 +319,11 @@ const Home = () => {
         <div className="px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <Gamepad2 className="w-4 h-4 text-primary-foreground" />
-              </div>
+              <img
+                src="/logo.png"
+                alt="StreamRate"
+                className="w-8 h-8 rounded-lg"
+              />
               <h1 className="text-xl font-bold gradient-text">StreamRate</h1>
             </div>
             <NotificationBell />

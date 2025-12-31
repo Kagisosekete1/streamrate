@@ -328,13 +328,15 @@ const StreamerProfile = () => {
             <Star className="w-4 h-4" />
             Rate & Review
           </Button>
-          <Button
-            variant={isFollowing ? "outline" : "gaming"}
-            className="flex-1"
-            onClick={handleFollow}
-          >
-            {isFollowing ? "Following" : "Follow"}
-          </Button>
+          {user?.id !== id && (
+            <Button
+              variant={isFollowing ? "outline" : "gaming"}
+              className="flex-1"
+              onClick={handleFollow}
+            >
+              {isFollowing ? "Following" : "Follow"}
+            </Button>
+          )}
         </div>
       </section>
 

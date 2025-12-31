@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Trash2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -8,6 +8,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { ShareMenu } from "@/components/ShareMenu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface PostCardProps {
   id: string;
@@ -20,7 +31,9 @@ interface PostCardProps {
   comments: number;
   createdAt: Date;
   isLiked?: boolean;
+  isBookmarked?: boolean;
   index?: number;
+  onDelete?: () => void;
 }
 
 export const PostCard = ({
@@ -34,13 +47,62 @@ export const PostCard = ({
   comments,
   createdAt,
   isLiked: initialIsLiked = false,
+  isBookmarked: initialIsBookmarked = false,
   index = 0,
+  onDelete,
 }: PostCardProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(initialIsLiked);
   const [likes, setLikes] = useState(initialLikes);
+  const [isBookmarked, setIsBookmarked] = useState(initialIsBookmarked);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const isOwner = user?.id === streamerId;
+
+  const handleBookmark = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+      toast({ title: "Please sign in to bookmark", variant: "destructive" });
+      return;
+    }
+
+    if (isBookmarked) {
+      await supabase
+        .from("bookmarks")
+        .delete()
+        .eq("post_id", id)
+        .eq("user_id", user.id);
+      setIsBookmarked(false);
+      toast({ title: "Removed from bookmarks" });
+    } else {
+      await supabase.from("bookmarks").insert({
+        post_id: id,
+        user_id: user.id,
+      });
+      setIsBookmarked(true);
+      toast({ title: "Saved to bookmarks" });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!user || !isOwner) return;
+
+    setIsDeleting(true);
+    const { error } = await supabase.from("posts").delete().eq("id", id);
+
+    if (error) {
+      toast({ title: "Failed to delete post", variant: "destructive" });
+      setIsDeleting(false);
+      return;
+    }
+
+    toast({ title: "Post deleted" });
+    onDelete?.();
+  };
 
   const handleLike = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -115,40 +177,87 @@ export const PostCard = ({
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-6 pt-3 border-t border-border/30">
-        <button
-          onClick={handleLike}
-          className="flex items-center gap-2 group transition-all duration-200"
-        >
-          <motion.div
-            whileTap={{ scale: 1.3 }}
-            transition={{ type: "spring", stiffness: 500 }}
+      <div className="flex items-center justify-between pt-3 border-t border-border/30">
+        <div className="flex items-center gap-6">
+          <button
+            onClick={handleLike}
+            className="flex items-center gap-2 group transition-all duration-200"
           >
-            <Heart
+            <motion.div
+              whileTap={{ scale: 1.3 }}
+              transition={{ type: "spring", stiffness: 500 }}
+            >
+              <Heart
+                className={cn(
+                  "w-5 h-5 transition-colors",
+                  isLiked
+                    ? "fill-accent text-accent"
+                    : "text-muted-foreground group-hover:text-accent"
+                )}
+              />
+            </motion.div>
+            <span
+              className={cn("text-sm", isLiked ? "text-accent" : "text-muted-foreground")}
+            >
+              {likes}
+            </span>
+          </button>
+
+          <button
+            onClick={handleCommentClick}
+            className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+          >
+            <MessageCircle className="w-5 h-5" />
+            <span className="text-sm">{comments}</span>
+          </button>
+
+          <ShareMenu postId={id} title={content.slice(0, 50)} />
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleBookmark}
+            className="text-muted-foreground hover:text-primary transition-colors"
+          >
+            <Bookmark
               className={cn(
                 "w-5 h-5 transition-colors",
-                isLiked
-                  ? "fill-accent text-accent"
-                  : "text-muted-foreground group-hover:text-accent"
+                isBookmarked && "fill-primary text-primary"
               )}
             />
-          </motion.div>
-          <span
-            className={cn("text-sm", isLiked ? "text-accent" : "text-muted-foreground")}
-          >
-            {likes}
-          </span>
-        </button>
+          </button>
 
-        <button
-          onClick={handleCommentClick}
-          className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
-        >
-          <MessageCircle className="w-5 h-5" />
-          <span className="text-sm">{comments}</span>
-        </button>
-
-        <ShareMenu postId={id} title={content.slice(0, 50)} />
+          {isOwner && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Post</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete this post? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="bg-destructive hover:bg-destructive/90"
+                  >
+                    {isDeleting ? "Deleting..." : "Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
       </div>
     </motion.div>
   );
