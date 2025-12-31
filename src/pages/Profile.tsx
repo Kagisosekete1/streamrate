@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
+import { ImageCropper } from "@/components/ImageCropper";
 
 interface Post {
   id: string;
@@ -29,7 +30,6 @@ const Profile = () => {
   const [averageRating, setAverageRating] = useState(0);
   const [reviewsCount, setReviewsCount] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [editForm, setEditForm] = useState({
     full_name: "",
     username: "",
@@ -37,6 +37,8 @@ const Profile = () => {
     country: "",
   });
   const [isUploading, setIsUploading] = useState(false);
+  const [showCropper, setShowCropper] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -131,47 +133,42 @@ const Profile = () => {
     navigate("/auth");
   };
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropImageSrc(reader.result as string);
+      setShowCropper(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCroppedImage = async (blob: Blob) => {
+    if (!user) return;
 
     setIsUploading(true);
-
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+    const fileName = `${user.id}/${Date.now()}.jpg`;
 
     const { error: uploadError } = await supabase.storage
       .from("avatars")
-      .upload(fileName, file);
+      .upload(fileName, blob);
 
     if (uploadError) {
-      toast({
-        title: "Upload failed",
-        description: uploadError.message,
-        variant: "destructive",
-      });
+      toast({ title: "Upload failed", variant: "destructive" });
       setIsUploading(false);
       return;
     }
 
-    const { data: urlData } = supabase.storage
-      .from("avatars")
-      .getPublicUrl(fileName);
-
+    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(fileName);
     const { error } = await updateProfile({ avatar_url: urlData.publicUrl });
 
     if (error) {
-      toast({
-        title: "Failed to update avatar",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Failed to update avatar", variant: "destructive" });
     } else {
-      toast({
-        title: "Avatar updated!",
-      });
+      toast({ title: "Avatar updated!" });
     }
-
     setIsUploading(false);
   };
 
@@ -210,7 +207,7 @@ const Profile = () => {
         <div className="relative pt-4 px-4">
           <div className="flex justify-end gap-2">
             <button
-              onClick={() => setShowSettingsModal(true)}
+              onClick={() => navigate("/settings")}
               className="w-10 h-10 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center"
             >
               <Settings className="w-5 h-5 text-foreground" />
@@ -234,7 +231,7 @@ const Profile = () => {
               <input
                 type="file"
                 accept="image/*"
-                onChange={handleAvatarUpload}
+                onChange={handleFileSelect}
                 ref={fileInputRef}
                 className="hidden"
               />

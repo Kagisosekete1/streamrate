@@ -14,6 +14,7 @@ import StreamerProfile from "./pages/StreamerProfile";
 import Profile from "./pages/Profile";
 import CreatePost from "./pages/CreatePost";
 import PostDetail from "./pages/PostDetail";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/streamers" element={<Streamers />} />
             <Route path="/streamer/:id" element={<StreamerProfile />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/create-post" element={<CreatePost />} />
             <Route path="/post/:id" element={<PostDetail />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
