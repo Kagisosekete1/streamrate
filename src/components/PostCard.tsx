@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Bookmark, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Trash2, Edit2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { ShareMenu } from "@/components/ShareMenu";
+import { EditPostModal } from "@/components/EditPostModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +35,7 @@ interface PostCardProps {
   isBookmarked?: boolean;
   index?: number;
   onDelete?: () => void;
+  onUpdate?: () => void;
 }
 
 export const PostCard = ({
@@ -41,8 +43,8 @@ export const PostCard = ({
   streamerName,
   streamerPicture,
   streamerId,
-  content,
-  imageUrl,
+  content: initialContent,
+  imageUrl: initialImageUrl,
   likes: initialLikes,
   comments,
   createdAt,
@@ -50,6 +52,7 @@ export const PostCard = ({
   isBookmarked: initialIsBookmarked = false,
   index = 0,
   onDelete,
+  onUpdate,
 }: PostCardProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -58,6 +61,9 @@ export const PostCard = ({
   const [likes, setLikes] = useState(initialLikes);
   const [isBookmarked, setIsBookmarked] = useState(initialIsBookmarked);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [content, setContent] = useState(initialContent);
+  const [imageUrl, setImageUrl] = useState(initialImageUrl);
 
   const isOwner = user?.id === streamerId;
 
@@ -228,37 +234,63 @@ export const PostCard = ({
           </button>
 
           {isOwner && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <button
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-muted-foreground hover:text-destructive transition-colors"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </AlertDialogTrigger>
-              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Post</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete this post? This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                    className="bg-destructive hover:bg-destructive/90"
+            <>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowEditModal(true);
+                }}
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Edit2 className="w-5 h-5" />
+              </button>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-muted-foreground hover:text-destructive transition-colors"
                   >
-                    {isDeleting ? "Deleting..." : "Delete"}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Post</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this post? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                      className="bg-destructive hover:bg-destructive/90"
+                    >
+                      {isDeleting ? "Deleting..." : "Delete"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
           )}
         </div>
       </div>
+
+      <EditPostModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        postId={id}
+        initialContent={content}
+        initialImageUrl={imageUrl}
+        onSave={(newContent, newImageUrl) => {
+          setContent(newContent);
+          setImageUrl(newImageUrl);
+          onUpdate?.();
+        }}
+      />
     </motion.div>
   );
 };
