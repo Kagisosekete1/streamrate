@@ -216,26 +216,32 @@ const Settings = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end sm:items-center sm:justify-center"
-      onClick={() => setActiveModal(null)}
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) {
+          setActiveModal(null);
+        }
+      }}
     >
       <motion.div
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 25 }}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full sm:max-w-md bg-card rounded-t-3xl sm:rounded-2xl p-6 border-t sm:border border-border max-h-[85vh] overflow-y-auto"
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="w-full max-w-md bg-card rounded-3xl p-6 border border-border shadow-2xl max-h-[85vh] overflow-y-auto"
       >
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={() => setActiveModal(null)}>
+        <div className="flex items-center justify-between mb-6">
+          <button 
+            onClick={() => setActiveModal(null)}
+            className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
+          >
             <X className="w-5 h-5 text-muted-foreground" />
           </button>
           <h2 className="text-lg font-bold text-foreground">{title}</h2>
           {showSave ? (
             <button
               onClick={onSave}
-              className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium"
+              className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg"
             >
               Save
             </button>
