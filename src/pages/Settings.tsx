@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -65,10 +65,21 @@ const Settings = () => {
   const { toast } = useToast();
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [editForm, setEditForm] = useState({
-    username: profile?.username || "",
-    bio: profile?.bio || "",
-    country: profile?.country || "",
+    username: "",
+    bio: "",
+    country: "",
   });
+
+  // Sync form data only when modal opens
+  useEffect(() => {
+    if (activeModal === "editProfile" && profile) {
+      setEditForm({
+        username: profile.username || "",
+        bio: profile.bio || "",
+        country: profile.country || "",
+      });
+    }
+  }, [activeModal]);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
