@@ -436,69 +436,19 @@ const Profile = () => {
         )}
       </AnimatePresence>
 
-      {/* Settings Modal */}
-      <AnimatePresence>
-        {showSettingsModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end"
-            onClick={() => setShowSettingsModal(false)}
-          >
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full bg-card rounded-t-3xl p-6 border-t border-border"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-foreground">Settings</h2>
-                <button onClick={() => setShowSettingsModal(false)}>
-                  <X className="w-6 h-6 text-muted-foreground" />
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                <button
-                  onClick={() => {
-                    setShowSettingsModal(false);
-                    setShowEditModal(true);
-                  }}
-                  className="w-full p-4 rounded-xl bg-secondary/50 text-left hover:bg-secondary transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <Edit2 className="w-5 h-5 text-primary" />
-                    <div>
-                      <p className="font-medium text-foreground">Edit Profile</p>
-                      <p className="text-sm text-muted-foreground">
-                        Update your name, bio, and photo
-                      </p>
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  onClick={handleLogout}
-                  className="w-full p-4 rounded-xl bg-destructive/10 text-left hover:bg-destructive/20 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <LogOut className="w-5 h-5 text-destructive" />
-                    <div>
-                      <p className="font-medium text-destructive">Log Out</p>
-                      <p className="text-sm text-muted-foreground">
-                        Sign out of your account
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Image Cropper */}
+      {cropImageSrc && (
+        <ImageCropper
+          isOpen={showCropper}
+          onClose={() => {
+            setShowCropper(false);
+            setCropImageSrc(null);
+          }}
+          imageSrc={cropImageSrc}
+          onCropComplete={handleCroppedImage}
+          aspectRatio={1}
+        />
+      )}
 
       <BottomNav />
     </div>
