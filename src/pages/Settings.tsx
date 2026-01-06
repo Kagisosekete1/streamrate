@@ -204,9 +204,13 @@ const Settings = () => {
   const Modal = ({
     title,
     children,
+    showSave = false,
+    onSave,
   }: {
     title: string;
     children: React.ReactNode;
+    showSave?: boolean;
+    onSave?: () => void;
   }) => (
     <motion.div
       initial={{ opacity: 0 }}
@@ -224,10 +228,20 @@ const Settings = () => {
         className="w-full sm:max-w-md bg-card rounded-t-3xl sm:rounded-2xl p-6 border-t sm:border border-border max-h-[85vh] overflow-y-auto"
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-foreground">{title}</h2>
           <button onClick={() => setActiveModal(null)}>
             <X className="w-5 h-5 text-muted-foreground" />
           </button>
+          <h2 className="text-lg font-bold text-foreground">{title}</h2>
+          {showSave ? (
+            <button
+              onClick={onSave}
+              className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium"
+            >
+              Save
+            </button>
+          ) : (
+            <div className="w-10" />
+          )}
         </div>
         {children}
       </motion.div>
@@ -426,7 +440,7 @@ const Settings = () => {
       {/* Modals */}
       <AnimatePresence>
         {activeModal === "editProfile" && (
-          <Modal title="Edit Profile">
+          <Modal title="Edit Profile" showSave onSave={handleSaveProfile}>
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">
@@ -461,20 +475,12 @@ const Settings = () => {
                   placeholder="Your country"
                 />
               </div>
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setActiveModal(null)} className="flex-1">
-                  Cancel
-                </Button>
-                <Button variant="gaming" onClick={handleSaveProfile} className="flex-1">
-                  Save
-                </Button>
-              </div>
             </div>
           </Modal>
         )}
 
         {activeModal === "changePassword" && (
-          <Modal title="Change Password">
+          <Modal title="Change Password" showSave onSave={handleChangePassword}>
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">
@@ -507,9 +513,6 @@ const Settings = () => {
                 />
               </div>
               <p className="text-xs text-muted-foreground">Password must be at least 8 characters</p>
-              <Button variant="gaming" onClick={handleChangePassword} className="w-full">
-                Update Password
-              </Button>
             </div>
           </Modal>
         )}
@@ -528,7 +531,7 @@ const Settings = () => {
         )}
 
         {activeModal === "profileVisibility" && (
-          <Modal title="Profile Visibility">
+          <Modal title="Profile Visibility" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
             <div className="space-y-3">
               {["public", "private"].map((option) => (
                 <button
@@ -553,7 +556,7 @@ const Settings = () => {
         )}
 
         {activeModal === "whoCanComment" && (
-          <Modal title="Who Can Comment">
+          <Modal title="Who Can Comment" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
             <div className="space-y-3">
               {[
                 { value: "everyone", label: "Everyone" },
@@ -579,7 +582,7 @@ const Settings = () => {
         )}
 
         {activeModal === "whoCanRate" && (
-          <Modal title="Who Can Rate Me">
+          <Modal title="Who Can Rate Me" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
             <div className="space-y-3">
               {[
                 { value: "everyone", label: "Everyone" },
@@ -614,7 +617,7 @@ const Settings = () => {
         )}
 
         {activeModal === "notifications" && (
-          <Modal title="Notifications">
+          <Modal title="Notifications" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
             <p className="text-sm text-muted-foreground mb-4">
               Choose what notifications you want to receive.
             </p>
@@ -641,7 +644,7 @@ const Settings = () => {
         )}
 
         {activeModal === "language" && (
-          <Modal title="Preferred Language">
+          <Modal title="Preferred Language" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
             <div className="space-y-3">
               {["English", "Spanish", "French", "German", "Portuguese"].map((lang) => (
                 <button
@@ -664,7 +667,7 @@ const Settings = () => {
         )}
 
         {activeModal === "preferredCountry" && (
-          <Modal title="Preferred Country">
+          <Modal title="Preferred Country" showSave onSave={handleSaveProfile}>
             <div className="space-y-4">
               <Input
                 value={editForm.country}
@@ -674,15 +677,12 @@ const Settings = () => {
               <p className="text-sm text-muted-foreground">
                 Used to show relevant streamers and search results.
               </p>
-              <Button variant="gaming" onClick={handleSaveProfile} className="w-full">
-                Save
-              </Button>
             </div>
           </Modal>
         )}
 
         {activeModal === "trendingStreamers" && (
-          <Modal title="Show Trending Streamers">
+          <Modal title="Show Trending Streamers" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
             <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-xl">
               <span className="text-foreground">Show trending section</span>
               <Switch
@@ -697,7 +697,7 @@ const Settings = () => {
         )}
 
         {activeModal === "darkMode" && (
-          <Modal title="Dark Mode">
+          <Modal title="Dark Mode" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
             <div className="space-y-3">
               {["System", "On", "Off"].map((mode) => (
                 <button
@@ -717,7 +717,7 @@ const Settings = () => {
         )}
 
         {activeModal === "dataSaver" && (
-          <Modal title="Data Saver Mode">
+          <Modal title="Data Saver Mode" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
             <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-xl">
               <span className="text-foreground">Enable data saver</span>
               <Switch
