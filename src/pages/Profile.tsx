@@ -23,7 +23,7 @@ interface Post {
 const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, profile, userRole, signOut, updateProfile, refreshProfile } = useAuth();
+  const { user, profile, userRole, loading, signOut, updateProfile } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
@@ -42,13 +42,15 @@ const Profile = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!user) {
+    if (!loading && !user) {
       navigate("/auth");
       return;
     }
 
-    fetchUserData();
-  }, [user]);
+    if (user) {
+      fetchUserData();
+    }
+  }, [user, loading]);
 
   useEffect(() => {
     if (profile) {
@@ -190,7 +192,7 @@ const Profile = () => {
     setShowEditModal(false);
   };
 
-  if (!user || !profile) {
+  if (loading || !user || !profile) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse text-primary">Loading...</div>
