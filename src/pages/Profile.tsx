@@ -9,7 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
-import { ImageCropper } from "@/components/ImageCropper";
 
 interface Post {
   id: string;
@@ -37,8 +36,9 @@ const Profile = () => {
     country: "",
   });
   const [isUploading, setIsUploading] = useState(false);
-  const [showCropper, setShowCropper] = useState(false);
-  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [showImagePreview, setShowImagePreview] = useState(false);
+  const [previewImageSrc, setPreviewImageSrc] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -140,26 +140,30 @@ const Profile = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setCropImageSrc(reader.result as string);
-      setShowCropper(true);
-    };
-    reader.readAsDataURL(file);
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setPreviewImageSrc(previewUrl);
+    setSelectedFile(file);
+    setShowImagePreview(true);
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
-  const handleCroppedImage = async (blob: Blob) => {
-    if (!user) return;
+  const handleSaveProfilePicture = async () => {
+    if (!user || !selectedFile) return;
 
     setIsUploading(true);
     const fileName = `${user.id}/${Date.now()}.jpg`;
 
     const { error: uploadError } = await supabase.storage
       .from("avatars")
-      .upload(fileName, blob);
+      .upload(fileName, selectedFile);
 
     if (uploadError) {
-      toast({ title: "Upload failed", variant: "destructive" });
+      toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
       setIsUploading(false);
       return;
     }
@@ -170,9 +174,22 @@ const Profile = () => {
     if (error) {
       toast({ title: "Failed to update avatar", variant: "destructive" });
     } else {
-      toast({ title: "Avatar updated!" });
+      toast({ title: "Profile picture saved!" });
     }
+    
     setIsUploading(false);
+    setShowImagePreview(false);
+    setPreviewImageSrc(null);
+    setSelectedFile(null);
+  };
+
+  const handleCancelImagePreview = () => {
+    setShowImagePreview(false);
+    if (previewImageSrc) {
+      URL.revokeObjectURL(previewImageSrc);
+    }
+    setPreviewImageSrc(null);
+    setSelectedFile(null);
   };
 
   const handleSaveProfile = async () => {
@@ -448,19 +465,56 @@ const Profile = () => {
         )}
       </AnimatePresence>
 
-      {/* Image Cropper */}
-      {cropImageSrc && (
-        <ImageCropper
-          isOpen={showCropper}
-          onClose={() => {
-            setShowCropper(false);
-            setCropImageSrc(null);
-          }}
-          imageSrc={cropImageSrc}
-          onCropComplete={handleCroppedImage}
-          aspectRatio={1}
-        />
-      )}
+      {/* Image Preview Modal */}
+      <AnimatePresence>
+        {showImagePreview && previewImageSrc && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={handleCancelImagePreview}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm bg-card rounded-3xl p-6 border border-border shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <button 
+                  onClick={handleCancelImagePreview}
+                  className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
+                >
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+                <h2 className="text-lg font-bold text-foreground">Profile Picture</h2>
+                <div className="w-10" />
+              </div>
+
+              <div className="flex justify-center mb-6">
+                <img
+                  src={previewImageSrc}
+                  alt="Preview"
+                  className="w-48 h-48 rounded-full object-cover ring-4 ring-primary/30"
+                />
+              </div>
+
+              <Button
+                variant="gaming"
+                onClick={handleSaveProfilePicture}
+                className="w-full"
+                disabled={isUploading}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {isUploading ? "Saving..." : "Save Profile Picture"}
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <BottomNav />
     </div>
