@@ -123,7 +123,6 @@ export const ImageCropper = ({
               onChange={(_, percentCrop) => setCrop(percentCrop)}
               onComplete={(c) => setCompletedCrop(c)}
               aspect={aspectRatio}
-              circularCrop
               className="max-h-full"
             >
               <img
