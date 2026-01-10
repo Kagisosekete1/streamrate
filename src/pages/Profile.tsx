@@ -52,8 +52,9 @@ const Profile = () => {
     }
   }, [user, loading]);
 
+  // Sync form data only when modal opens (matching Settings pattern)
   useEffect(() => {
-    if (profile) {
+    if (showEditModal && profile) {
       setEditForm({
         full_name: profile.full_name || "",
         username: profile.username || "",
@@ -61,7 +62,7 @@ const Profile = () => {
         country: profile.country || "",
       });
     }
-  }, [profile]);
+  }, [showEditModal]);
 
   const fetchUserData = async () => {
     if (!user) return;
@@ -364,28 +365,40 @@ const Profile = () => {
         )}
       </section>
 
-      {/* Edit Profile Modal */}
+      {/* Edit Profile Modal - Matching Settings style */}
       <AnimatePresence>
         {showEditModal && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end"
-            onClick={() => setShowEditModal(false)}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowEditModal(false);
+              }
+            }}
           >
             <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full bg-card rounded-t-3xl p-6 border-t border-border max-h-[80vh] overflow-y-auto"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="w-full max-w-md bg-card rounded-3xl p-6 border border-border shadow-2xl max-h-[85vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-foreground">Edit Profile</h2>
-                <button onClick={() => setShowEditModal(false)}>
-                  <X className="w-6 h-6 text-muted-foreground" />
+                <button 
+                  onClick={() => setShowEditModal(false)}
+                  className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
+                >
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+                <h2 className="text-lg font-bold text-foreground">Edit Profile</h2>
+                <button
+                  onClick={handleSaveProfile}
+                  className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg"
+                >
+                  Save
                 </button>
               </div>
 
@@ -410,9 +423,11 @@ const Profile = () => {
                   <textarea
                     value={editForm.bio}
                     onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                    maxLength={200}
                     placeholder="Tell us about yourself..."
-                    className="w-full min-h-[100px] rounded-lg border border-border bg-secondary/50 px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="w-full min-h-[80px] rounded-lg border border-border bg-secondary/50 px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">{editForm.bio.length}/200</p>
                 </div>
 
                 <div>
@@ -427,11 +442,6 @@ const Profile = () => {
                     placeholder="Your country"
                   />
                 </div>
-
-                <Button variant="gaming" className="w-full" onClick={handleSaveProfile}>
-                  <Save className="w-4 h-4" />
-                  Save Changes
-                </Button>
               </div>
             </motion.div>
           </motion.div>
