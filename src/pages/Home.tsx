@@ -16,7 +16,7 @@ import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 
 interface Streamer {
   id: string;
-  full_name: string | null;
+  username: string | null;
   avatar_url: string | null;
   average_rating: number;
 }
@@ -28,7 +28,7 @@ interface Post {
   created_at: string;
   user_id: string;
   profiles: {
-    full_name: string | null;
+    username: string | null;
     avatar_url: string | null;
   } | null;
   likes_count: number;
@@ -126,7 +126,7 @@ const Home = () => {
 
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id, full_name, avatar_url")
+      .select("id, username, avatar_url")
       .in("id", streamerIds);
 
     const streamersWithRatings = await Promise.all(
@@ -177,7 +177,7 @@ const Home = () => {
     const userIds = [...new Set(postsData.map((p) => p.user_id))];
     const { data: profilesData } = await supabase
       .from("profiles")
-      .select("id, full_name, avatar_url")
+      .select("id, username, avatar_url")
       .in("id", userIds);
 
     const profilesMap = new Map((profilesData || []).map((p) => [p.id, p]));
@@ -219,7 +219,7 @@ const Home = () => {
         return {
           ...post,
           profiles: profile
-            ? { full_name: profile.full_name, avatar_url: profile.avatar_url }
+            ? { username: profile.username, avatar_url: profile.avatar_url }
             : null,
           likes_count: likesCount || 0,
           comments_count: commentsCount || 0,
@@ -265,7 +265,7 @@ const Home = () => {
             key={post.id}
             id={post.id}
             streamerId={post.user_id}
-            streamerName={post.profiles?.full_name || "Anonymous"}
+            streamerName={post.profiles?.username || "Anonymous"}
             streamerPicture={
               post.profiles?.avatar_url ||
               "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"
@@ -355,7 +355,7 @@ const Home = () => {
                   <TrendingStreamer
                     key={streamer.id}
                     id={streamer.id}
-                    name={streamer.full_name || "Anonymous"}
+                    name={streamer.username || "Anonymous"}
                     profilePicture={
                       streamer.avatar_url ||
                       "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"
