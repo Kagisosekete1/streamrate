@@ -105,11 +105,14 @@ export const ImageUploadModal = ({
                   className="w-48 h-48 rounded-full object-cover ring-4 ring-primary/30"
                 />
               ) : (
-                <img
-                  src={imageSrc}
-                  alt="Preview"
-                  className="w-full h-32 rounded-lg object-cover ring-2 ring-primary/30"
-                />
+                <div className="w-full">
+                  <p className="text-xs text-muted-foreground text-center mb-2">Landscape Preview</p>
+                  <img
+                    src={imageSrc}
+                    alt="Header Preview"
+                    className="w-full aspect-[16/5] rounded-lg object-cover ring-2 ring-primary/30"
+                  />
+                </div>
               )}
             </div>
 
