@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, LogOut, Edit2, Users, Star, MessageCircle, Camera, X, Save, Trash2, ImageIcon } from "lucide-react";
+import { Settings, LogOut, Edit2, Users, Star, MessageCircle, Camera, X, Trash2, ImageIcon, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
+import { ImageUploadModal } from "@/components/ImageUploadModal";
+import { ProfilePreviewModal } from "@/components/ProfilePreviewModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,6 +60,7 @@ const Profile = () => {
   const [selectedHeaderFile, setSelectedHeaderFile] = useState<File | null>(null);
   const [isUploadingHeader, setIsUploadingHeader] = useState(false);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+  const [showProfilePreview, setShowProfilePreview] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -184,15 +187,15 @@ const Profile = () => {
     }
   };
 
-  const handleSaveProfilePicture = async () => {
-    if (!user || !selectedFile) return;
+  const handleSaveProfilePicture = async (fileOrBlob: File | Blob) => {
+    if (!user) return;
 
     setIsUploading(true);
     const fileName = `${user.id}/${Date.now()}.jpg`;
 
     const { error: uploadError } = await supabase.storage
       .from("avatars")
-      .upload(fileName, selectedFile);
+      .upload(fileName, fileOrBlob);
 
     if (uploadError) {
       toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
@@ -211,6 +214,9 @@ const Profile = () => {
     
     setIsUploading(false);
     setShowImagePreview(false);
+    if (previewImageSrc) {
+      URL.revokeObjectURL(previewImageSrc);
+    }
     setPreviewImageSrc(null);
     setSelectedFile(null);
   };
@@ -239,15 +245,15 @@ const Profile = () => {
     }
   };
 
-  const handleSaveHeader = async () => {
-    if (!user || !selectedHeaderFile) return;
+  const handleSaveHeader = async (fileOrBlob: File | Blob) => {
+    if (!user) return;
 
     setIsUploadingHeader(true);
     const fileName = `${user.id}/header_${Date.now()}.jpg`;
 
     const { error: uploadError } = await supabase.storage
       .from("avatars")
-      .upload(fileName, selectedHeaderFile);
+      .upload(fileName, fileOrBlob);
 
     if (uploadError) {
       toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
@@ -271,6 +277,9 @@ const Profile = () => {
     
     setIsUploadingHeader(false);
     setShowHeaderPreview(false);
+    if (headerPreviewSrc) {
+      URL.revokeObjectURL(headerPreviewSrc);
+    }
     setHeaderPreviewSrc(null);
     setSelectedHeaderFile(null);
   };
@@ -346,10 +355,11 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header with Banner */}
+      {/* Header with Banner - Header now behind profile picture */}
       <header className="relative">
+        {/* Header Banner - positioned behind */}
         <div 
-          className="h-32 w-full bg-cover bg-center relative"
+          className="h-40 w-full bg-cover bg-center relative"
           style={{ 
             backgroundImage: headerUrl 
               ? `url(${headerUrl})` 
@@ -373,21 +383,26 @@ const Profile = () => {
           >
             <ImageIcon className="w-4 h-4 text-white" />
           </button>
-        </div>
 
-        <div className="relative pt-4 px-4 -mt-12">
-          <div className="flex justify-end gap-2 mb-8">
+          {/* Top right actions */}
+          <div className="absolute top-4 right-4 flex gap-2">
+            <button
+              onClick={() => setShowProfilePreview(true)}
+              className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 transition-colors"
+            >
+              <Eye className="w-5 h-5 text-white" />
+            </button>
             <button
               onClick={() => navigate("/settings")}
-              className="w-10 h-10 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center"
+              className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 transition-colors"
             >
-              <Settings className="w-5 h-5 text-foreground" />
+              <Settings className="w-5 h-5 text-white" />
             </button>
           </div>
         </div>
 
-        {/* Profile info */}
-        <div className="relative px-4 pb-6 -mt-8">
+        {/* Profile info - overlapping the header */}
+        <div className="relative px-4 pb-6 -mt-16">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -397,7 +412,7 @@ const Profile = () => {
               <img
                 src={profile.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&crop=face"}
                 alt={profile.full_name || "User"}
-                className="w-24 h-24 rounded-full object-cover ring-4 ring-primary/30"
+                className="w-28 h-28 rounded-full object-cover ring-4 ring-background shadow-xl"
               />
               <input
                 type="file"
@@ -409,7 +424,7 @@ const Profile = () => {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center"
+                className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-lg"
               >
                 <Camera className="w-4 h-4 text-primary-foreground" />
               </button>
@@ -650,107 +665,49 @@ const Profile = () => {
         )}
       </AnimatePresence>
 
-      {/* Image Preview Modal */}
-      <AnimatePresence>
-        {showImagePreview && previewImageSrc && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
-            onClick={handleCancelImagePreview}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-sm bg-card rounded-3xl p-6 border border-border shadow-2xl"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <button 
-                  onClick={handleCancelImagePreview}
-                  className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
-                >
-                  <X className="w-5 h-5 text-muted-foreground" />
-                </button>
-                <h2 className="text-lg font-bold text-foreground">Profile Picture</h2>
-                <div className="w-10" />
-              </div>
+      {/* Image Upload Modal with Compression */}
+      {selectedFile && previewImageSrc && (
+        <ImageUploadModal
+          isOpen={showImagePreview}
+          onClose={handleCancelImagePreview}
+          imageSrc={previewImageSrc}
+          originalFile={selectedFile}
+          onSave={handleSaveProfilePicture}
+          isSaving={isUploading}
+          title="Profile Picture"
+          previewType="avatar"
+        />
+      )}
 
-              <div className="flex justify-center mb-6">
-                <img
-                  src={previewImageSrc}
-                  alt="Preview"
-                  className="w-48 h-48 rounded-full object-cover ring-4 ring-primary/30"
-                />
-              </div>
+      {/* Header Upload Modal with Compression */}
+      {selectedHeaderFile && headerPreviewSrc && (
+        <ImageUploadModal
+          isOpen={showHeaderPreview}
+          onClose={handleCancelHeaderPreview}
+          imageSrc={headerPreviewSrc}
+          originalFile={selectedHeaderFile}
+          onSave={handleSaveHeader}
+          isSaving={isUploadingHeader}
+          title="Header Photo"
+          previewType="header"
+        />
+      )}
 
-              <Button
-                variant="gaming"
-                onClick={handleSaveProfilePicture}
-                className="w-full"
-                disabled={isUploading}
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {isUploading ? "Saving..." : "Save Profile Picture"}
-              </Button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Header Preview Modal */}
-      <AnimatePresence>
-        {showHeaderPreview && headerPreviewSrc && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
-            onClick={handleCancelHeaderPreview}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md bg-card rounded-3xl p-6 border border-border shadow-2xl"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <button 
-                  onClick={handleCancelHeaderPreview}
-                  className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
-                >
-                  <X className="w-5 h-5 text-muted-foreground" />
-                </button>
-                <h2 className="text-lg font-bold text-foreground">Header Photo</h2>
-                <div className="w-10" />
-              </div>
-
-              <div className="flex justify-center mb-6">
-                <img
-                  src={headerPreviewSrc}
-                  alt="Header Preview"
-                  className="w-full h-32 rounded-lg object-cover ring-2 ring-primary/30"
-                />
-              </div>
-
-              <Button
-                variant="gaming"
-                onClick={handleSaveHeader}
-                className="w-full"
-                disabled={isUploadingHeader}
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {isUploadingHeader ? "Saving..." : "Save Header Photo"}
-              </Button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Profile Preview Modal */}
+      <ProfilePreviewModal
+        isOpen={showProfilePreview}
+        onClose={() => setShowProfilePreview(false)}
+        profile={profile}
+        headerUrl={headerUrl}
+        userRole={userRole}
+        stats={{
+          followers: followersCount,
+          following: followingCount,
+          posts: posts.length,
+          averageRating: averageRating,
+          reviewsCount: reviewsCount,
+        }}
+      />
 
       <BottomNav />
     </div>
