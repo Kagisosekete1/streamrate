@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, LogOut, Edit2, Users, Star, MessageCircle, Camera, X, Save } from "lucide-react";
+import { Settings, LogOut, Edit2, Users, Star, MessageCircle, Camera, X, Save, Trash2, ImageIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,17 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Post {
   id: string;
@@ -40,6 +51,13 @@ const Profile = () => {
   const [previewImageSrc, setPreviewImageSrc] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const headerInputRef = useRef<HTMLInputElement>(null);
+  const [headerUrl, setHeaderUrl] = useState<string | null>(null);
+  const [showHeaderPreview, setShowHeaderPreview] = useState(false);
+  const [headerPreviewSrc, setHeaderPreviewSrc] = useState<string | null>(null);
+  const [selectedHeaderFile, setSelectedHeaderFile] = useState<File | null>(null);
+  const [isUploadingHeader, setIsUploadingHeader] = useState(false);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -49,6 +67,7 @@ const Profile = () => {
 
     if (user) {
       fetchUserData();
+      fetchHeaderUrl();
     }
   }, [user, loading]);
 
@@ -63,6 +82,19 @@ const Profile = () => {
       });
     }
   }, [showEditModal]);
+
+  const fetchHeaderUrl = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("header_url")
+      .eq("id", user.id)
+      .single();
+    
+    if (data?.header_url) {
+      setHeaderUrl(data.header_url);
+    }
+  };
 
   const fetchUserData = async () => {
     if (!user) return;
@@ -192,6 +224,81 @@ const Profile = () => {
     setSelectedFile(null);
   };
 
+  // Header photo handlers
+  const handleHeaderSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const previewUrl = URL.createObjectURL(file);
+    setHeaderPreviewSrc(previewUrl);
+    setSelectedHeaderFile(file);
+    setShowHeaderPreview(true);
+    
+    if (headerInputRef.current) {
+      headerInputRef.current.value = "";
+    }
+  };
+
+  const handleSaveHeader = async () => {
+    if (!user || !selectedHeaderFile) return;
+
+    setIsUploadingHeader(true);
+    const fileName = `${user.id}/header_${Date.now()}.jpg`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(fileName, selectedHeaderFile);
+
+    if (uploadError) {
+      toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
+      setIsUploadingHeader(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(fileName);
+    
+    const { error } = await supabase
+      .from("profiles")
+      .update({ header_url: urlData.publicUrl })
+      .eq("id", user.id);
+
+    if (error) {
+      toast({ title: "Failed to update header", variant: "destructive" });
+    } else {
+      setHeaderUrl(urlData.publicUrl);
+      toast({ title: "Header photo saved!" });
+    }
+    
+    setIsUploadingHeader(false);
+    setShowHeaderPreview(false);
+    setHeaderPreviewSrc(null);
+    setSelectedHeaderFile(null);
+  };
+
+  const handleCancelHeaderPreview = () => {
+    setShowHeaderPreview(false);
+    if (headerPreviewSrc) {
+      URL.revokeObjectURL(headerPreviewSrc);
+    }
+    setHeaderPreviewSrc(null);
+    setSelectedHeaderFile(null);
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    setDeletingPostId(postId);
+    const { error } = await supabase.from("posts").delete().eq("id", postId);
+
+    if (error) {
+      toast({ title: "Failed to delete post", variant: "destructive" });
+      setDeletingPostId(null);
+      return;
+    }
+
+    toast({ title: "Post deleted" });
+    setPosts(posts.filter(p => p.id !== postId));
+    setDeletingPostId(null);
+  };
+
   const handleSaveProfile = async () => {
     // Validate username uniqueness
     if (editForm.username && editForm.username !== profile?.username) {
@@ -239,12 +346,37 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
+      {/* Header with Banner */}
       <header className="relative">
-        <div className="absolute inset-0 h-32 gradient-gaming opacity-30" />
+        <div 
+          className="h-32 w-full bg-cover bg-center relative"
+          style={{ 
+            backgroundImage: headerUrl 
+              ? `url(${headerUrl})` 
+              : 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%)',
+            backgroundSize: 'cover'
+          }}
+        >
+          <div className="absolute inset-0 bg-black/30" />
+          
+          {/* Header upload button */}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleHeaderSelect}
+            ref={headerInputRef}
+            className="hidden"
+          />
+          <button
+            onClick={() => headerInputRef.current?.click()}
+            className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center hover:bg-black/70 transition-colors"
+          >
+            <ImageIcon className="w-4 h-4 text-white" />
+          </button>
+        </div>
 
-        <div className="relative pt-4 px-4">
-          <div className="flex justify-end gap-2">
+        <div className="relative pt-4 px-4 -mt-12">
+          <div className="flex justify-end gap-2 mb-8">
             <button
               onClick={() => navigate("/settings")}
               className="w-10 h-10 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center"
@@ -255,7 +387,7 @@ const Profile = () => {
         </div>
 
         {/* Profile info */}
-        <div className="relative px-4 pb-6 -mt-4">
+        <div className="relative px-4 pb-6 -mt-8">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -377,23 +509,57 @@ const Profile = () => {
                 key={post.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-card rounded-xl p-4 border border-border/50 cursor-pointer"
-                onClick={() => navigate(`/post/${post.id}`)}
+                className="bg-card rounded-xl p-4 border border-border/50"
               >
-                <p className="text-foreground/90 text-sm leading-relaxed mb-4">{post.content}</p>
-                {post.image_url && (
-                  <img
-                    src={post.image_url}
-                    alt="Post"
-                    className="w-full rounded-lg mb-4 max-h-64 object-cover"
-                  />
-                )}
+                <div 
+                  className="cursor-pointer"
+                  onClick={() => navigate(`/post/${post.id}`)}
+                >
+                  <p className="text-foreground/90 text-sm leading-relaxed mb-4">{post.content}</p>
+                  {post.image_url && (
+                    <img
+                      src={post.image_url}
+                      alt="Post"
+                      className="w-full rounded-lg mb-4 max-h-64 object-cover"
+                    />
+                  )}
+                </div>
                 <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
                   <span>❤️ {post.likes_count}</span>
                   <span>💬 {post.comments_count}</span>
-                  <span className="ml-auto">
+                  <span>
                     {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
                   </span>
+                  <div className="ml-auto">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Post</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this post? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeletePost(post.id)}
+                            disabled={deletingPostId === post.id}
+                            className="bg-destructive hover:bg-destructive/90"
+                          >
+                            {deletingPostId === post.id ? "Deleting..." : "Delete"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -529,6 +695,57 @@ const Profile = () => {
               >
                 <Save className="w-4 h-4 mr-2" />
                 {isUploading ? "Saving..." : "Save Profile Picture"}
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Header Preview Modal */}
+      <AnimatePresence>
+        {showHeaderPreview && headerPreviewSrc && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={handleCancelHeaderPreview}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-card rounded-3xl p-6 border border-border shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <button 
+                  onClick={handleCancelHeaderPreview}
+                  className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
+                >
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+                <h2 className="text-lg font-bold text-foreground">Header Photo</h2>
+                <div className="w-10" />
+              </div>
+
+              <div className="flex justify-center mb-6">
+                <img
+                  src={headerPreviewSrc}
+                  alt="Header Preview"
+                  className="w-full h-32 rounded-lg object-cover ring-2 ring-primary/30"
+                />
+              </div>
+
+              <Button
+                variant="gaming"
+                onClick={handleSaveHeader}
+                className="w-full"
+                disabled={isUploadingHeader}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {isUploadingHeader ? "Saving..." : "Save Header Photo"}
               </Button>
             </motion.div>
           </motion.div>

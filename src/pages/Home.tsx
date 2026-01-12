@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface Streamer {
   id: string;
@@ -43,7 +44,7 @@ interface Post {
 const POSTS_PER_PAGE = 10;
 
 const Home = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [trendingStreamers, setTrendingStreamers] = useState<Streamer[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -89,7 +90,7 @@ const Home = () => {
     fetchData();
 
     // Set up realtime subscription for new posts
-    const channel = supabase
+    const postsChannel = supabase
       .channel("home-posts-realtime")
       .on(
         "postgres_changes",
@@ -107,8 +108,27 @@ const Home = () => {
       )
       .subscribe();
 
+    // Set up realtime subscription for profile changes
+    const profilesChannel = supabase
+      .channel("home-profiles-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+        },
+        () => {
+          // Refresh data when any profile changes
+          fetchTrendingStreamers();
+          fetchPosts();
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(postsChannel);
+      supabase.removeChannel(profilesChannel);
     };
   }, [user]);
 
@@ -375,24 +395,24 @@ const Home = () => {
           )}
         </section>
 
-        {/* Post Update Section */}
+        {/* What's on your mind Section */}
         <section className="py-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">
-              ✍️ Post Update
-            </h2>
-          </div>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-card rounded-xl p-4 border border-border/50 mb-6"
           >
             <div className="flex items-center gap-3">
-              <img
-                src={user?.user_metadata?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
-                alt="Your avatar"
-                className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20"
-              />
+              <Avatar className="w-10 h-10 ring-2 ring-primary/20">
+                <AvatarImage 
+                  src={profile?.avatar_url || undefined} 
+                  alt="Your avatar"
+                  className="object-cover"
+                />
+                <AvatarFallback className="bg-primary/20 text-primary">
+                  {profile?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
               <button
                 onClick={() => navigate("/create-post")}
                 className="flex-1 text-left px-4 py-3 bg-secondary/50 rounded-xl text-muted-foreground hover:bg-secondary/70 transition-colors"
