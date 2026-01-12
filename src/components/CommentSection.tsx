@@ -16,7 +16,7 @@ interface Comment {
   user_id: string;
   parent_id: string | null;
   profiles: {
-    full_name: string | null;
+    username: string | null;
     avatar_url: string | null;
   } | null;
   likes_count: number;
@@ -57,7 +57,7 @@ export const CommentSection = ({ postId }: CommentSectionProps) => {
       (commentsData || []).map(async (comment) => {
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("full_name, avatar_url")
+          .select("username, avatar_url")
           .eq("id", comment.user_id)
           .maybeSingle();
 
@@ -112,7 +112,7 @@ export const CommentSection = ({ postId }: CommentSectionProps) => {
       (repliesData || []).map(async (reply) => {
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("full_name, avatar_url")
+          .select("username, avatar_url")
           .eq("id", reply.user_id)
           .maybeSingle();
 
@@ -270,13 +270,13 @@ export const CommentSection = ({ postId }: CommentSectionProps) => {
       <div className="flex items-start gap-3">
         <img
           src={comment.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
-          alt={comment.profiles?.full_name || "User"}
+          alt={comment.profiles?.username || "User"}
           className="w-8 h-8 rounded-full object-cover"
         />
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <span className="font-medium text-foreground text-sm">
-              {comment.profiles?.full_name || "Anonymous"}
+              {comment.profiles?.username || "Anonymous"}
             </span>
             <span className="text-xs text-muted-foreground">
               {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
