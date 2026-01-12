@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, MessageCircle, Send, ChevronDown, ChevronUp } from "lucide-react";
+import { Heart, MessageCircle, Send, ChevronDown, ChevronUp, Trash2, Edit2, X, Check } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,6 +8,18 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Comment {
   id: string;
@@ -31,6 +43,7 @@ interface CommentSectionProps {
 export const CommentSection = ({ postId }: CommentSectionProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -38,7 +51,9 @@ export const CommentSection = ({ postId }: CommentSectionProps) => {
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
   const [replies, setReplies] = useState<Record<string, Comment[]>>({});
   const [loading, setLoading] = useState(true);
-
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [replyToUsername, setReplyToUsername] = useState<string | null>(null);
   const fetchComments = async () => {
     const { data: commentsData, error } = await supabase
       .from("comments")
@@ -260,68 +275,228 @@ export const CommentSection = ({ postId }: CommentSectionProps) => {
     setExpandedReplies(newExpanded);
   };
 
-  const renderComment = (comment: Comment, isReply = false) => (
-    <motion.div
-      key={comment.id}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={cn("py-3", isReply && "ml-8 border-l-2 border-border/50 pl-4")}
-    >
-      <div className="flex items-start gap-3">
-        <img
-          src={comment.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
-          alt={comment.profiles?.username || "User"}
-          className="w-8 h-8 rounded-full object-cover"
-        />
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-foreground text-sm">
-              {comment.profiles?.username || "Anonymous"}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-            </span>
-          </div>
-          <p className="text-foreground/80 text-sm mt-1">{comment.content}</p>
+  const handleDeleteComment = async (commentId: string, parentId: string | null) => {
+    if (!user) return;
 
-          <div className="flex items-center gap-4 mt-2">
-            <button
-              onClick={() => handleLikeComment(comment.id, comment.is_liked)}
-              className="flex items-center gap-1 text-xs"
-            >
-              <Heart
-                className={cn(
-                  "w-4 h-4",
-                  comment.is_liked ? "fill-accent text-accent" : "text-muted-foreground"
-                )}
-              />
-              <span className={comment.is_liked ? "text-accent" : "text-muted-foreground"}>
-                {comment.likes_count}
-              </span>
-            </button>
+    const { error } = await supabase
+      .from("comments")
+      .delete()
+      .eq("id", commentId)
+      .eq("user_id", user.id);
 
-            <button
-              onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
-            >
-              <MessageCircle className="w-4 h-4" />
-              Reply
-            </button>
+    if (error) {
+      toast({ title: "Failed to delete comment", variant: "destructive" });
+      return;
+    }
 
-            {comment.replies_count > 0 && (
-              <button
-                onClick={() => toggleReplies(comment.id)}
-                className="flex items-center gap-1 text-xs text-primary"
+    toast({ title: "Comment deleted" });
+    if (parentId) {
+      fetchReplies(parentId);
+    }
+    fetchComments();
+  };
+
+  const handleEditComment = async (commentId: string, parentId: string | null) => {
+    if (!user || !editText.trim()) return;
+
+    const { error } = await supabase
+      .from("comments")
+      .update({ content: editText.trim() })
+      .eq("id", commentId)
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast({ title: "Failed to edit comment", variant: "destructive" });
+      return;
+    }
+
+    toast({ title: "Comment updated" });
+    setEditingCommentId(null);
+    setEditText("");
+    if (parentId) {
+      fetchReplies(parentId);
+    }
+    fetchComments();
+  };
+
+  const startReplyWithMention = (commentId: string, username: string | null) => {
+    setReplyingTo(commentId);
+    setReplyToUsername(username);
+    setReplyText(username ? `@${username} ` : "");
+  };
+
+  const renderContentWithMentions = (content: string) => {
+    const mentionRegex = /@(\w+)/g;
+    const parts = content.split(mentionRegex);
+    
+    return parts.map((part, index) => {
+      // Every odd index is a username (captured group)
+      if (index % 2 === 1) {
+        return (
+          <span
+            key={index}
+            className="text-primary cursor-pointer hover:underline font-medium"
+            onClick={(e) => {
+              e.stopPropagation();
+              // Find user by username and navigate
+              supabase
+                .from("profiles")
+                .select("id")
+                .eq("username", part)
+                .maybeSingle()
+                .then(({ data }) => {
+                  if (data) {
+                    navigate(`/streamer/${data.id}`);
+                  }
+                });
+            }}
+          >
+            @{part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
+  const renderComment = (comment: Comment, isReply = false, parentId: string | null = null) => {
+    const isOwner = user?.id === comment.user_id;
+    const isEditing = editingCommentId === comment.id;
+
+    return (
+      <motion.div
+        key={comment.id}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={cn("py-3", isReply && "ml-8 border-l-2 border-border/50 pl-4")}
+      >
+        <div className="flex items-start gap-3">
+          <img
+            src={comment.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+            alt={comment.profiles?.username || "User"}
+            className="w-8 h-8 rounded-full object-cover cursor-pointer"
+            onClick={() => navigate(`/streamer/${comment.user_id}`)}
+          />
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span 
+                className="font-medium text-foreground text-sm cursor-pointer hover:text-primary"
+                onClick={() => navigate(`/streamer/${comment.user_id}`)}
               >
-                {expandedReplies.has(comment.id) ? (
-                  <ChevronUp className="w-4 h-4" />
-                ) : (
-                  <ChevronDown className="w-4 h-4" />
-                )}
-                {comment.replies_count} {comment.replies_count === 1 ? "reply" : "replies"}
-              </button>
+                {comment.profiles?.username || "Anonymous"}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+              </span>
+            </div>
+            
+            {isEditing ? (
+              <div className="flex items-center gap-2 mt-1">
+                <Input
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  className="flex-1 h-8 text-sm"
+                  autoFocus
+                />
+                <button
+                  onClick={() => handleEditComment(comment.id, parentId)}
+                  className="text-primary hover:text-primary/80"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingCommentId(null);
+                    setEditText("");
+                  }}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <p className="text-foreground/80 text-sm mt-1">
+                {renderContentWithMentions(comment.content)}
+              </p>
             )}
-          </div>
+
+            <div className="flex items-center gap-4 mt-2">
+              <button
+                onClick={() => handleLikeComment(comment.id, comment.is_liked)}
+                className="flex items-center gap-1 text-xs"
+              >
+                <Heart
+                  className={cn(
+                    "w-4 h-4",
+                    comment.is_liked ? "fill-accent text-accent" : "text-muted-foreground"
+                  )}
+                />
+                <span className={comment.is_liked ? "text-accent" : "text-muted-foreground"}>
+                  {comment.likes_count}
+                </span>
+              </button>
+
+              <button
+                onClick={() => startReplyWithMention(comment.id, comment.profiles?.username)}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+              >
+                <MessageCircle className="w-4 h-4" />
+                Reply
+              </button>
+
+              {comment.replies_count > 0 && (
+                <button
+                  onClick={() => toggleReplies(comment.id)}
+                  className="flex items-center gap-1 text-xs text-primary"
+                >
+                  {expandedReplies.has(comment.id) ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
+                  {comment.replies_count} {comment.replies_count === 1 ? "reply" : "replies"}
+                </button>
+              )}
+
+              {isOwner && !isEditing && (
+                <>
+                  <button
+                    onClick={() => {
+                      setEditingCommentId(comment.id);
+                      setEditText(comment.content);
+                    }}
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                  </button>
+
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive">
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Comment</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete this comment? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeleteComment(comment.id, parentId)}
+                          className="bg-destructive hover:bg-destructive/90"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              )}
+            </div>
 
           {/* Reply input */}
           <AnimatePresence>
@@ -364,7 +539,7 @@ export const CommentSection = ({ postId }: CommentSectionProps) => {
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
               >
-                {replies[comment.id].map((reply) => renderComment(reply, true))}
+                {replies[comment.id].map((reply) => renderComment(reply, true, comment.id))}
               </motion.div>
             )}
           </AnimatePresence>
@@ -372,6 +547,7 @@ export const CommentSection = ({ postId }: CommentSectionProps) => {
       </div>
     </motion.div>
   );
+  };
 
   return (
     <div className="space-y-4">
