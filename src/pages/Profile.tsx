@@ -376,6 +376,22 @@ const Profile = () => {
     setSelectedHeaderFile(null);
   };
 
+  const handleRemoveHeader = async () => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ header_url: null })
+      .eq("id", user.id);
+
+    if (error) {
+      toast({ title: "Failed to remove header", variant: "destructive" });
+    } else {
+      setHeaderUrl(null);
+      toast({ title: "Header removed" });
+    }
+  };
+
   const handleDeletePost = async (postId: string) => {
     setDeletingPostId(postId);
     const { error } = await supabase.from("posts").delete().eq("id", postId);
@@ -478,6 +494,19 @@ const Profile = () => {
           >
             <ImageIcon className="w-4 h-4 text-white" />
           </button>
+          
+          {/* Remove header button - only show if header exists */}
+          {headerUrl && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRemoveHeader();
+              }}
+              className="absolute bottom-2 right-12 w-8 h-8 rounded-full bg-destructive/80 flex items-center justify-center hover:bg-destructive transition-colors z-10"
+            >
+              <X className="w-4 h-4 text-white" />
+            </button>
+          )}
 
           {/* Top right actions */}
           <div className="absolute top-4 right-4 flex gap-2">
