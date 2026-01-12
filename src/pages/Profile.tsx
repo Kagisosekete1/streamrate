@@ -440,17 +440,26 @@ const Profile = () => {
     <div className="min-h-screen bg-background pb-20">
       {/* Header with Banner - Header now behind profile picture */}
       <header className="relative">
-        {/* Header Banner - positioned behind */}
+        {/* Header Banner - clickable to upload */}
         <div 
-          className="h-40 w-full bg-cover bg-center relative"
+          className="h-40 w-full bg-cover bg-center relative cursor-pointer group"
           style={{ 
             backgroundImage: headerUrl 
               ? `url(${headerUrl})` 
               : 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%)',
             backgroundSize: 'cover'
           }}
+          onClick={() => headerInputRef.current?.click()}
         >
-          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors" />
+          
+          {/* Header upload overlay hint */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="bg-black/60 rounded-full px-4 py-2 flex items-center gap-2">
+              <Camera className="w-5 h-5 text-white" />
+              <span className="text-white text-sm font-medium">Change Header</span>
+            </div>
+          </div>
           
           {/* Header upload button */}
           <input
@@ -461,8 +470,11 @@ const Profile = () => {
             className="hidden"
           />
           <button
-            onClick={() => headerInputRef.current?.click()}
-            className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center hover:bg-black/70 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              headerInputRef.current?.click();
+            }}
+            className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center hover:bg-black/70 transition-colors z-10"
           >
             <ImageIcon className="w-4 h-4 text-white" />
           </button>
