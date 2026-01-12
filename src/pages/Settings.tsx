@@ -26,6 +26,8 @@ import {
   UserX,
   X,
   ChevronRight,
+  RefreshCw,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +36,15 @@ import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+
+// App version info
+const APP_VERSION = "1.0.0";
+const BUILD_NUMBER = "1";
+const LAST_UPDATE = "2025-01-12";
+
+const UPDATE_HISTORY = [
+  { version: "1.0.0", date: "2025-01-12", notes: "Initial release with ratings, posts, and social features" },
+];
 
 type ModalType =
   | "editProfile"
@@ -57,6 +68,7 @@ type ModalType =
   | "termsOfService"
   | "logout"
   | "deleteAccount"
+  | "appUpdate"
   | null;
 
 const Settings = () => {
@@ -393,6 +405,12 @@ const Settings = () => {
             subtitle="Free up space"
             onClick={() => setActiveModal("clearCache")}
           />
+          <SettingItem
+            icon={RefreshCw}
+            title="Check for Updates"
+            subtitle={`Version ${APP_VERSION}`}
+            onClick={() => setActiveModal("appUpdate")}
+          />
         </div>
 
         {/* Support & Legal */}
@@ -448,10 +466,19 @@ const Settings = () => {
           />
         </div>
 
-        {/* App Version */}
-        <p className="text-center text-xs text-muted-foreground mt-8 mb-4">
-          StreamRate v1.0.0
-        </p>
+        {/* App Info */}
+        <div className="mt-8 mb-4 p-4 rounded-xl bg-secondary/30 text-center">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Smartphone className="w-5 h-5 text-primary" />
+            <span className="font-semibold text-foreground">StreamRate</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Version {APP_VERSION} (Build {BUILD_NUMBER})
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Last updated: {LAST_UPDATE}
+          </p>
+        </div>
       </div>
 
       {/* Modals */}
@@ -945,6 +972,64 @@ const Settings = () => {
               <Button variant="destructive" onClick={handleDeleteAccount} className="flex-1">
                 Delete Account
               </Button>
+            </div>
+          </Modal>
+        )}
+
+        {activeModal === "appUpdate" && (
+          <Modal title="App Updates">
+            <div className="space-y-6">
+              {/* Current Version */}
+              <div className="p-4 rounded-xl bg-gradient-to-r from-primary/20 to-primary/5 border border-primary/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Current Version</p>
+                    <p className="text-2xl font-bold text-foreground">{APP_VERSION}</p>
+                    <p className="text-xs text-muted-foreground">Build {BUILD_NUMBER}</p>
+                  </div>
+                  <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center">
+                    <Smartphone className="w-8 h-8 text-primary" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Check for Updates Button */}
+              <Button
+                variant="gaming"
+                className="w-full"
+                onClick={() => {
+                  toast({
+                    title: "You're up to date!",
+                    description: `StreamRate v${APP_VERSION} is the latest version.`,
+                  });
+                }}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Check for Updates
+              </Button>
+
+              {/* Update History */}
+              <div>
+                <h4 className="text-sm font-semibold text-foreground mb-3">Update History</h4>
+                <div className="space-y-3">
+                  {UPDATE_HISTORY.map((update, i) => (
+                    <div key={i} className="p-3 rounded-lg bg-secondary/50">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-medium text-foreground">v{update.version}</span>
+                        <span className="text-xs text-muted-foreground">{update.date}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{update.notes}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Last Updated Info */}
+              <div className="text-center pt-2 border-t border-border">
+                <p className="text-xs text-muted-foreground">
+                  Last checked: Just now
+                </p>
+              </div>
             </div>
           </Modal>
         )}
