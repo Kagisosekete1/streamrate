@@ -347,20 +347,20 @@ const StreamerProfile = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={() => setShowReviewForm(false)}
           >
             <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25 }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full bg-card rounded-t-3xl p-6 border-t border-border"
+              className="w-full max-w-md bg-card rounded-3xl p-6 border border-border shadow-2xl"
             >
               <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-6" />
-              <h2 className="text-xl font-bold text-foreground mb-4">
-                Rate {streamer.full_name}
+              <h2 className="text-xl font-bold text-foreground mb-4 text-center">
+                Rate {streamer.username || streamer.full_name}
               </h2>
 
               <div className="flex justify-center mb-6">
@@ -372,6 +372,10 @@ const StreamerProfile = () => {
                 />
               </div>
 
+              <p className="text-center text-muted-foreground text-sm mb-4">
+                {rating === 0 ? "Tap to rate" : `You rated ${rating} star${rating > 1 ? 's' : ''}`}
+              </p>
+
               <textarea
                 placeholder="Write your review (optional)"
                 value={reviewText}
@@ -379,14 +383,23 @@ const StreamerProfile = () => {
                 className="w-full min-h-[100px] rounded-lg border border-border bg-secondary/50 px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 mb-4"
               />
 
-              <Button
-                variant="gaming"
-                className="w-full"
-                onClick={handleSubmitReview}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Submitting..." : "Submit Review"}
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowReviewForm(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="gaming"
+                  className="flex-1"
+                  onClick={handleSubmitReview}
+                  disabled={isSubmitting || rating === 0}
+                >
+                  {isSubmitting ? "Saving..." : "Save Review"}
+                </Button>
+              </div>
             </motion.div>
           </motion.div>
         )}

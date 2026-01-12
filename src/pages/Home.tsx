@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { Loader2, PenSquare } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { BottomNav } from "@/components/BottomNav";
 import { SearchBar } from "@/components/SearchBar";
 import { TrendingStreamer } from "@/components/TrendingStreamer";
@@ -9,6 +10,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 import { NewPostsBanner } from "@/components/NewPostsBanner";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
@@ -26,6 +28,7 @@ interface Post {
   content: string;
   image_url: string | null;
   created_at: string;
+  updated_at: string | null;
   user_id: string;
   profiles: {
     username: string | null;
@@ -41,6 +44,7 @@ const POSTS_PER_PAGE = 10;
 
 const Home = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [trendingStreamers, setTrendingStreamers] = useState<Streamer[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -161,7 +165,7 @@ const Home = () => {
   ) => {
     let query = supabase
       .from("posts")
-      .select("id, content, image_url, created_at, user_id")
+      .select("id, content, image_url, created_at, updated_at, user_id")
       .order("created_at", { ascending: false })
       .range(offset, offset + POSTS_PER_PAGE - 1);
 
@@ -259,7 +263,7 @@ const Home = () => {
     }
 
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:space-y-0">
         {posts.map((post, index) => (
           <PostCard
             key={post.id}
@@ -275,6 +279,7 @@ const Home = () => {
             likes={post.likes_count}
             comments={post.comments_count}
             createdAt={new Date(post.created_at)}
+            updatedAt={post.updated_at ? new Date(post.updated_at) : undefined}
             isLiked={post.is_liked}
             isBookmarked={post.is_bookmarked}
             index={index}
@@ -283,16 +288,16 @@ const Home = () => {
         ))}
 
         {/* Infinite scroll trigger */}
-        <div ref={loadMoreAllRef} className="h-1" />
+        <div ref={loadMoreAllRef} className="h-1 md:col-span-full" />
 
         {loadingMore && (
-          <div className="flex justify-center py-4">
+          <div className="flex justify-center py-4 md:col-span-full">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         )}
 
         {!hasMorePosts && posts.length > 0 && (
-          <div className="text-center py-4 text-muted-foreground text-sm">
+          <div className="text-center py-4 text-muted-foreground text-sm md:col-span-full">
             No more posts to load
           </div>
         )}
@@ -368,6 +373,40 @@ const Home = () => {
               </motion.div>
             </div>
           )}
+        </section>
+
+        {/* Post Update Section */}
+        <section className="py-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-foreground">
+              ✍️ Post Update
+            </h2>
+          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card rounded-xl p-4 border border-border/50 mb-6"
+          >
+            <div className="flex items-center gap-3">
+              <img
+                src={user?.user_metadata?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+                alt="Your avatar"
+                className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20"
+              />
+              <button
+                onClick={() => navigate("/create-post")}
+                className="flex-1 text-left px-4 py-3 bg-secondary/50 rounded-xl text-muted-foreground hover:bg-secondary/70 transition-colors"
+              >
+                What's on your mind?
+              </button>
+            </div>
+            <div className="flex items-center justify-end mt-3 pt-3 border-t border-border/30">
+              <Button variant="gaming" size="sm" onClick={() => navigate("/create-post")}>
+                <PenSquare className="w-4 h-4 mr-2" />
+                Create Post
+              </Button>
+            </div>
+          </motion.div>
         </section>
 
         {/* Feed */}

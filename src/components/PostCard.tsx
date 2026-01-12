@@ -31,6 +31,7 @@ interface PostCardProps {
   likes: number;
   comments: number;
   createdAt: Date;
+  updatedAt?: Date;
   isLiked?: boolean;
   isBookmarked?: boolean;
   index?: number;
@@ -48,6 +49,7 @@ export const PostCard = ({
   likes: initialLikes,
   comments,
   createdAt,
+  updatedAt,
   isLiked: initialIsLiked = false,
   isBookmarked: initialIsBookmarked = false,
   index = 0,
@@ -64,6 +66,9 @@ export const PostCard = ({
   const [showEditModal, setShowEditModal] = useState(false);
   const [content, setContent] = useState(initialContent);
   const [imageUrl, setImageUrl] = useState(initialImageUrl);
+  const [wasEdited, setWasEdited] = useState(
+    updatedAt && createdAt && updatedAt.getTime() > createdAt.getTime() + 1000
+  );
 
   const isOwner = user?.id === streamerId;
 
@@ -164,9 +169,14 @@ export const PostCard = ({
         />
         <div>
           <h4 className="font-semibold text-foreground text-sm">{streamerName}</h4>
-          <p className="text-xs text-muted-foreground">
-            {formatDistanceToNow(createdAt, { addSuffix: true })}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-muted-foreground">
+              {formatDistanceToNow(createdAt, { addSuffix: true })}
+            </p>
+            {wasEdited && (
+              <span className="text-xs text-muted-foreground italic">• Edited</span>
+            )}
+          </div>
         </div>
       </Link>
 
@@ -175,11 +185,13 @@ export const PostCard = ({
 
       {/* Image */}
       {imageUrl && (
-        <img
-          src={imageUrl}
-          alt="Post image"
-          className="w-full rounded-lg mb-4 max-h-64 object-cover"
-        />
+        <div className="relative mb-4 rounded-lg overflow-hidden">
+          <img
+            src={imageUrl}
+            alt="Post image"
+            className="w-full max-h-96 object-contain bg-secondary/30 md:max-h-[500px] lg:max-h-[600px]"
+          />
+        </div>
       )}
 
       {/* Actions */}
@@ -288,6 +300,7 @@ export const PostCard = ({
         onSave={(newContent, newImageUrl) => {
           setContent(newContent);
           setImageUrl(newImageUrl);
+          setWasEdited(true);
           onUpdate?.();
         }}
       />

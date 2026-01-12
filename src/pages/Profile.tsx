@@ -193,6 +193,25 @@ const Profile = () => {
   };
 
   const handleSaveProfile = async () => {
+    // Validate username uniqueness
+    if (editForm.username && editForm.username !== profile?.username) {
+      const { data: existingUser } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", editForm.username)
+        .neq("id", user.id)
+        .maybeSingle();
+
+      if (existingUser) {
+        toast({
+          title: "Username taken",
+          description: "This username is already in use. Please choose a different one.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     const { error } = await updateProfile(editForm);
 
     if (error) {
