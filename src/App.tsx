@@ -16,6 +16,7 @@ import CreatePost from "./pages/CreatePost";
 import PostDetail from "./pages/PostDetail";
 import Settings from "./pages/Settings";
 import Notifications from "./pages/Notifications";
+import Reels from "./pages/Reels";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,8 @@ const App = () => (
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/create-post" element={<CreatePost />} />
             <Route path="/post/:id" element={<PostDetail />} />
+            <Route path="/reels" element={<Reels />} />
+            <Route path="/reel/:id" element={<Reels />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

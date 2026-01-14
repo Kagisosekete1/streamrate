@@ -12,6 +12,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ImageUploadModal } from "@/components/ImageUploadModal";
 import { ProfilePreviewModal } from "@/components/ProfilePreviewModal";
 import { HeaderPositionModal } from "@/components/HeaderPositionModal";
+import { ReelViewer } from "@/components/ReelViewer";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -77,6 +78,8 @@ const Profile = () => {
   const [savedPosts, setSavedPosts] = useState<SavedPost[]>([]);
   const [showHeaderPositionModal, setShowHeaderPositionModal] = useState(false);
   const [reels, setReels] = useState<any[]>([]);
+  const [showReelViewer, setShowReelViewer] = useState(false);
+  const [reelViewerIndex, setReelViewerIndex] = useState(0);
 
   // Filter posts based on active tab
   const filteredContent = useMemo(() => {
@@ -118,7 +121,15 @@ const Profile = () => {
       .order("created_at", { ascending: false });
 
     if (data) {
-      setReels(data);
+      // Enrich reels with user data
+      const enrichedReels = data.map(reel => ({
+        ...reel,
+        user: {
+          username: profile?.username,
+          avatar_url: profile?.avatar_url
+        }
+      }));
+      setReels(enrichedReels);
     }
   };
 
@@ -787,12 +798,16 @@ const Profile = () => {
               ))
             ) : activeTab === "reels" ? (
               // Reels grid view
-              filteredContent.map((reel: any) => (
+              filteredContent.map((reel: any, index: number) => (
                 <motion.div
                   key={reel.id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="aspect-[9/16] cursor-pointer relative group rounded-lg overflow-hidden"
+                  onClick={() => {
+                    setReelViewerIndex(index);
+                    setShowReelViewer(true);
+                  }}
                 >
                   <video
                     src={reel.video_url}
@@ -802,6 +817,9 @@ const Profile = () => {
                     onMouseEnter={(e) => e.currentTarget.play()}
                     onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
                   />
+                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Film className="w-8 h-8 text-white" />
+                  </div>
                   <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
                     <div className="flex items-center gap-1 text-white text-xs">
                       <Film className="w-3 h-3" />
@@ -1040,6 +1058,14 @@ const Profile = () => {
           averageRating: averageRating,
           reviewsCount: reviewsCount,
         }}
+      />
+
+      {/* Reel Viewer */}
+      <ReelViewer
+        reels={reels}
+        initialIndex={reelViewerIndex}
+        isOpen={showReelViewer}
+        onClose={() => setShowReelViewer(false)}
       />
 
       <BottomNav />

@@ -290,16 +290,48 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
                   </div>
                 </button>
               ) : (
-                <div className="relative">
-                  <video
-                    ref={videoPreviewRef}
-                    src={videoPreview}
-                    controls
-                    className="w-full max-h-96 rounded-xl object-contain bg-black"
-                  />
-                  <div className="absolute top-2 left-2 px-2 py-1 bg-black/70 rounded text-white text-xs">
-                    {videoDuration}s
+                <div className="relative mx-auto" style={{ maxWidth: "280px" }}>
+                  {/* Phone-like frame for preview */}
+                  <div className="relative bg-black rounded-[2rem] p-2 shadow-2xl border-4 border-gray-800">
+                    <div className="relative rounded-[1.5rem] overflow-hidden aspect-[9/16]">
+                      <video
+                        ref={videoPreviewRef}
+                        src={videoPreview}
+                        className="w-full h-full object-cover"
+                        loop
+                        playsInline
+                        autoPlay
+                        muted
+                      />
+                      {/* Duration badge */}
+                      <div className="absolute top-3 left-3 px-2 py-1 bg-black/70 backdrop-blur-sm rounded-full text-white text-xs font-medium">
+                        {videoDuration}s
+                      </div>
+                      {/* Preview badge */}
+                      <div className="absolute top-3 right-3 px-2 py-1 bg-primary/80 backdrop-blur-sm rounded-full text-primary-foreground text-xs font-medium">
+                        Preview
+                      </div>
+                      {/* Bottom gradient overlay */}
+                      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent" />
+                      {/* Mock UI overlay */}
+                      <div className="absolute bottom-4 left-4 right-12 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm" />
+                          <span className="text-white text-sm font-medium">@you</span>
+                        </div>
+                        {caption && (
+                          <p className="text-white/90 text-xs line-clamp-2">{caption}</p>
+                        )}
+                      </div>
+                      {/* Mock action buttons */}
+                      <div className="absolute right-3 bottom-16 flex flex-col gap-3">
+                        <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                          <Film className="w-5 h-5 text-white" />
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                  {/* Remove button */}
                   <button
                     onClick={() => {
                       if (videoPreview) URL.revokeObjectURL(videoPreview);
@@ -307,7 +339,7 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
                       setVideoPreview(null);
                       setVideoDuration(0);
                     }}
-                    className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/70 flex items-center justify-center hover:bg-black"
+                    className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-destructive flex items-center justify-center hover:bg-destructive/90 shadow-lg"
                   >
                     <X className="w-4 h-4 text-white" />
                   </button>
