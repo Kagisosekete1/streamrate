@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Image, Send, X, FileText, Trash2 } from "lucide-react";
+import { ArrowLeft, Image, Send, X, FileText, Trash2, Film } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useDraftPosts, DraftPost } from "@/hooks/useDraftPosts";
+import { ReelUploadModal } from "@/components/ReelUploadModal";
 
 const CreatePost = () => {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ const CreatePost = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDrafts, setShowDrafts] = useState(false);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
+  const [showReelModal, setShowReelModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load draft from URL param
@@ -332,6 +334,13 @@ const CreatePost = () => {
                 <Image className="w-5 h-5" />
                 <span className="text-sm">Photo</span>
               </button>
+              <button
+                onClick={() => setShowReelModal(true)}
+                className="flex items-center gap-2 text-muted-foreground hover:text-accent transition-colors"
+              >
+                <Film className="w-5 h-5" />
+                <span className="text-sm">Reel</span>
+              </button>
             </div>
             {(content.trim() || imagePreview) && (
               <button
@@ -357,6 +366,13 @@ const CreatePost = () => {
           </ul>
         </div>
       </main>
+
+      {/* Reel Upload Modal */}
+      <ReelUploadModal
+        isOpen={showReelModal}
+        onClose={() => setShowReelModal(false)}
+        onSuccess={() => navigate("/profile")}
+      />
 
       <BottomNav />
     </div>
