@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { ImageUploadModal } from "@/components/ImageUploadModal";
 import { ProfilePreviewModal } from "@/components/ProfilePreviewModal";
+import { HeaderPositionModal } from "@/components/HeaderPositionModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -74,6 +75,8 @@ const Profile = () => {
   const [showProfilePreview, setShowProfilePreview] = useState(false);
   const [activeTab, setActiveTab] = useState<ProfileTab>("posts");
   const [savedPosts, setSavedPosts] = useState<SavedPost[]>([]);
+  const [showHeaderPositionModal, setShowHeaderPositionModal] = useState(false);
+  const [reels, setReels] = useState<any[]>([]);
 
   // Filter posts based on active tab
   const filteredContent = useMemo(() => {
@@ -83,13 +86,13 @@ const Profile = () => {
       case "photos":
         return posts.filter(p => p.image_url);
       case "reels":
-        return posts.filter(p => p.video_url);
+        return reels;
       case "saved":
         return savedPosts;
       default:
         return posts;
     }
-  }, [activeTab, posts, savedPosts]);
+  }, [activeTab, posts, savedPosts, reels]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -101,8 +104,23 @@ const Profile = () => {
       fetchUserData();
       fetchHeaderUrl();
       fetchSavedPosts();
+      fetchUserReels();
     }
   }, [user, loading]);
+
+  const fetchUserReels = async () => {
+    if (!user) return;
+
+    const { data } = await supabase
+      .from("reels")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (data) {
+      setReels(data);
+    }
+  };
 
   // Sync form data only when modal opens (matching Settings pattern)
   useEffect(() => {
@@ -321,11 +339,58 @@ const Profile = () => {
     const previewUrl = URL.createObjectURL(file);
     setHeaderPreviewSrc(previewUrl);
     setSelectedHeaderFile(file);
-    setShowHeaderPreview(true);
+    setShowHeaderPositionModal(true);
     
     if (headerInputRef.current) {
       headerInputRef.current.value = "";
     }
+  };
+
+  const handleSavePositionedHeader = async (blob: Blob) => {
+    if (!user) return;
+
+    setIsUploadingHeader(true);
+    const fileName = `${user.id}/header_${Date.now()}.jpg`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(fileName, blob);
+
+    if (uploadError) {
+      toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
+      setIsUploadingHeader(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(fileName);
+    
+    const { error } = await supabase
+      .from("profiles")
+      .update({ header_url: urlData.publicUrl })
+      .eq("id", user.id);
+
+    if (error) {
+      toast({ title: "Failed to update header", variant: "destructive" });
+    } else {
+      setHeaderUrl(urlData.publicUrl);
+      toast({ title: "Header photo saved!" });
+    }
+    
+    setIsUploadingHeader(false);
+    if (headerPreviewSrc) {
+      URL.revokeObjectURL(headerPreviewSrc);
+    }
+    setHeaderPreviewSrc(null);
+    setSelectedHeaderFile(null);
+  };
+
+  const handleCloseHeaderPositionModal = () => {
+    setShowHeaderPositionModal(false);
+    if (headerPreviewSrc) {
+      URL.revokeObjectURL(headerPreviewSrc);
+    }
+    setHeaderPreviewSrc(null);
+    setSelectedHeaderFile(null);
   };
 
   const handleSaveHeader = async (fileOrBlob: File | Blob) => {
@@ -698,7 +763,7 @@ const Profile = () => {
             {activeTab === "saved" && <p>No saved posts yet</p>}
           </div>
         ) : (
-          <div className={activeTab === "photos" ? "grid grid-cols-3 gap-1" : "space-y-4"}>
+          <div className={activeTab === "photos" || activeTab === "reels" ? "grid grid-cols-3 gap-1" : "space-y-4"}>
             {activeTab === "photos" ? (
               // Photo grid view
               filteredContent.map((post) => (
@@ -720,8 +785,33 @@ const Profile = () => {
                   </div>
                 </motion.div>
               ))
+            ) : activeTab === "reels" ? (
+              // Reels grid view
+              filteredContent.map((reel: any) => (
+                <motion.div
+                  key={reel.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="aspect-[9/16] cursor-pointer relative group rounded-lg overflow-hidden"
+                >
+                  <video
+                    src={reel.video_url}
+                    className="w-full h-full object-cover"
+                    muted
+                    loop
+                    onMouseEnter={(e) => e.currentTarget.play()}
+                    onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
+                    <div className="flex items-center gap-1 text-white text-xs">
+                      <Film className="w-3 h-3" />
+                      <span>{reel.duration}s</span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))
             ) : (
-              // List view for posts, reels, and saved
+              // List view for posts and saved
               filteredContent.map((post) => (
                 <motion.div
                   key={post.id}
@@ -913,7 +1003,7 @@ const Profile = () => {
       )}
 
       {/* Header Upload Modal with Compression */}
-      {selectedHeaderFile && headerPreviewSrc && (
+      {selectedHeaderFile && headerPreviewSrc && !showHeaderPositionModal && (
         <ImageUploadModal
           isOpen={showHeaderPreview}
           onClose={handleCancelHeaderPreview}
@@ -923,6 +1013,16 @@ const Profile = () => {
           isSaving={isUploadingHeader}
           title="Header Photo"
           previewType="header"
+        />
+      )}
+
+      {/* Header Position Modal */}
+      {headerPreviewSrc && (
+        <HeaderPositionModal
+          isOpen={showHeaderPositionModal}
+          onClose={handleCloseHeaderPositionModal}
+          imageSrc={headerPreviewSrc}
+          onSave={handleSavePositionedHeader}
         />
       )}
 

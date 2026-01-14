@@ -154,6 +154,27 @@ export type Database = {
         }
         Relationships: []
       }
+      hashtags: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          use_count: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          use_count?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          use_count?: number
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -317,6 +338,72 @@ export type Database = {
           review_text?: string | null
           stars?: number
           streamer_id?: string
+        }
+        Relationships: []
+      }
+      reel_hashtags: {
+        Row: {
+          created_at: string
+          hashtag_id: string
+          id: string
+          reel_id: string
+        }
+        Insert: {
+          created_at?: string
+          hashtag_id: string
+          id?: string
+          reel_id: string
+        }
+        Update: {
+          created_at?: string
+          hashtag_id?: string
+          id?: string
+          reel_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reel_hashtags_hashtag_id_fkey"
+            columns: ["hashtag_id"]
+            isOneToOne: false
+            referencedRelation: "hashtags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reel_hashtags_reel_id_fkey"
+            columns: ["reel_id"]
+            isOneToOne: false
+            referencedRelation: "reels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reels: {
+        Row: {
+          caption: string | null
+          created_at: string
+          duration: number
+          id: string
+          updated_at: string
+          user_id: string
+          video_url: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          duration?: number
+          id?: string
+          updated_at?: string
+          user_id: string
+          video_url: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          duration?: number
+          id?: string
+          updated_at?: string
+          user_id?: string
+          video_url?: string
         }
         Relationships: []
       }
