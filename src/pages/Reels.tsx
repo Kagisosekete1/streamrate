@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Film } from "lucide-react";
+import { ArrowLeft, Film, Play, Hash } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ReelViewer } from "@/components/ReelViewer";
+import { BottomNav } from "@/components/BottomNav";
 
 interface Reel {
   id: string;
@@ -80,7 +81,7 @@ const Reels = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="flex items-center justify-between px-4 py-3">
@@ -88,7 +89,12 @@ const Reels = () => {
             <ArrowLeft className="w-6 h-6 text-foreground" />
           </button>
           <h1 className="text-lg font-semibold text-foreground">Reels</h1>
-          <div className="w-10" />
+          <button 
+            onClick={() => navigate("/hashtags")}
+            className="p-2 -mr-2 text-primary"
+          >
+            <Hash className="w-5 h-5" />
+          </button>
         </div>
       </header>
 
@@ -124,9 +130,11 @@ const Reels = () => {
                   onMouseEnter={(e) => e.currentTarget.play()}
                   onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
                 />
-                {/* Hover overlay */}
-                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Film className="w-8 h-8 text-white" />
+                {/* Play icon overlay - always visible on mobile */}
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/40 transition-colors">
+                  <div className="w-12 h-12 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center opacity-100 group-hover:scale-110 transition-transform">
+                    <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+                  </div>
                 </div>
                 {/* Bottom info */}
                 <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
@@ -164,6 +172,8 @@ const Reels = () => {
           }
         }}
       />
+
+      <BottomNav />
     </div>
   );
 };

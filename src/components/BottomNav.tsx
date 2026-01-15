@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Home, PlusCircle, User, Tv, Bell } from "lucide-react";
+import { Home, PlusCircle, User, Film, Bell } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
   { icon: Home, label: "Home", path: "/home" },
-  { icon: Tv, label: "Streamers", path: "/streamers" },
+  { icon: Film, label: "Reels", path: "/reels" },
   { icon: PlusCircle, label: "Post", path: "/create-post" },
   { icon: null, label: "Notifications", path: "/notifications" },
   { icon: User, label: "Profile", path: "/profile" },
