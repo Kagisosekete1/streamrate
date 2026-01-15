@@ -797,7 +797,7 @@ const Profile = () => {
                 </motion.div>
               ))
             ) : activeTab === "reels" ? (
-              // Reels grid view
+              // Reels grid view with play on tap
               filteredContent.map((reel: any, index: number) => (
                 <motion.div
                   key={reel.id}
@@ -814,11 +814,15 @@ const Profile = () => {
                     className="w-full h-full object-cover"
                     muted
                     loop
+                    playsInline
                     onMouseEnter={(e) => e.currentTarget.play()}
                     onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
                   />
-                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Film className="w-8 h-8 text-white" />
+                  {/* Play icon overlay */}
+                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-100 group-hover:bg-black/40 transition-colors">
+                    <div className="w-12 h-12 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center">
+                      <Film className="w-6 h-6 text-white" />
+                    </div>
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
                     <div className="flex items-center gap-1 text-white text-xs">

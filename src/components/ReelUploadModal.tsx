@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Upload, Hash, TrendingUp, Film, Check } from "lucide-react";
+import { X, Upload, Hash, TrendingUp, Film, Check, Play, Pause, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +34,8 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
   const [trendingHashtags, setTrendingHashtags] = useState<Hashtag[]>([]);
   const [showHashtagSuggestions, setShowHashtagSuggestions] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
 
   useEffect(() => {
     if (isOpen) {
@@ -290,7 +292,7 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
                   </div>
                 </button>
               ) : (
-                <div className="relative mx-auto" style={{ maxWidth: "280px" }}>
+              <div className="relative mx-auto" style={{ maxWidth: "280px" }}>
                   {/* Phone-like frame for preview */}
                   <div className="relative bg-black rounded-[2rem] p-2 shadow-2xl border-4 border-gray-800">
                     <div className="relative rounded-[1.5rem] overflow-hidden aspect-[9/16]">
@@ -300,21 +302,78 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
                         className="w-full h-full object-cover"
                         loop
                         playsInline
-                        autoPlay
-                        muted
+                        muted={isMuted}
+                        onClick={() => {
+                          if (videoPreviewRef.current) {
+                            if (isPlaying) {
+                              videoPreviewRef.current.pause();
+                            } else {
+                              videoPreviewRef.current.play();
+                            }
+                            setIsPlaying(!isPlaying);
+                          }
+                        }}
                       />
+                      
+                      {/* Play/Pause overlay button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (videoPreviewRef.current) {
+                            if (isPlaying) {
+                              videoPreviewRef.current.pause();
+                            } else {
+                              videoPreviewRef.current.play();
+                            }
+                            setIsPlaying(!isPlaying);
+                          }
+                        }}
+                        className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-colors"
+                      >
+                        <AnimatePresence mode="wait">
+                          {!isPlaying && (
+                            <motion.div
+                              initial={{ scale: 0.8, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              exit={{ scale: 0.8, opacity: 0 }}
+                              className="w-16 h-16 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center"
+                            >
+                              <Play className="w-8 h-8 text-white fill-white ml-1" />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </button>
+                      
                       {/* Duration badge */}
                       <div className="absolute top-3 left-3 px-2 py-1 bg-black/70 backdrop-blur-sm rounded-full text-white text-xs font-medium">
                         {videoDuration}s
                       </div>
+                      
                       {/* Preview badge */}
                       <div className="absolute top-3 right-3 px-2 py-1 bg-primary/80 backdrop-blur-sm rounded-full text-primary-foreground text-xs font-medium">
                         Preview
                       </div>
+                      
+                      {/* Mute/Unmute button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsMuted(!isMuted);
+                        }}
+                        className="absolute bottom-20 right-3 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 transition-colors"
+                      >
+                        {isMuted ? (
+                          <VolumeX className="w-5 h-5 text-white" />
+                        ) : (
+                          <Volume2 className="w-5 h-5 text-white" />
+                        )}
+                      </button>
+                      
                       {/* Bottom gradient overlay */}
-                      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent" />
+                      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+                      
                       {/* Mock UI overlay */}
-                      <div className="absolute bottom-4 left-4 right-12 space-y-2">
+                      <div className="absolute bottom-4 left-4 right-12 space-y-2 pointer-events-none">
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm" />
                           <span className="text-white text-sm font-medium">@you</span>
@@ -323,14 +382,9 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
                           <p className="text-white/90 text-xs line-clamp-2">{caption}</p>
                         )}
                       </div>
-                      {/* Mock action buttons */}
-                      <div className="absolute right-3 bottom-16 flex flex-col gap-3">
-                        <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                          <Film className="w-5 h-5 text-white" />
-                        </div>
-                      </div>
                     </div>
                   </div>
+                  
                   {/* Remove button */}
                   <button
                     onClick={() => {
@@ -338,6 +392,7 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
                       setVideoFile(null);
                       setVideoPreview(null);
                       setVideoDuration(0);
+                      setIsPlaying(false);
                     }}
                     className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-destructive flex items-center justify-center hover:bg-destructive/90 shadow-lg"
                   >

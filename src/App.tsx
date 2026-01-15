@@ -17,6 +17,7 @@ import PostDetail from "./pages/PostDetail";
 import Settings from "./pages/Settings";
 import Notifications from "./pages/Notifications";
 import Reels from "./pages/Reels";
+import Hashtags from "./pages/Hashtags";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,8 @@ const App = () => (
             <Route path="/post/:id" element={<PostDetail />} />
             <Route path="/reels" element={<Reels />} />
             <Route path="/reel/:id" element={<Reels />} />
+            <Route path="/hashtags" element={<Hashtags />} />
+            <Route path="/hashtags/:tag" element={<Hashtags />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
