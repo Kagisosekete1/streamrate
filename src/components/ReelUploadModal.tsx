@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Upload, Hash, TrendingUp, Film, Check, Play, Pause, Volume2, VolumeX } from "lucide-react";
+import { X, Upload, Hash, TrendingUp, Film, Play, Pause, Volume2, VolumeX, Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { ReelTrimmer } from "@/components/ReelTrimmer";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ReelUploadModalProps {
   isOpen: boolean;
@@ -21,13 +23,14 @@ interface Hashtag {
 
 export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalProps) => {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const videoInputRef = useRef<HTMLInputElement>(null);
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
   
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [videoDuration, setVideoDuration] = useState<number>(0);
+  const [originalDuration, setOriginalDuration] = useState<number>(0);
   const [caption, setCaption] = useState("");
   const [hashtagInput, setHashtagInput] = useState("");
   const [selectedHashtags, setSelectedHashtags] = useState<string[]>([]);
@@ -36,6 +39,9 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
   const [isUploading, setIsUploading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [showTrimmer, setShowTrimmer] = useState(false);
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(0);
 
   useEffect(() => {
     if (isOpen) {
@@ -59,7 +65,6 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check if it's a video
     if (!file.type.startsWith("video/")) {
       toast({
         title: "Invalid file",
@@ -69,19 +74,18 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
       return;
     }
 
-    // Create preview URL
     const previewUrl = URL.createObjectURL(file);
     
-    // Check video duration
     const video = document.createElement("video");
     video.preload = "metadata";
     video.onloadedmetadata = () => {
       URL.revokeObjectURL(video.src);
       
-      if (video.duration > 30) {
+      // Max 60 seconds (1 minute)
+      if (video.duration > 60) {
         toast({
           title: "Video too long",
-          description: "Reels must be 30 seconds or less.",
+          description: "Reels must be 60 seconds or less. You can trim it after selecting.",
           variant: "destructive",
         });
         return;
@@ -100,8 +104,19 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
       setVideoFile(file);
       setVideoPreview(previewUrl);
       setVideoDuration(Math.round(video.duration));
+      setOriginalDuration(video.duration);
+      setTrimStart(0);
+      setTrimEnd(Math.min(video.duration, 60));
     };
     video.src = previewUrl;
+  };
+
+  const handleTrimSave = (startTime: number, endTime: number) => {
+    setTrimStart(startTime);
+    setTrimEnd(endTime);
+    setVideoDuration(Math.round(endTime - startTime));
+    setShowTrimmer(false);
+    toast({ title: "Trim applied!", description: `Video trimmed to ${Math.round(endTime - startTime)}s` });
   };
 
   const handleAddHashtag = (tag: string) => {
@@ -130,7 +145,6 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
     setIsUploading(true);
 
     try {
-      // Upload video to storage
       const fileExt = videoFile.name.split(".").pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
 
@@ -144,7 +158,6 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
         .from("reels")
         .getPublicUrl(fileName);
 
-      // Create reel record
       const { data: reel, error: reelError } = await supabase
         .from("reels")
         .insert({
@@ -160,7 +173,6 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
 
       // Handle hashtags
       for (const tag of selectedHashtags) {
-        // Upsert hashtag
         const { data: existingHashtag } = await supabase
           .from("hashtags")
           .select("id, use_count")
@@ -189,7 +201,6 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
           }
         }
 
-        // Link hashtag to reel
         await supabase
           .from("reel_hashtags")
           .insert({
@@ -203,12 +214,12 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
         description: "Your reel is now live.",
       });
 
-      // Reset state
       setVideoFile(null);
       setVideoPreview(null);
       setVideoDuration(0);
       setCaption("");
       setSelectedHashtags([]);
+      setShowTrimmer(false);
       
       onSuccess?.();
       onClose();
@@ -232,6 +243,7 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
     setVideoDuration(0);
     setCaption("");
     setSelectedHashtags([]);
+    setShowTrimmer(false);
     onClose();
   };
 
@@ -250,7 +262,7 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
           className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-border">
+          <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
             <button onClick={handleClose}>
               <X className="w-6 h-6 text-foreground" />
             </button>
@@ -265,260 +277,289 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
             </Button>
           </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-6">
-            {/* Video Upload Area */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Video (Portrait, max 30s)</label>
-              <input
-                type="file"
-                accept="video/*"
-                onChange={handleVideoSelect}
-                ref={videoInputRef}
-                className="hidden"
-              />
-              
-              {!videoPreview ? (
-                <button
-                  onClick={() => videoInputRef.current?.click()}
-                  className="w-full aspect-[9/16] max-h-96 rounded-xl border-2 border-dashed border-border hover:border-primary transition-colors flex flex-col items-center justify-center gap-3 bg-card"
-                >
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Film className="w-8 h-8 text-primary" />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-foreground font-medium">Upload Reel</p>
-                    <p className="text-sm text-muted-foreground">Portrait video, max 30 seconds</p>
-                  </div>
-                </button>
-              ) : (
-              <div className="relative mx-auto" style={{ maxWidth: "280px" }}>
-                  {/* Phone-like frame for preview */}
-                  <div className="relative bg-black rounded-[2rem] p-2 shadow-2xl border-4 border-gray-800">
-                    <div className="relative rounded-[1.5rem] overflow-hidden aspect-[9/16]">
-                      <video
-                        ref={videoPreviewRef}
-                        src={videoPreview}
-                        className="w-full h-full object-cover"
-                        loop
-                        playsInline
-                        muted={isMuted}
-                        onClick={() => {
-                          if (videoPreviewRef.current) {
-                            if (isPlaying) {
-                              videoPreviewRef.current.pause();
-                            } else {
-                              videoPreviewRef.current.play();
-                            }
-                            setIsPlaying(!isPlaying);
-                          }
-                        }}
-                      />
-                      
-                      {/* Play/Pause overlay button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (videoPreviewRef.current) {
-                            if (isPlaying) {
-                              videoPreviewRef.current.pause();
-                            } else {
-                              videoPreviewRef.current.play();
-                            }
-                            setIsPlaying(!isPlaying);
-                          }
-                        }}
-                        className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-colors"
-                      >
-                        <AnimatePresence mode="wait">
-                          {!isPlaying && (
-                            <motion.div
-                              initial={{ scale: 0.8, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              exit={{ scale: 0.8, opacity: 0 }}
-                              className="w-16 h-16 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center"
-                            >
-                              <Play className="w-8 h-8 text-white fill-white ml-1" />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </button>
-                      
-                      {/* Duration badge */}
-                      <div className="absolute top-3 left-3 px-2 py-1 bg-black/70 backdrop-blur-sm rounded-full text-white text-xs font-medium">
-                        {videoDuration}s
-                      </div>
-                      
-                      {/* Preview badge */}
-                      <div className="absolute top-3 right-3 px-2 py-1 bg-primary/80 backdrop-blur-sm rounded-full text-primary-foreground text-xs font-medium">
-                        Preview
-                      </div>
-                      
-                      {/* Mute/Unmute button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsMuted(!isMuted);
-                        }}
-                        className="absolute bottom-20 right-3 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 transition-colors"
-                      >
-                        {isMuted ? (
-                          <VolumeX className="w-5 h-5 text-white" />
-                        ) : (
-                          <Volume2 className="w-5 h-5 text-white" />
-                        )}
-                      </button>
-                      
-                      {/* Bottom gradient overlay */}
-                      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
-                      
-                      {/* Mock UI overlay */}
-                      <div className="absolute bottom-4 left-4 right-12 space-y-2 pointer-events-none">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm" />
-                          <span className="text-white text-sm font-medium">@you</span>
-                        </div>
-                        {caption && (
-                          <p className="text-white/90 text-xs line-clamp-2">{caption}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Remove button */}
-                  <button
-                    onClick={() => {
-                      if (videoPreview) URL.revokeObjectURL(videoPreview);
-                      setVideoFile(null);
-                      setVideoPreview(null);
-                      setVideoDuration(0);
-                      setIsPlaying(false);
-                    }}
-                    className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-destructive flex items-center justify-center hover:bg-destructive/90 shadow-lg"
-                  >
-                    <X className="w-4 h-4 text-white" />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Caption */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Caption</label>
-              <textarea
-                value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-                placeholder="Write a caption for your reel..."
-                className="w-full bg-card border border-border rounded-xl p-3 text-foreground placeholder:text-muted-foreground resize-none min-h-[80px] focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            {/* Hashtags */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                <Hash className="w-4 h-4" />
-                Hashtags
-              </label>
-              
-              {/* Selected hashtags */}
-              {selectedHashtags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {selectedHashtags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1 px-3 py-1 bg-primary/20 text-primary rounded-full text-sm"
-                    >
-                      #{tag}
-                      <button onClick={() => handleRemoveHashtag(tag)}>
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-              
-              {/* Hashtag input */}
-              <div className="relative">
-                <Input
-                  value={hashtagInput}
-                  onChange={(e) => {
-                    setHashtagInput(e.target.value);
-                    setShowHashtagSuggestions(true);
-                  }}
-                  onFocus={() => setShowHashtagSuggestions(true)}
-                  onKeyDown={handleHashtagKeyDown}
-                  placeholder="Add hashtag..."
-                  className="bg-card"
+          {/* Scrollable Content */}
+          <ScrollArea className="flex-1">
+            <div className="p-4 space-y-6 pb-8">
+              {/* Video Upload Area */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Video (Portrait, max 60s)</label>
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={handleVideoSelect}
+                  ref={videoInputRef}
+                  className="hidden"
                 />
                 
-                {/* Suggestions dropdown */}
-                {showHashtagSuggestions && (hashtagInput || trendingHashtags.length > 0) && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-10 max-h-48 overflow-y-auto">
-                    {hashtagInput && !selectedHashtags.includes(hashtagInput.replace(/^#/, "").toLowerCase()) && (
-                      <button
-                        onClick={() => handleAddHashtag(hashtagInput)}
-                        className="w-full px-4 py-2 text-left hover:bg-secondary flex items-center gap-2"
-                      >
-                        <Hash className="w-4 h-4 text-muted-foreground" />
-                        <span>Create #{hashtagInput.replace(/^#/, "")}</span>
-                      </button>
-                    )}
-                    
-                    {filteredTrendingHashtags.length > 0 && (
-                      <>
-                        <div className="px-4 py-2 text-xs text-muted-foreground flex items-center gap-1 border-t border-border">
-                          <TrendingUp className="w-3 h-3" />
-                          Trending
+                {!videoPreview ? (
+                  <button
+                    onClick={() => videoInputRef.current?.click()}
+                    className="w-full aspect-[9/16] max-h-80 rounded-xl border-2 border-dashed border-border hover:border-primary transition-colors flex flex-col items-center justify-center gap-3 bg-card"
+                  >
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Film className="w-8 h-8 text-primary" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-foreground font-medium">Upload Reel</p>
+                      <p className="text-sm text-muted-foreground">Portrait video, max 60 seconds</p>
+                    </div>
+                  </button>
+                ) : showTrimmer ? (
+                  <ReelTrimmer
+                    videoSrc={videoPreview}
+                    duration={originalDuration}
+                    onSave={handleTrimSave}
+                    onCancel={() => setShowTrimmer(false)}
+                  />
+                ) : (
+                  <div className="relative mx-auto" style={{ maxWidth: "260px" }}>
+                    {/* Phone-like frame for preview - TikTok style */}
+                    <div className="relative bg-black rounded-[2rem] p-1.5 shadow-2xl border-4 border-gray-800">
+                      <div className="relative rounded-[1.5rem] overflow-hidden aspect-[9/16]">
+                        <video
+                          ref={videoPreviewRef}
+                          src={videoPreview}
+                          className="w-full h-full object-cover"
+                          loop
+                          playsInline
+                          muted={isMuted}
+                          onClick={() => {
+                            if (videoPreviewRef.current) {
+                              if (isPlaying) {
+                                videoPreviewRef.current.pause();
+                              } else {
+                                videoPreviewRef.current.play();
+                              }
+                              setIsPlaying(!isPlaying);
+                            }
+                          }}
+                        />
+                        
+                        {/* Play/Pause overlay button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (videoPreviewRef.current) {
+                              if (isPlaying) {
+                                videoPreviewRef.current.pause();
+                              } else {
+                                videoPreviewRef.current.play();
+                              }
+                              setIsPlaying(!isPlaying);
+                            }
+                          }}
+                          className="absolute inset-0 flex items-center justify-center"
+                        >
+                          <AnimatePresence mode="wait">
+                            {!isPlaying && (
+                              <motion.div
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.8, opacity: 0 }}
+                                className="w-16 h-16 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center"
+                              >
+                                <Play className="w-8 h-8 text-white fill-white ml-1" />
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </button>
+                        
+                        {/* Duration badge */}
+                        <div className="absolute top-3 left-3 px-2 py-1 bg-black/70 backdrop-blur-sm rounded-full text-white text-xs font-medium">
+                          {videoDuration}s
                         </div>
-                        {filteredTrendingHashtags.map((tag) => (
+                        
+                        {/* Preview badge */}
+                        <div className="absolute top-3 right-3 px-2 py-1 bg-primary/80 backdrop-blur-sm rounded-full text-primary-foreground text-xs font-medium">
+                          Preview
+                        </div>
+                        
+                        {/* Right side controls - like TikTok */}
+                        <div className="absolute right-2 bottom-16 flex flex-col gap-3">
+                          {/* Mute/Unmute */}
                           <button
-                            key={tag.id}
-                            onClick={() => handleAddHashtag(tag.name)}
-                            className="w-full px-4 py-2 text-left hover:bg-secondary flex items-center justify-between"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsMuted(!isMuted);
+                            }}
+                            className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
                           >
-                            <span className="flex items-center gap-2">
-                              <Hash className="w-4 h-4 text-primary" />
-                              {tag.name}
-                            </span>
-                            <span className="text-xs text-muted-foreground">{tag.use_count} uses</span>
+                            {isMuted ? (
+                              <VolumeX className="w-5 h-5 text-white" />
+                            ) : (
+                              <Volume2 className="w-5 h-5 text-white" />
+                            )}
                           </button>
-                        ))}
-                      </>
-                    )}
+                          
+                          {/* Trim button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowTrimmer(true);
+                              setIsPlaying(false);
+                              if (videoPreviewRef.current) {
+                                videoPreviewRef.current.pause();
+                              }
+                            }}
+                            className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
+                          >
+                            <Scissors className="w-5 h-5 text-white" />
+                          </button>
+                        </div>
+                        
+                        {/* Bottom gradient overlay */}
+                        <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+                        
+                        {/* Mock UI overlay - TikTok style */}
+                        <div className="absolute bottom-3 left-3 right-12 space-y-2 pointer-events-none">
+                          <div className="flex items-center gap-2">
+                            <img 
+                              src={profile?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face"} 
+                              alt="You"
+                              className="w-8 h-8 rounded-full object-cover border border-white"
+                            />
+                            <span className="text-white text-sm font-semibold">@{profile?.username || "you"}</span>
+                          </div>
+                          {caption && (
+                            <p className="text-white/90 text-xs line-clamp-2">{caption}</p>
+                          )}
+                          {selectedHashtags.length > 0 && (
+                            <p className="text-primary text-xs">
+                              {selectedHashtags.map(t => `#${t}`).join(" ")}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Remove button */}
+                    <button
+                      onClick={() => {
+                        if (videoPreview) URL.revokeObjectURL(videoPreview);
+                        setVideoFile(null);
+                        setVideoPreview(null);
+                        setVideoDuration(0);
+                        setIsPlaying(false);
+                        setShowTrimmer(false);
+                      }}
+                      className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-destructive flex items-center justify-center hover:bg-destructive/90 shadow-lg"
+                    >
+                      <X className="w-4 h-4 text-white" />
+                    </button>
                   </div>
                 )}
               </div>
-            </div>
 
-            {/* Trending Hashtags Quick Add */}
-            {trendingHashtags.length > 0 && (
+              {/* Caption */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Caption</label>
+                <textarea
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  placeholder="Write a caption for your reel..."
+                  className="w-full bg-card border border-border rounded-xl p-3 text-foreground placeholder:text-muted-foreground resize-none min-h-[100px] focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              {/* Hashtags */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-primary" />
-                  Trending Hashtags
+                  <Hash className="w-4 h-4" />
+                  Hashtags
                 </label>
-                <div className="flex flex-wrap gap-2">
-                  {trendingHashtags.slice(0, 6).map((tag) => (
-                    <button
-                      key={tag.id}
-                      onClick={() => handleAddHashtag(tag.name)}
-                      disabled={selectedHashtags.includes(tag.name)}
-                      className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                        selectedHashtags.includes(tag.name)
-                          ? "bg-primary/20 text-primary"
-                          : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-                      }`}
-                    >
-                      #{tag.name}
-                      {selectedHashtags.includes(tag.name) && (
-                        <Check className="w-3 h-3 ml-1 inline" />
+                
+                {/* Selected hashtags */}
+                {selectedHashtags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedHashtags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-primary/20 text-primary rounded-full text-sm"
+                      >
+                        #{tag}
+                        <button onClick={() => handleRemoveHashtag(tag)}>
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Hashtag input */}
+                <div className="relative">
+                  <Input
+                    value={hashtagInput}
+                    onChange={(e) => {
+                      setHashtagInput(e.target.value);
+                      setShowHashtagSuggestions(true);
+                    }}
+                    onFocus={() => setShowHashtagSuggestions(true)}
+                    onKeyDown={handleHashtagKeyDown}
+                    placeholder="Add hashtag..."
+                    className="bg-card"
+                  />
+                  
+                  {/* Suggestions dropdown */}
+                  {showHashtagSuggestions && (hashtagInput || trendingHashtags.length > 0) && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-10 max-h-48 overflow-y-auto">
+                      {hashtagInput && !selectedHashtags.includes(hashtagInput.replace(/^#/, "").toLowerCase()) && (
+                        <button
+                          onClick={() => handleAddHashtag(hashtagInput)}
+                          className="w-full px-4 py-2 text-left hover:bg-secondary flex items-center gap-2"
+                        >
+                          <Hash className="w-4 h-4 text-muted-foreground" />
+                          <span>Create #{hashtagInput.replace(/^#/, "")}</span>
+                        </button>
                       )}
-                    </button>
-                  ))}
+                      
+                      {filteredTrendingHashtags.length > 0 && (
+                        <>
+                          <div className="px-4 py-2 text-xs text-muted-foreground flex items-center gap-1 border-t border-border">
+                            <TrendingUp className="w-3 h-3" />
+                            Trending
+                          </div>
+                          {filteredTrendingHashtags.map((tag) => (
+                            <button
+                              key={tag.id}
+                              onClick={() => handleAddHashtag(tag.name)}
+                              className="w-full px-4 py-2 text-left hover:bg-secondary flex items-center justify-between"
+                            >
+                              <span className="flex items-center gap-2">
+                                <Hash className="w-4 h-4 text-primary" />
+                                #{tag.name}
+                              </span>
+                              <span className="text-xs text-muted-foreground">{tag.use_count} reels</span>
+                            </button>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-          </div>
+
+              {/* Trending hashtags quick add */}
+              {trendingHashtags.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-primary" />
+                    Trending Now
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {trendingHashtags.slice(0, 6).filter(t => !selectedHashtags.includes(t.name)).map((tag) => (
+                      <button
+                        key={tag.id}
+                        onClick={() => handleAddHashtag(tag.name)}
+                        className="px-3 py-1.5 bg-secondary/50 hover:bg-secondary rounded-full text-sm text-foreground transition-colors"
+                      >
+                        #{tag.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
         </motion.div>
       )}
     </AnimatePresence>

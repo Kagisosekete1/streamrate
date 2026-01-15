@@ -132,7 +132,8 @@ const Notifications = () => {
       markAsRead(notification.id);
     }
 
-    if (notification.type === "follow" && notification.from_user_id) {
+    // Navigate to user profile when clicking notification with from_user_id
+    if (notification.from_user_id) {
       navigate(`/streamer/${notification.from_user_id}`);
     } else if (notification.post_id) {
       navigate(`/post/${notification.post_id}`);
