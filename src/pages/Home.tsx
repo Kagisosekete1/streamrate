@@ -10,6 +10,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 import { NewPostsBanner } from "@/components/NewPostsBanner";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
+import { PeopleYouMayKnow } from "@/components/PeopleYouMayKnow";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -394,6 +395,9 @@ const Home = () => {
             </div>
           )}
         </section>
+
+        {/* People You May Know */}
+        {user && <PeopleYouMayKnow />}
 
         {/* What's on your mind Section */}
         <section className="py-4">
