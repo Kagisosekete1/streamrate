@@ -339,7 +339,7 @@ const CreatePost = () => {
                 className="flex items-center gap-2 text-muted-foreground hover:text-accent transition-colors"
               >
                 <Film className="w-5 h-5" />
-                <span className="text-sm">Reel</span>
+                <span className="text-sm">Reel (60s)</span>
               </button>
             </div>
             {(content.trim() || imagePreview) && (

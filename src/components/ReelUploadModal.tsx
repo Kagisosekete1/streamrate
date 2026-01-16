@@ -319,10 +319,17 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
                         <video
                           ref={videoPreviewRef}
                           src={videoPreview}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover cursor-pointer"
                           loop
                           playsInline
                           muted={isMuted}
+                          onPlay={() => setIsPlaying(true)}
+                          onPause={() => setIsPlaying(false)}
+                        />
+                        
+                        {/* Play/Pause overlay button - always clickable */}
+                        <button
+                          type="button"
                           onClick={() => {
                             if (videoPreviewRef.current) {
                               if (isPlaying) {
@@ -330,25 +337,9 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
                               } else {
                                 videoPreviewRef.current.play();
                               }
-                              setIsPlaying(!isPlaying);
                             }
                           }}
-                        />
-                        
-                        {/* Play/Pause overlay button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (videoPreviewRef.current) {
-                              if (isPlaying) {
-                                videoPreviewRef.current.pause();
-                              } else {
-                                videoPreviewRef.current.play();
-                              }
-                              setIsPlaying(!isPlaying);
-                            }
-                          }}
-                          className="absolute inset-0 flex items-center justify-center"
+                          className="absolute inset-0 flex items-center justify-center z-10"
                         >
                           <AnimatePresence mode="wait">
                             {!isPlaying && (
@@ -356,7 +347,7 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
                                 initial={{ scale: 0.8, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 exit={{ scale: 0.8, opacity: 0 }}
-                                className="w-16 h-16 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center"
+                                className="w-16 h-16 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center pointer-events-none"
                               >
                                 <Play className="w-8 h-8 text-white fill-white ml-1" />
                               </motion.div>
