@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Upload, Hash, TrendingUp, Film, Play, Pause, Volume2, VolumeX, Scissors } from "lucide-react";
+import { X, Upload, Hash, TrendingUp, Film, Play, Pause, Volume2, VolumeX, Scissors, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { ReelTrimmer } from "@/components/ReelTrimmer";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Slider } from "@/components/ui/slider";
 
 interface ReelUploadModalProps {
   isOpen: boolean;
@@ -26,6 +27,8 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
   const { user, profile } = useAuth();
   const videoInputRef = useRef<HTMLInputElement>(null);
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
+  const audioPreviewRef = useRef<HTMLAudioElement>(null);
   
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
@@ -42,6 +45,15 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
   const [showTrimmer, setShowTrimmer] = useState(false);
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(0);
+  
+  // Music state
+  const [musicFile, setMusicFile] = useState<File | null>(null);
+  const [musicPreview, setMusicPreview] = useState<string | null>(null);
+  const [musicDuration, setMusicDuration] = useState<number>(0);
+  const [musicTrimStart, setMusicTrimStart] = useState(0);
+  const [musicTrimEnd, setMusicTrimEnd] = useState(0);
+  const [showMusicTrimmer, setShowMusicTrimmer] = useState(false);
+  const [musicName, setMusicName] = useState<string>("");
 
   useEffect(() => {
     if (isOpen) {
@@ -117,6 +129,50 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
     setVideoDuration(Math.round(endTime - startTime));
     setShowTrimmer(false);
     toast({ title: "Trim applied!", description: `Video trimmed to ${Math.round(endTime - startTime)}s` });
+  };
+
+  const handleMusicSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("audio/")) {
+      toast({
+        title: "Invalid file",
+        description: "Please select an audio file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    
+    const audio = document.createElement("audio");
+    audio.onloadedmetadata = () => {
+      setMusicFile(file);
+      setMusicPreview(previewUrl);
+      setMusicDuration(audio.duration);
+      setMusicTrimStart(0);
+      setMusicTrimEnd(Math.min(audio.duration, videoDuration || 60));
+      setMusicName(file.name.replace(/\.[^/.]+$/, ""));
+    };
+    audio.src = previewUrl;
+  };
+
+  const handleRemoveMusic = () => {
+    if (musicPreview) URL.revokeObjectURL(musicPreview);
+    setMusicFile(null);
+    setMusicPreview(null);
+    setMusicDuration(0);
+    setMusicTrimStart(0);
+    setMusicTrimEnd(0);
+    setMusicName("");
+    setShowMusicTrimmer(false);
+  };
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const handleAddHashtag = (tag: string) => {
@@ -238,12 +294,16 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
     if (videoPreview) {
       URL.revokeObjectURL(videoPreview);
     }
+    if (musicPreview) {
+      URL.revokeObjectURL(musicPreview);
+    }
     setVideoFile(null);
     setVideoPreview(null);
     setVideoDuration(0);
     setCaption("");
     setSelectedHashtags([]);
     setShowTrimmer(false);
+    handleRemoveMusic();
     onClose();
   };
 
@@ -441,18 +501,18 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
                 )}
               </div>
 
-              {/* Caption */}
+              {/* Caption - moved up */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Caption</label>
                 <textarea
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
                   placeholder="Write a caption for your reel..."
-                  className="w-full bg-card border border-border rounded-xl p-3 text-foreground placeholder:text-muted-foreground resize-none min-h-[100px] focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full bg-card border border-border rounded-xl p-3 text-foreground placeholder:text-muted-foreground resize-none min-h-[80px] focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
-              {/* Hashtags */}
+              {/* Hashtags - moved up */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground flex items-center gap-2">
                   <Hash className="w-4 h-4" />
@@ -549,6 +609,119 @@ export const ReelUploadModal = ({ isOpen, onClose, onSuccess }: ReelUploadModalP
                   </div>
                 </div>
               )}
+
+              {/* Music Upload Section */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Music className="w-4 h-4 text-primary" />
+                  Add Music (Optional)
+                </label>
+                
+                <input
+                  type="file"
+                  accept="audio/*"
+                  onChange={handleMusicSelect}
+                  ref={audioInputRef}
+                  className="hidden"
+                />
+                
+                {!musicPreview ? (
+                  <button
+                    onClick={() => audioInputRef.current?.click()}
+                    className="w-full p-4 rounded-xl border-2 border-dashed border-border hover:border-primary transition-colors flex items-center justify-center gap-3 bg-card"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Music className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-foreground font-medium">Add Music</p>
+                      <p className="text-sm text-muted-foreground">Choose audio from your device</p>
+                    </div>
+                  </button>
+                ) : (
+                  <div className="space-y-3 bg-card rounded-xl p-4 border border-border">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                          <Music className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-foreground font-medium text-sm truncate max-w-[180px]">{musicName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatTime(musicTrimStart)} - {formatTime(musicTrimEnd)} ({Math.round(musicTrimEnd - musicTrimStart)}s)
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleRemoveMusic}
+                        className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center hover:bg-destructive/20 transition-colors"
+                      >
+                        <X className="w-4 h-4 text-destructive" />
+                      </button>
+                    </div>
+                    
+                    {/* Audio hidden element for preview */}
+                    <audio ref={audioPreviewRef} src={musicPreview} className="hidden" />
+                    
+                    {/* Music trimmer toggle */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => setShowMusicTrimmer(!showMusicTrimmer)}
+                    >
+                      <Scissors className="w-4 h-4 mr-2" />
+                      {showMusicTrimmer ? "Hide Trimmer" : "Trim Music"}
+                    </Button>
+                    
+                    {/* Music trimmer */}
+                    <AnimatePresence>
+                      {showMusicTrimmer && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="space-y-3 overflow-hidden"
+                        >
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>Start: {formatTime(musicTrimStart)}</span>
+                              <span>End: {formatTime(musicTrimEnd)}</span>
+                            </div>
+                            <div className="space-y-3">
+                              <div className="space-y-1">
+                                <label className="text-xs text-muted-foreground">Start time</label>
+                                <Slider
+                                  value={[musicTrimStart]}
+                                  min={0}
+                                  max={Math.max(0, musicTrimEnd - 1)}
+                                  step={0.5}
+                                  onValueChange={([val]) => setMusicTrimStart(val)}
+                                  className="w-full"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-xs text-muted-foreground">End time</label>
+                                <Slider
+                                  value={[musicTrimEnd]}
+                                  min={musicTrimStart + 1}
+                                  max={musicDuration}
+                                  step={0.5}
+                                  onValueChange={([val]) => setMusicTrimEnd(Math.min(val, musicTrimStart + (videoDuration || 60)))}
+                                  className="w-full"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground text-center">
+                            Selected: {Math.round(musicTrimEnd - musicTrimStart)}s of music
+                          </p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
+              </div>
             </div>
           </ScrollArea>
         </motion.div>

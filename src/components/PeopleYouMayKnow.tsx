@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Users, UserPlus } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Users, UserPlus, ChevronDown, ChevronUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,6 +22,7 @@ export const PeopleYouMayKnow = () => {
   const [suggestions, setSuggestions] = useState<SuggestedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -109,51 +110,76 @@ export const PeopleYouMayKnow = () => {
 
   return (
     <section className="py-4">
-      <div className="flex items-center gap-2 mb-4">
-        <Users className="w-5 h-5 text-primary" />
-        <h2 className="text-lg font-semibold text-foreground">People You May Know</h2>
-      </div>
-      
-      <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-        <div className="flex gap-3">
-          {suggestions.map((person, index) => (
-            <motion.div
-              key={person.id}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="flex-shrink-0 w-36 bg-card border border-border rounded-xl p-4 text-center"
-            >
-              <img
-                src={person.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
-                alt={person.username || "User"}
-                className="w-16 h-16 rounded-full object-cover mx-auto mb-2 border-2 border-primary/20 cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => navigate(`/streamer/${person.id}`)}
-              />
-              <p 
-                className="font-medium text-foreground text-sm truncate cursor-pointer hover:text-primary transition-colors"
-                onClick={() => navigate(`/streamer/${person.id}`)}
-              >
-                @{person.username || "user"}
-              </p>
-              {person.mutual_followers && person.mutual_followers > 0 && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {person.mutual_followers} mutual
-                </p>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-3 w-full text-xs"
-                onClick={() => handleFollow(person.id)}
-              >
-                <UserPlus className="w-3 h-3 mr-1" />
-                Follow
-              </Button>
-            </motion.div>
-          ))}
+      <button 
+        onClick={() => setIsVisible(!isVisible)}
+        className="flex items-center gap-2 mb-4 w-full justify-between"
+      >
+        <div className="flex items-center gap-2">
+          <Users className="w-5 h-5 text-primary" />
+          <h2 className="text-lg font-semibold text-foreground">People You May Know</h2>
         </div>
-      </div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <span className="text-xs">{isVisible ? "Hide" : "View"}</span>
+          {isVisible ? (
+            <ChevronUp className="w-4 h-4" />
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
+        </div>
+      </button>
+      
+      <AnimatePresence>
+        {isVisible && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
+              <div className="flex gap-3">
+                {suggestions.map((person, index) => (
+                  <motion.div
+                    key={person.id}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="flex-shrink-0 w-36 bg-card border border-border rounded-xl p-4 text-center"
+                  >
+                    <img
+                      src={person.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+                      alt={person.username || "User"}
+                      className="w-16 h-16 rounded-full object-cover mx-auto mb-2 border-2 border-primary/20 cursor-pointer hover:border-primary/50 transition-colors"
+                      onClick={() => navigate(`/streamer/${person.id}`)}
+                    />
+                    <p 
+                      className="font-medium text-foreground text-sm truncate cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => navigate(`/streamer/${person.id}`)}
+                    >
+                      @{person.username || "user"}
+                    </p>
+                    {person.mutual_followers && person.mutual_followers > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {person.mutual_followers} mutual
+                      </p>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 w-full text-xs"
+                      onClick={() => handleFollow(person.id)}
+                    >
+                      <UserPlus className="w-3 h-3 mr-1" />
+                      Follow
+                    </Button>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 };
