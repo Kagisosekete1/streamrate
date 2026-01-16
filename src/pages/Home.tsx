@@ -4,7 +4,7 @@ import { Loader2, PenSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { BottomNav } from "@/components/BottomNav";
 import { SearchBar } from "@/components/SearchBar";
-import { TrendingStreamer } from "@/components/TrendingStreamer";
+import { TrendingStreamersSection } from "@/components/TrendingStreamersSection";
 import { PostCard } from "@/components/PostCard";
 import { NotificationBell } from "@/components/NotificationBell";
 import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
@@ -362,39 +362,9 @@ const Home = () => {
       {/* Content */}
       <main className="px-4">
         {/* Trending Section */}
-        <section className="py-4">
-          <h2 className="text-lg font-semibold text-foreground mb-4">
-            🔥 Trending Streamers
-          </h2>
-          {trendingStreamers.length === 0 ? (
-            <div className="text-center py-4 text-muted-foreground text-sm">
-              No streamers yet. Be the first to join!
-            </div>
-          ) : (
-            <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex gap-4"
-              >
-                {trendingStreamers.map((streamer, index) => (
-                  <TrendingStreamer
-                    key={streamer.id}
-                    id={streamer.id}
-                    name={streamer.username || "Anonymous"}
-                    profilePicture={
-                      streamer.avatar_url ||
-                      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"
-                    }
-                    rank={index + 1}
-                    averageRating={streamer.average_rating}
-                    index={index}
-                  />
-                ))}
-              </motion.div>
-            </div>
-          )}
-        </section>
+        <TrendingStreamersSection 
+          trendingStreamers={trendingStreamers} 
+        />
 
         {/* People You May Know */}
         {user && <PeopleYouMayKnow />}

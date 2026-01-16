@@ -391,7 +391,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
             </div>
 
             {/* Right side actions - TikTok style */}
-            <div className="absolute right-3 bottom-28 flex flex-col items-center gap-5 z-30">
+            <div className="absolute right-3 bottom-32 flex flex-col items-center gap-5 z-30">
               {/* User avatar with follow button */}
               <div className="relative mb-2">
                 <img
@@ -486,8 +486,8 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
               </motion.div>
             </div>
 
-            {/* Bottom info - TikTok style */}
-            <div className="absolute left-4 bottom-6 right-24 space-y-3 z-20">
+            {/* Bottom info - TikTok style - aligned with volume button */}
+            <div className="absolute left-4 bottom-32 right-24 space-y-2 z-20">
               {/* User info */}
               <div 
                 className="flex items-center gap-2 cursor-pointer"
