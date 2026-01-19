@@ -448,6 +448,41 @@ export type Database = {
           },
         ]
       }
+      reel_views: {
+        Row: {
+          completed: boolean | null
+          id: string
+          reel_id: string
+          user_id: string | null
+          viewed_at: string
+          watch_duration: number | null
+        }
+        Insert: {
+          completed?: boolean | null
+          id?: string
+          reel_id: string
+          user_id?: string | null
+          viewed_at?: string
+          watch_duration?: number | null
+        }
+        Update: {
+          completed?: boolean | null
+          id?: string
+          reel_id?: string
+          user_id?: string | null
+          viewed_at?: string
+          watch_duration?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reel_views_reel_id_fkey"
+            columns: ["reel_id"]
+            isOneToOne: false
+            referencedRelation: "reels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reels: {
         Row: {
           caption: string | null
@@ -457,6 +492,7 @@ export type Database = {
           updated_at: string
           user_id: string
           video_url: string
+          view_count: number
         }
         Insert: {
           caption?: string | null
@@ -466,6 +502,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           video_url: string
+          view_count?: number
         }
         Update: {
           caption?: string | null
@@ -475,8 +512,47 @@ export type Database = {
           updated_at?: string
           user_id?: string
           video_url?: string
+          view_count?: number
         }
         Relationships: []
+      }
+      user_interests: {
+        Row: {
+          created_at: string
+          creator_id: string | null
+          hashtag_id: string | null
+          id: string
+          interest_score: number
+          last_interaction: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id?: string | null
+          hashtag_id?: string | null
+          id?: string
+          interest_score?: number
+          last_interaction?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string | null
+          hashtag_id?: string | null
+          id?: string
+          interest_score?: number
+          last_interaction?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_interests_hashtag_id_fkey"
+            columns: ["hashtag_id"]
+            isOneToOne: false
+            referencedRelation: "hashtags"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
