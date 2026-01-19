@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Film, Play, Hash } from "lucide-react";
+import { ArrowLeft, Film, Play, Hash, Eye, Sparkles } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ReelViewer } from "@/components/ReelViewer";
 import { BottomNav } from "@/components/BottomNav";
+import { useForYouAlgorithm } from "@/hooks/useForYouAlgorithm";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Reel {
   id: string;
@@ -13,6 +15,7 @@ interface Reel {
   duration: number;
   user_id: string;
   created_at: string;
+  view_count?: number;
   user?: {
     username: string | null;
     avatar_url: string | null;
@@ -23,9 +26,12 @@ const Reels = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [reels, setReels] = useState<Reel[]>([]);
+  const [forYouReels, setForYouReels] = useState<Reel[]>([]);
   const [loading, setLoading] = useState(true);
   const [showViewer, setShowViewer] = useState(false);
   const [viewerIndex, setViewerIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState("foryou");
+  const { getForYouFeed } = useForYouAlgorithm();
 
   const fetchReels = useCallback(async () => {
     const { data: reelsData } = await supabase
@@ -63,14 +69,30 @@ const Reels = () => {
     setLoading(false);
   }, [id]);
 
+  const fetchForYouReels = useCallback(async () => {
+    const fyReels = await getForYouFeed();
+    setForYouReels(fyReels);
+  }, [getForYouFeed]);
+
   useEffect(() => {
     fetchReels();
-  }, [fetchReels]);
+    fetchForYouReels();
+  }, [fetchReels, fetchForYouReels]);
 
-  const openReel = (index: number) => {
+  // Format view count
+  const formatViewCount = (count: number) => {
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+    return count.toString();
+  };
+
+  const openReel = (index: number, isForYou: boolean = false) => {
     setViewerIndex(index);
+    setActiveTab(isForYou ? "foryou" : "latest");
     setShowViewer(true);
   };
+
+  const currentReelsList = activeTab === "foryou" ? forYouReels : reels;
 
   if (loading) {
     return (
@@ -98,70 +120,77 @@ const Reels = () => {
         </div>
       </header>
 
-      {/* Reels Grid */}
-      <div className="p-2">
-        {reels.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-              <Film className="w-8 h-8 text-primary" />
+      {/* Tabs for For You / Latest */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <div className="sticky top-14 z-30 bg-background/80 backdrop-blur-lg px-4 py-2">
+          <TabsList className="grid w-full grid-cols-2 max-w-xs mx-auto">
+            <TabsTrigger value="foryou" className="gap-1.5">
+              <Sparkles className="w-4 h-4" />
+              For You
+            </TabsTrigger>
+            <TabsTrigger value="latest" className="gap-1.5">
+              <Film className="w-4 h-4" />
+              Latest
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="foryou" className="p-2 mt-0">
+          {forYouReels.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <Sparkles className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Discover Reels</h3>
+              <p className="text-muted-foreground text-sm">
+                Watch and interact with reels to get personalized recommendations
+              </p>
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">No Reels Yet</h3>
-            <p className="text-muted-foreground text-sm">
-              Be the first to share a reel!
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 gap-1">
-            {reels.map((reel, index) => (
-              <motion.div
-                key={reel.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.05 }}
-                className="aspect-[9/16] cursor-pointer relative group rounded-lg overflow-hidden"
-                onClick={() => openReel(index)}
-              >
-                <video
-                  src={reel.video_url}
-                  className="w-full h-full object-cover"
-                  muted
-                  loop
-                  playsInline
-                  onMouseEnter={(e) => e.currentTarget.play()}
-                  onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+          ) : (
+            <div className="grid grid-cols-3 gap-1">
+              {forYouReels.map((reel, index) => (
+                <ReelCard 
+                  key={reel.id} 
+                  reel={reel} 
+                  index={index} 
+                  onOpen={() => openReel(index, true)}
+                  formatViewCount={formatViewCount}
                 />
-                {/* Play icon overlay - always visible on mobile */}
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/40 transition-colors">
-                  <div className="w-12 h-12 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center opacity-100 group-hover:scale-110 transition-transform">
-                    <Play className="w-6 h-6 text-white fill-white ml-0.5" />
-                  </div>
-                </div>
-                {/* Bottom info */}
-                <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
-                  <div className="flex items-center gap-2">
-                    <img
-                      src={reel.user?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"}
-                      alt={reel.user?.username || "User"}
-                      className="w-5 h-5 rounded-full object-cover"
-                    />
-                    <span className="text-white text-xs truncate">
-                      @{reel.user?.username || "user"}
-                    </span>
-                  </div>
-                </div>
-                {/* Duration badge */}
-                <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-black/60 rounded text-white text-xs">
-                  {reel.duration}s
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="latest" className="p-2 mt-0">
+          {reels.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <Film className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">No Reels Yet</h3>
+              <p className="text-muted-foreground text-sm">
+                Be the first to share a reel!
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-1">
+              {reels.map((reel, index) => (
+                <ReelCard 
+                  key={reel.id} 
+                  reel={reel} 
+                  index={index} 
+                  onOpen={() => openReel(index, false)}
+                  formatViewCount={formatViewCount}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Reel Viewer */}
       <ReelViewer
-        reels={reels}
+        reels={currentReelsList}
         initialIndex={viewerIndex}
         isOpen={showViewer}
         onClose={() => {
@@ -170,6 +199,8 @@ const Reels = () => {
           if (id) {
             navigate("/reels", { replace: true });
           }
+          // Refresh For You feed after watching
+          fetchForYouReels();
         }}
       />
 
@@ -177,5 +208,66 @@ const Reels = () => {
     </div>
   );
 };
+
+// Reusable Reel Card Component
+const ReelCard = ({ 
+  reel, 
+  index, 
+  onOpen, 
+  formatViewCount 
+}: { 
+  reel: Reel; 
+  index: number; 
+  onOpen: () => void;
+  formatViewCount: (count: number) => string;
+}) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ delay: index * 0.05 }}
+    className="aspect-[9/16] cursor-pointer relative group rounded-lg overflow-hidden"
+    onClick={onOpen}
+  >
+    <video
+      src={reel.video_url}
+      className="w-full h-full object-cover"
+      muted
+      loop
+      playsInline
+      onMouseEnter={(e) => e.currentTarget.play()}
+      onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+    />
+    {/* Play icon overlay */}
+    <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/40 transition-colors">
+      <div className="w-12 h-12 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center opacity-100 group-hover:scale-110 transition-transform">
+        <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+      </div>
+    </div>
+    {/* Bottom info */}
+    <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <img
+            src={reel.user?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"}
+            alt={reel.user?.username || "User"}
+            className="w-5 h-5 rounded-full object-cover flex-shrink-0"
+          />
+          <span className="text-white text-xs truncate">
+            @{reel.user?.username || "user"}
+          </span>
+        </div>
+        {/* View count */}
+        <div className="flex items-center gap-0.5 text-white/80">
+          <Eye className="w-3 h-3" />
+          <span className="text-xs">{formatViewCount(reel.view_count || 0)}</span>
+        </div>
+      </div>
+    </div>
+    {/* Duration badge */}
+    <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-black/60 rounded text-white text-xs">
+      {reel.duration}s
+    </div>
+  </motion.div>
+);
 
 export default Reels;

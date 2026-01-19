@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Play, ChevronUp, ChevronDown, Send, Music2, Bookmark, UserPlus } from "lucide-react";
+import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Play, ChevronUp, ChevronDown, Send, Music2, Bookmark, UserPlus, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { HashtagText } from "@/components/HashtagText";
+import { useForYouAlgorithm } from "@/hooks/useForYouAlgorithm";
 
 interface Reel {
   id: string;
@@ -17,6 +18,7 @@ interface Reel {
   duration: number;
   user_id: string;
   created_at: string;
+  view_count?: number;
   user?: {
     username: string | null;
     avatar_url: string | null;
@@ -34,6 +36,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { recordView, updateUserInterest } = useForYouAlgorithm();
   
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isMuted, setIsMuted] = useState(false);
@@ -45,13 +48,16 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
   const [commentsCount, setCommentsCount] = useState<Record<string, number>>({});
   const [isFollowing, setIsFollowing] = useState<Record<string, boolean>>({});
   const [videoProgress, setVideoProgress] = useState(0);
+  const [viewsCount, setViewsCount] = useState<Record<string, number>>({});
+  const [viewRecorded, setViewRecorded] = useState<Record<string, boolean>>({});
+  const viewStartTime = useRef<number>(0);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const currentReel = reels[currentIndex];
 
-  // Fetch likes and comments data
+  // Fetch likes, comments, and views data
   const fetchReelData = useCallback(async (reelId: string) => {
     const { count: likesCount } = await supabase
       .from("reel_likes")
@@ -82,6 +88,18 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
     setCommentsCount(prev => ({
       ...prev,
       [reelId]: commCount || 0
+    }));
+
+    // Fetch view count from reels table
+    const { data: reelData } = await supabase
+      .from("reels")
+      .select("view_count")
+      .eq("id", reelId)
+      .maybeSingle();
+
+    setViewsCount(prev => ({
+      ...prev,
+      [reelId]: reelData?.view_count || 0
     }));
   }, [user]);
 
@@ -131,8 +149,24 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
     if (isOpen && currentReel) {
       fetchReelData(currentReel.id);
       checkFollowing(currentReel.user_id);
+      viewStartTime.current = Date.now();
+      
+      // Update user interest for viewing this creator
+      updateUserInterest("creator", currentReel.user_id, "view");
     }
-  }, [isOpen, currentReel?.id, fetchReelData, checkFollowing]);
+  }, [isOpen, currentReel?.id, fetchReelData, checkFollowing, updateUserInterest]);
+
+  // Record view when switching reels or closing
+  useEffect(() => {
+    return () => {
+      if (currentReel && viewStartTime.current > 0 && !viewRecorded[currentReel.id]) {
+        const watchDuration = Math.floor((Date.now() - viewStartTime.current) / 1000);
+        const completed = watchDuration >= currentReel.duration * 0.8; // 80% watched
+        recordView(currentReel.id, watchDuration, completed);
+        setViewRecorded(prev => ({ ...prev, [currentReel.id]: true }));
+      }
+    };
+  }, [currentReel?.id]);
 
   useEffect(() => {
     if (showComments && currentReel) {
@@ -221,6 +255,8 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
         reel_id: reelId,
         user_id: user.id
       });
+      // Update user interest for liking
+      updateUserInterest("creator", currentReel.user_id, "like");
     }
 
     fetchReelData(reelId);
@@ -250,6 +286,8 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
       });
       setIsFollowing(prev => ({ ...prev, [userId]: true }));
       toast({ title: "Following!" });
+      // Update user interest for following
+      updateUserInterest("creator", userId, "follow");
     }
   };
 
@@ -272,6 +310,9 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
       toast({ title: "Failed to add comment", variant: "destructive" });
       return;
     }
+
+    // Update user interest for commenting
+    updateUserInterest("creator", currentReel.user_id, "comment");
 
     setNewComment("");
     fetchComments(currentReel.id);
@@ -300,6 +341,14 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
 
   const likeData = likesData[currentReel.id] || { count: 0, isLiked: false };
   const commentCount = commentsCount[currentReel.id] || 0;
+  const viewCount = viewsCount[currentReel.id] || currentReel.view_count || 0;
+
+  // Format view count
+  const formatViewCount = (count: number) => {
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+    return count.toString();
+  };
 
   return (
     <AnimatePresence>
@@ -441,6 +490,14 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
                 </div>
                 <span className="text-white text-xs font-semibold">{commentCount}</span>
               </button>
+
+              {/* View count */}
+              <div className="flex flex-col items-center gap-1">
+                <div className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center">
+                  <Eye className="w-7 h-7 text-white" />
+                </div>
+                <span className="text-white text-xs font-semibold">{formatViewCount(viewCount)}</span>
+              </div>
 
               {/* Bookmark */}
               <button
