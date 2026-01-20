@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Film, Play, Hash, Eye, Sparkles } from "lucide-react";
+import { ArrowLeft, Film, Play, Hash, Eye, Sparkles, BarChart3 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ReelViewer } from "@/components/ReelViewer";
 import { BottomNav } from "@/components/BottomNav";
 import { useForYouAlgorithm } from "@/hooks/useForYouAlgorithm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Reel {
   id: string;
@@ -25,6 +26,7 @@ interface Reel {
 const Reels = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { user } = useAuth();
   const [reels, setReels] = useState<Reel[]>([]);
   const [forYouReels, setForYouReels] = useState<Reel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,46 +110,56 @@ const Reels = () => {
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="flex items-center justify-between px-4 py-3">
           <button onClick={() => navigate(-1)} className="p-2 -ml-2">
-            <ArrowLeft className="w-6 h-6 text-foreground" />
+            <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
           <h1 className="text-lg font-semibold text-foreground">Reels</h1>
-          <button 
-            onClick={() => navigate("/hashtags")}
-            className="p-2 -mr-2 text-primary"
-          >
-            <Hash className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {user && (
+              <button 
+                onClick={() => navigate("/analytics/reels")}
+                className="p-2 text-muted-foreground hover:text-primary transition-colors"
+              >
+                <BarChart3 className="w-5 h-5" />
+              </button>
+            )}
+            <button 
+              onClick={() => navigate("/hashtags")}
+              className="p-2 text-primary"
+            >
+              <Hash className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Tabs for For You / Latest */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="sticky top-14 z-30 bg-background/80 backdrop-blur-lg px-4 py-2">
-          <TabsList className="grid w-full grid-cols-2 max-w-xs mx-auto">
-            <TabsTrigger value="foryou" className="gap-1.5">
-              <Sparkles className="w-4 h-4" />
+          <TabsList className="grid w-full grid-cols-2 max-w-xs mx-auto h-9">
+            <TabsTrigger value="foryou" className="gap-1.5 text-sm">
+              <Sparkles className="w-3.5 h-3.5" />
               For You
             </TabsTrigger>
-            <TabsTrigger value="latest" className="gap-1.5">
-              <Film className="w-4 h-4" />
+            <TabsTrigger value="latest" className="gap-1.5 text-sm">
+              <Film className="w-3.5 h-3.5" />
               Latest
             </TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="foryou" className="p-2 mt-0">
+        <TabsContent value="foryou" className="p-1.5 mt-0">
           {forYouReels.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Sparkles className="w-8 h-8 text-primary" />
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <Sparkles className="w-7 h-7 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Discover Reels</h3>
-              <p className="text-muted-foreground text-sm">
+              <h3 className="text-base font-semibold text-foreground mb-2">Discover Reels</h3>
+              <p className="text-muted-foreground text-sm px-8">
                 Watch and interact with reels to get personalized recommendations
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-1">
+            <div className="grid grid-cols-3 gap-0.5">
               {forYouReels.map((reel, index) => (
                 <ReelCard 
                   key={reel.id} 
@@ -161,19 +173,19 @@ const Reels = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="latest" className="p-2 mt-0">
+        <TabsContent value="latest" className="p-1.5 mt-0">
           {reels.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Film className="w-8 h-8 text-primary" />
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <Film className="w-7 h-7 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">No Reels Yet</h3>
-              <p className="text-muted-foreground text-sm">
+              <h3 className="text-base font-semibold text-foreground mb-2">No Reels Yet</h3>
+              <p className="text-muted-foreground text-sm px-8">
                 Be the first to share a reel!
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-1">
+            <div className="grid grid-cols-3 gap-0.5">
               {reels.map((reel, index) => (
                 <ReelCard 
                   key={reel.id} 
@@ -209,7 +221,7 @@ const Reels = () => {
   );
 };
 
-// Reusable Reel Card Component
+// Reusable Reel Card Component - Facebook Reels style
 const ReelCard = ({ 
   reel, 
   index, 
@@ -222,10 +234,10 @@ const ReelCard = ({
   formatViewCount: (count: number) => string;
 }) => (
   <motion.div
-    initial={{ opacity: 0, scale: 0.95 }}
+    initial={{ opacity: 0, scale: 0.98 }}
     animate={{ opacity: 1, scale: 1 }}
-    transition={{ delay: index * 0.05 }}
-    className="aspect-[9/16] cursor-pointer relative group rounded-lg overflow-hidden"
+    transition={{ delay: index * 0.03 }}
+    className="aspect-[9/16] cursor-pointer relative group overflow-hidden bg-secondary"
     onClick={onOpen}
   >
     <video
@@ -237,35 +249,31 @@ const ReelCard = ({
       onMouseEnter={(e) => e.currentTarget.play()}
       onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
     />
-    {/* Play icon overlay */}
-    <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/40 transition-colors">
-      <div className="w-12 h-12 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center opacity-100 group-hover:scale-110 transition-transform">
-        <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+    {/* Subtle play icon overlay */}
+    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+        <Play className="w-5 h-5 text-white fill-white ml-0.5" />
       </div>
     </div>
-    {/* Bottom info */}
-    <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
+    {/* Bottom gradient info */}
+    <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-gradient-to-t from-black/70 to-transparent">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="flex items-center gap-1 flex-1 min-w-0">
           <img
             src={reel.user?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"}
             alt={reel.user?.username || "User"}
-            className="w-5 h-5 rounded-full object-cover flex-shrink-0"
+            className="w-4 h-4 rounded-full object-cover flex-shrink-0 border border-white/30"
           />
-          <span className="text-white text-xs truncate">
-            @{reel.user?.username || "user"}
+          <span className="text-white text-[10px] truncate font-medium">
+            {reel.user?.username || "user"}
           </span>
         </div>
         {/* View count */}
-        <div className="flex items-center gap-0.5 text-white/80">
-          <Eye className="w-3 h-3" />
-          <span className="text-xs">{formatViewCount(reel.view_count || 0)}</span>
+        <div className="flex items-center gap-0.5 text-white/90">
+          <Eye className="w-2.5 h-2.5" />
+          <span className="text-[10px] font-medium">{formatViewCount(reel.view_count || 0)}</span>
         </div>
       </div>
-    </div>
-    {/* Duration badge */}
-    <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-black/60 rounded text-white text-xs">
-      {reel.duration}s
     </div>
   </motion.div>
 );

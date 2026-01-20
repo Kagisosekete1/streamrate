@@ -4,9 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
-import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import Splash from "./pages/Splash";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
 import Streamers from "./pages/Streamers";
@@ -18,6 +16,7 @@ import Settings from "./pages/Settings";
 import Notifications from "./pages/Notifications";
 import Reels from "./pages/Reels";
 import Hashtags from "./pages/Hashtags";
+import ReelAnalytics from "./pages/ReelAnalytics";
 
 const queryClient = new QueryClient();
 
@@ -29,8 +28,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/splash" element={<Splash />} />
+            <Route path="/" element={<Auth />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/home" element={<Home />} />
             <Route path="/streamers" element={<Streamers />} />
@@ -44,6 +42,7 @@ const App = () => (
             <Route path="/reel/:id" element={<Reels />} />
             <Route path="/hashtags" element={<Hashtags />} />
             <Route path="/hashtags/:tag" element={<Hashtags />} />
+            <Route path="/analytics/reels" element={<ReelAnalytics />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

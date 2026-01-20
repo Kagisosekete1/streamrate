@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Play, ChevronUp, ChevronDown, Send, Music2, Bookmark, UserPlus, Eye } from "lucide-react";
+import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Send, Music2, Bookmark, UserPlus, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -36,7 +36,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { recordView, updateUserInterest } = useForYouAlgorithm();
+  const { recordView, updateUserInterest, updateHashtagInterests } = useForYouAlgorithm();
   
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isMuted, setIsMuted] = useState(false);
@@ -217,23 +217,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
     }
   };
 
-  // Navigate with arrows
-  const goToPrev = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(prev => prev - 1);
-      setIsPlaying(true);
-      setVideoProgress(0);
-    }
-  };
-
-  const goToNext = () => {
-    if (currentIndex < reels.length - 1) {
-      setCurrentIndex(prev => prev + 1);
-      setIsPlaying(true);
-      setVideoProgress(0);
-    }
-  };
-
   // Handle like with animation
   const handleLike = async () => {
     if (!user) {
@@ -343,8 +326,8 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
   const commentCount = commentsCount[currentReel.id] || 0;
   const viewCount = viewsCount[currentReel.id] || currentReel.view_count || 0;
 
-  // Format view count
-  const formatViewCount = (count: number) => {
+  // Format count - compact style
+  const formatCount = (count: number) => {
     if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
     if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
     return count.toString();
@@ -361,7 +344,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
           ref={containerRef}
         >
           {/* Progress bar at top */}
-          <div className="absolute top-0 left-0 right-0 z-50 h-1 bg-white/20">
+          <div className="absolute top-0 left-0 right-0 z-50 h-0.5 bg-white/20">
             <motion.div
               className="h-full bg-white"
               style={{ width: `${videoProgress}%` }}
@@ -371,34 +354,10 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-6 left-4 z-50 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center hover:bg-black/50 transition-colors"
+            className="absolute top-4 left-3 z-50 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center"
           >
-            <X className="w-6 h-6 text-white" />
+            <X className="w-5 h-5 text-white" />
           </button>
-
-          {/* Navigation arrows - Desktop */}
-          <div className="hidden md:flex absolute right-6 top-1/2 -translate-y-1/2 flex-col gap-4 z-40">
-            <button
-              onClick={goToPrev}
-              disabled={currentIndex === 0}
-              className={cn(
-                "w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-colors",
-                currentIndex === 0 && "opacity-30 pointer-events-none"
-              )}
-            >
-              <ChevronUp className="w-6 h-6 text-white" />
-            </button>
-            <button
-              onClick={goToNext}
-              disabled={currentIndex === reels.length - 1}
-              className={cn(
-                "w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-colors",
-                currentIndex === reels.length - 1 && "opacity-30 pointer-events-none"
-              )}
-            >
-              <ChevronDown className="w-6 h-6 text-white" />
-            </button>
-          </div>
 
           {/* Video container with swipe */}
           <motion.div
@@ -431,22 +390,22 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
                     exit={{ opacity: 0, scale: 0.5 }}
                     className="absolute inset-0 flex items-center justify-center pointer-events-none"
                   >
-                    <div className="w-20 h-20 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                      <Play className="w-10 h-10 text-white fill-white ml-1" />
+                    <div className="w-16 h-16 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                      <Play className="w-8 h-8 text-white fill-white ml-1" />
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            {/* Right side actions - TikTok style */}
-            <div className="absolute right-3 bottom-32 flex flex-col items-center gap-5 z-30">
+            {/* Right side actions - Facebook Reels style (smaller, aligned) */}
+            <div className="absolute right-2 bottom-24 flex flex-col items-center gap-4 z-30">
               {/* User avatar with follow button */}
-              <div className="relative mb-2">
+              <div className="relative mb-1">
                 <img
                   src={currentReel.user?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
                   alt={currentReel.user?.username || "User"}
-                  className="w-12 h-12 rounded-full object-cover border-2 border-white cursor-pointer"
+                  className="w-10 h-10 rounded-full object-cover border-2 border-white cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/streamer/${currentReel.user_id}`);
@@ -456,9 +415,9 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
                 {user && user.id !== currentReel.user_id && !isFollowing[currentReel.user_id] && (
                   <button
                     onClick={(e) => { e.stopPropagation(); handleFollow(); }}
-                    className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-primary flex items-center justify-center border-2 border-black"
+                    className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-primary flex items-center justify-center border-2 border-black"
                   >
-                    <UserPlus className="w-3 h-3 text-white" />
+                    <UserPlus className="w-2.5 h-2.5 text-white" />
                   </button>
                 )}
               </div>
@@ -466,69 +425,61 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
               {/* Like */}
               <button
                 onClick={(e) => { e.stopPropagation(); handleLike(); }}
-                className="flex flex-col items-center gap-1"
+                className="flex flex-col items-center"
               >
                 <motion.div 
-                  className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center"
+                  className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center"
                   whileTap={{ scale: 0.9 }}
                 >
                   <Heart className={cn(
-                    "w-7 h-7 transition-colors",
+                    "w-5 h-5 transition-colors",
                     likeData.isLiked ? "fill-red-500 text-red-500" : "text-white"
                   )} />
                 </motion.div>
-                <span className="text-white text-xs font-semibold">{likeData.count}</span>
+                <span className="text-white text-[10px] font-medium mt-0.5">{formatCount(likeData.count)}</span>
               </button>
 
               {/* Comments */}
               <button
                 onClick={(e) => { e.stopPropagation(); setShowComments(true); }}
-                className="flex flex-col items-center gap-1"
+                className="flex flex-col items-center"
               >
-                <div className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center">
-                  <MessageCircle className="w-7 h-7 text-white" />
+                <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                  <MessageCircle className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-white text-xs font-semibold">{commentCount}</span>
+                <span className="text-white text-[10px] font-medium mt-0.5">{formatCount(commentCount)}</span>
               </button>
-
-              {/* View count */}
-              <div className="flex flex-col items-center gap-1">
-                <div className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center">
-                  <Eye className="w-7 h-7 text-white" />
-                </div>
-                <span className="text-white text-xs font-semibold">{formatViewCount(viewCount)}</span>
-              </div>
 
               {/* Bookmark */}
               <button
                 onClick={(e) => { e.stopPropagation(); toast({ title: "Saved!" }); }}
-                className="flex flex-col items-center gap-1"
+                className="flex flex-col items-center"
               >
-                <div className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center">
-                  <Bookmark className="w-7 h-7 text-white" />
+                <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                  <Bookmark className="w-5 h-5 text-white" />
                 </div>
               </button>
 
               {/* Share */}
               <button
                 onClick={(e) => { e.stopPropagation(); handleShare(); }}
-                className="flex flex-col items-center gap-1"
+                className="flex flex-col items-center"
               >
-                <div className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center">
-                  <Share2 className="w-7 h-7 text-white" />
+                <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                  <Share2 className="w-5 h-5 text-white" />
                 </div>
               </button>
 
-              {/* Mute/Unmute */}
+              {/* Mute/Unmute - aligned with volume */}
               <button
                 onClick={(e) => { e.stopPropagation(); setIsMuted(!isMuted); }}
                 className="flex flex-col items-center"
               >
-                <div className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
                   {isMuted ? (
-                    <VolumeX className="w-5 h-5 text-white" />
+                    <VolumeX className="w-4 h-4 text-white" />
                   ) : (
-                    <Volume2 className="w-5 h-5 text-white" />
+                    <Volume2 className="w-4 h-4 text-white" />
                   )}
                 </div>
               </button>
@@ -537,14 +488,14 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
               <motion.div
                 animate={{ rotate: isPlaying ? 360 : 0 }}
                 transition={{ duration: 3, repeat: isPlaying ? Infinity : 0, ease: "linear" }}
-                className="w-12 h-12 rounded-full bg-gradient-to-r from-gray-800 to-gray-600 flex items-center justify-center border-4 border-gray-700"
+                className="w-10 h-10 rounded-full bg-gradient-to-r from-gray-800 to-gray-600 flex items-center justify-center border-2 border-gray-700"
               >
-                <Music2 className="w-5 h-5 text-white" />
+                <Music2 className="w-4 h-4 text-white" />
               </motion.div>
             </div>
 
-            {/* Bottom info - TikTok style - aligned with volume button */}
-            <div className="absolute left-4 bottom-32 right-24 space-y-2 z-20">
+            {/* Bottom info - aligned with volume button */}
+            <div className="absolute left-3 bottom-24 right-20 space-y-1.5 z-20">
               {/* User info */}
               <div 
                 className="flex items-center gap-2 cursor-pointer"
@@ -554,36 +505,43 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
                   onClose();
                 }}
               >
-                <span className="text-white font-bold text-base">
+                <span className="text-white font-semibold text-sm">
                   @{currentReel.user?.username || "anonymous"}
                 </span>
                 {isFollowing[currentReel.user_id] && (
-                  <span className="text-xs text-white/60 px-2 py-0.5 bg-white/10 rounded-full">Following</span>
+                  <span className="text-[10px] text-white/60 px-1.5 py-0.5 bg-white/10 rounded-full">Following</span>
                 )}
               </div>
 
               {/* Caption with hashtags */}
               {currentReel.caption && (
-                <div className="text-white text-sm leading-relaxed">
+                <div className="text-white text-xs leading-relaxed line-clamp-2">
                   <HashtagText text={currentReel.caption} />
                 </div>
               )}
 
               {/* Music info bar */}
-              <div className="flex items-center gap-2 overflow-hidden">
-                <Music2 className="w-4 h-4 text-white flex-shrink-0" />
+              <div className="flex items-center gap-1.5 overflow-hidden">
+                <Music2 className="w-3 h-3 text-white flex-shrink-0" />
                 <motion.div
                   animate={{ x: [-100, 200] }}
                   transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                  className="text-white text-sm whitespace-nowrap"
+                  className="text-white text-[11px] whitespace-nowrap"
                 >
                   Original sound - @{currentReel.user?.username || "user"}
                 </motion.div>
               </div>
 
-              {/* Reel counter */}
-              <div className="text-white/50 text-xs">
-                {currentIndex + 1} / {reels.length} • {formatDistanceToNow(new Date(currentReel.created_at), { addSuffix: true })}
+              {/* View count & counter */}
+              <div className="flex items-center gap-2 text-white/60 text-[10px]">
+                <div className="flex items-center gap-1">
+                  <Eye className="w-3 h-3" />
+                  <span>{formatCount(viewCount)} views</span>
+                </div>
+                <span>•</span>
+                <span>{currentIndex + 1}/{reels.length}</span>
+                <span>•</span>
+                <span>{formatDistanceToNow(new Date(currentReel.created_at), { addSuffix: true })}</span>
               </div>
             </div>
           </motion.div>
