@@ -97,6 +97,27 @@ export const useForYouAlgorithm = () => {
     fetchUserInterests();
   }, [user, fetchUserInterests]);
 
+  // Update hashtag interests when interacting with a reel
+  const updateHashtagInterests = useCallback(async (
+    reelId: string,
+    action: "view" | "like" | "comment" | "follow"
+  ) => {
+    if (!user) return;
+
+    // Get hashtags for this reel
+    const { data: reelHashtags } = await supabase
+      .from("reel_hashtags")
+      .select("hashtag_id")
+      .eq("reel_id", reelId);
+
+    if (reelHashtags && reelHashtags.length > 0) {
+      // Update interest for each hashtag
+      for (const rh of reelHashtags) {
+        await updateUserInterest("hashtag", rh.hashtag_id, action);
+      }
+    }
+  }, [user, updateUserInterest]);
+
   // Calculate relevance score for a reel based on user interests
   const calculateReelScore = useCallback((reel: Reel, reelHashtags: string[]): number => {
     let score = 0;
@@ -117,9 +138,9 @@ export const useForYouAlgorithm = () => {
         score += interest.interest_score * 3;
       }
 
-      // Check hashtag match
+      // Check hashtag match - now properly tracking hashtag interests
       if (interest.hashtag_id && reelHashtags.includes(interest.hashtag_id)) {
-        score += interest.interest_score * 2;
+        score += interest.interest_score * 2.5;
       }
     }
 
@@ -185,7 +206,7 @@ export const useForYouAlgorithm = () => {
     return scoredReels;
   }, [calculateReelScore]);
 
-  // Record a view
+  // Record a view and update hashtag interests
   const recordView = useCallback(async (reelId: string, watchDuration: number, completed: boolean) => {
     await supabase.from("reel_views").insert({
       reel_id: reelId,
@@ -193,11 +214,17 @@ export const useForYouAlgorithm = () => {
       watch_duration: watchDuration,
       completed
     });
-  }, [user]);
+
+    // Update hashtag interests for views (lower weight for views)
+    if (user && watchDuration > 3) { // Only track if watched more than 3 seconds
+      await updateHashtagInterests(reelId, "view");
+    }
+  }, [user, updateHashtagInterests]);
 
   return {
     getForYouFeed,
     updateUserInterest,
+    updateHashtagInterests,
     recordView,
     userInterests
   };
