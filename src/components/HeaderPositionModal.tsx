@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, RotateCcw, Move } from "lucide-react";
+import { X, Check, RotateCcw, Move, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface HeaderPositionModalProps {
@@ -23,6 +23,7 @@ export const HeaderPositionModal = ({
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [scale, setScale] = useState(1);
 
   // Header aspect ratio 16:5
@@ -57,6 +58,7 @@ export const HeaderPositionModal = ({
       x: (containerWidth - scaledWidth) / 2,
       y: (containerHeight - scaledHeight) / 2,
     });
+    setImageLoaded(true);
   }, [aspectRatio]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -203,13 +205,25 @@ export const HeaderPositionModal = ({
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border">
-            <button onClick={onClose}>
-              <X className="w-6 h-6 text-foreground" />
+            <button onClick={onClose} className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors">
+              <X className="w-5 h-5 text-foreground" />
             </button>
             <h2 className="text-lg font-semibold text-foreground">Position Header</h2>
-            <button onClick={handleReset}>
-              <RotateCcw className="w-5 h-5 text-muted-foreground" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={handleReset}
+                className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
+              >
+                <RotateCcw className="w-4 h-4 text-muted-foreground" />
+              </button>
+              <button 
+                onClick={handleSave}
+                disabled={!imageLoaded}
+                className="w-10 h-10 rounded-full bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                <Save className="w-4 h-4 text-primary-foreground" />
+              </button>
+            </div>
           </div>
 
           {/* Instructions */}

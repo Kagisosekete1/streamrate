@@ -13,6 +13,7 @@ import { ProfilePreviewModal } from "@/components/ProfilePreviewModal";
 import { HeaderPositionModal } from "@/components/HeaderPositionModal";
 import { ReelViewer } from "@/components/ReelViewer";
 import { ProfileContentGrid } from "@/components/ProfileContentGrid";
+import { FollowersModal } from "@/components/FollowersModal";
 
 interface Post {
   id: string;
@@ -69,6 +70,8 @@ const Profile = () => {
   const [reels, setReels] = useState<any[]>([]);
   const [showReelViewer, setShowReelViewer] = useState(false);
   const [reelViewerIndex, setReelViewerIndex] = useState(0);
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [followersModalType, setFollowersModalType] = useState<"followers" | "following">("followers");
 
 
   useEffect(() => {
@@ -648,14 +651,26 @@ const Profile = () => {
             transition={{ delay: 0.1 }}
             className="flex justify-center gap-8 mt-6"
           >
-            <div className="text-center">
+            <button 
+              className="text-center hover:opacity-80 transition-opacity"
+              onClick={() => {
+                setFollowersModalType("followers");
+                setShowFollowersModal(true);
+              }}
+            >
               <span className="text-lg font-bold text-foreground">{followersCount}</span>
               <p className="text-xs text-muted-foreground">Followers</p>
-            </div>
-            <div className="text-center">
+            </button>
+            <button 
+              className="text-center hover:opacity-80 transition-opacity"
+              onClick={() => {
+                setFollowersModalType("following");
+                setShowFollowersModal(true);
+              }}
+            >
               <span className="text-lg font-bold text-foreground">{followingCount}</span>
               <p className="text-xs text-muted-foreground">Following</p>
-            </div>
+            </button>
             <div className="text-center">
               <span className="text-lg font-bold text-foreground">{posts.length}</span>
               <p className="text-xs text-muted-foreground">Posts</p>
@@ -862,6 +877,16 @@ const Profile = () => {
         isOpen={showReelViewer}
         onClose={() => setShowReelViewer(false)}
       />
+
+      {/* Followers Modal */}
+      {user && (
+        <FollowersModal
+          isOpen={showFollowersModal}
+          onClose={() => setShowFollowersModal(false)}
+          userId={user.id}
+          type={followersModalType}
+        />
+      )}
 
       <BottomNav />
     </div>
