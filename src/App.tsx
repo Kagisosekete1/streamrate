@@ -17,6 +17,7 @@ import Notifications from "./pages/Notifications";
 import Reels from "./pages/Reels";
 import Hashtags from "./pages/Hashtags";
 import ReelAnalytics from "./pages/ReelAnalytics";
+import CreateReel from "./pages/CreateReel";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/create-post" element={<CreatePost />} />
+            <Route path="/create-reel" element={<CreateReel />} />
             <Route path="/post/:id" element={<PostDetail />} />
             <Route path="/reels" element={<Reels />} />
             <Route path="/reel/:id" element={<Reels />} />
