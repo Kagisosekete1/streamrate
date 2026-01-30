@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Send, Music2, Bookmark, UserPlus, Eye } from "lucide-react";
+import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Send, Music2, Bookmark, UserPlus, Eye, Layers } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { HashtagText } from "@/components/HashtagText";
 import { useForYouAlgorithm } from "@/hooks/useForYouAlgorithm";
+import { DuetStitchModal } from "@/components/DuetStitchModal";
 
 interface Reel {
   id: string;
@@ -50,6 +51,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
   const [videoProgress, setVideoProgress] = useState(0);
   const [viewsCount, setViewsCount] = useState<Record<string, number>>({});
   const [viewRecorded, setViewRecorded] = useState<Record<string, boolean>>({});
+  const [showDuetStitch, setShowDuetStitch] = useState(false);
   const viewStartTime = useRef<number>(0);
   
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -460,6 +462,18 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
                 </div>
               </button>
 
+              {/* Duet/Stitch */}
+              {user && user.id !== currentReel.user_id && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowDuetStitch(true); }}
+                  className="flex flex-col items-center"
+                >
+                  <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                    <Layers className="w-5 h-5 text-white" />
+                  </div>
+                </button>
+              )}
+
               {/* Share */}
               <button
                 onClick={(e) => { e.stopPropagation(); handleShare(); }}
@@ -627,6 +641,16 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Duet/Stitch Modal */}
+          <DuetStitchModal
+            isOpen={showDuetStitch}
+            onClose={() => setShowDuetStitch(false)}
+            reelId={currentReel.id}
+            reelVideoUrl={currentReel.video_url}
+            reelCaption={currentReel.caption || undefined}
+            creatorUsername={currentReel.user?.username || undefined}
+          />
         </motion.div>
       )}
     </AnimatePresence>

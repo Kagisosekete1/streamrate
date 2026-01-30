@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, LogOut, Edit2, Users, Star, MessageCircle, Camera, X, Trash2, ImageIcon, Eye, Grid3X3, Image, Film, Bookmark } from "lucide-react";
+import { Settings, LogOut, Edit2, Users, Star, MessageCircle, Camera, X, ImageIcon, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,22 +8,11 @@ import { BottomNav } from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { formatDistanceToNow } from "date-fns";
 import { ImageUploadModal } from "@/components/ImageUploadModal";
 import { ProfilePreviewModal } from "@/components/ProfilePreviewModal";
 import { HeaderPositionModal } from "@/components/HeaderPositionModal";
 import { ReelViewer } from "@/components/ReelViewer";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ProfileContentGrid } from "@/components/ProfileContentGrid";
 
 interface Post {
   id: string;
@@ -81,21 +70,6 @@ const Profile = () => {
   const [showReelViewer, setShowReelViewer] = useState(false);
   const [reelViewerIndex, setReelViewerIndex] = useState(0);
 
-  // Filter posts based on active tab
-  const filteredContent = useMemo(() => {
-    switch (activeTab) {
-      case "posts":
-        return posts;
-      case "photos":
-        return posts.filter(p => p.image_url);
-      case "reels":
-        return reels;
-      case "saved":
-        return savedPosts;
-      default:
-        return posts;
-    }
-  }, [activeTab, posts, savedPosts, reels]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -702,230 +676,23 @@ const Profile = () => {
         </section>
       )}
 
-      {/* Profile Tabs */}
-      <section className="px-4 py-2">
-        <div className="flex border-b border-border">
-          <button
-            onClick={() => setActiveTab("posts")}
-            className={`flex-1 flex flex-col items-center gap-1 py-3 border-b-2 transition-colors ${
-              activeTab === "posts" 
-                ? "border-primary text-primary" 
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Grid3X3 className="w-5 h-5" />
-            <span className="text-xs font-medium">Posts</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("photos")}
-            className={`flex-1 flex flex-col items-center gap-1 py-3 border-b-2 transition-colors ${
-              activeTab === "photos" 
-                ? "border-primary text-primary" 
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Image className="w-5 h-5" />
-            <span className="text-xs font-medium">Photo's</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("reels")}
-            className={`flex-1 flex flex-col items-center gap-1 py-3 border-b-2 transition-colors ${
-              activeTab === "reels" 
-                ? "border-primary text-primary" 
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Film className="w-5 h-5" />
-            <span className="text-xs font-medium">Reels</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("saved")}
-            className={`flex-1 flex flex-col items-center gap-1 py-3 border-b-2 transition-colors ${
-              activeTab === "saved" 
-                ? "border-primary text-primary" 
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Bookmark className="w-5 h-5" />
-            <span className="text-xs font-medium">Saved</span>
-          </button>
-        </div>
-      </section>
-
-      {/* Tab Content */}
-      <section className="px-4 py-4">
-        {filteredContent.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            {activeTab === "posts" && (
-              <>
-                <p>No posts yet</p>
-                <Button
-                  variant="gaming"
-                  size="sm"
-                  className="mt-4"
-                  onClick={() => navigate("/create-post")}
-                >
-                  Create your first post
-                </Button>
-              </>
-            )}
-            {activeTab === "photos" && <p>No photos yet</p>}
-            {activeTab === "reels" && <p>No reels yet</p>}
-            {activeTab === "saved" && <p>No saved posts yet</p>}
-          </div>
-        ) : (
-          <div className={activeTab === "photos" || activeTab === "reels" ? "grid grid-cols-3 gap-1" : "space-y-4"}>
-            {activeTab === "photos" ? (
-              // Photo grid view
-              filteredContent.map((post) => (
-                <motion.div
-                  key={post.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="aspect-square cursor-pointer relative group"
-                  onClick={() => navigate(`/post/${post.id}`)}
-                >
-                  <img
-                    src={post.image_url!}
-                    alt="Photo"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 text-white text-sm">
-                    <span>❤️ {post.likes_count}</span>
-                    <span>💬 {post.comments_count}</span>
-                  </div>
-                </motion.div>
-              ))
-            ) : activeTab === "reels" ? (
-              // Reels grid view with play on tap
-              filteredContent.map((reel: any, index: number) => (
-                <motion.div
-                  key={reel.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="aspect-[9/16] cursor-pointer relative group rounded-lg overflow-hidden"
-                  onClick={() => {
-                    setReelViewerIndex(index);
-                    setShowReelViewer(true);
-                  }}
-                >
-                  <video
-                    src={reel.video_url}
-                    className="w-full h-full object-cover"
-                    muted
-                    loop
-                    playsInline
-                    onMouseEnter={(e) => e.currentTarget.play()}
-                    onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
-                  />
-                  {/* Play icon overlay */}
-                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-100 group-hover:bg-black/40 transition-colors">
-                    <div className="w-12 h-12 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center">
-                      <Film className="w-6 h-6 text-white" />
-                    </div>
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
-                    <div className="flex items-center gap-1 text-white text-xs">
-                      <Film className="w-3 h-3" />
-                      <span>{reel.duration}s</span>
-                    </div>
-                  </div>
-                </motion.div>
-              ))
-            ) : (
-              // List view for posts and saved
-              filteredContent.map((post) => (
-                <motion.div
-                  key={post.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-card rounded-xl p-4 border border-border/50"
-                >
-                  {/* Show author for saved posts */}
-                  {activeTab === "saved" && (post as SavedPost).author && (
-                    <div 
-                      className="flex items-center gap-2 mb-3 cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/streamer/${(post as SavedPost).user_id}`);
-                      }}
-                    >
-                      <img
-                        src={(post as SavedPost).author?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"}
-                        alt={(post as SavedPost).author?.username || "User"}
-                        className="w-8 h-8 rounded-full object-cover"
-                      />
-                      <span className="text-sm font-medium text-foreground">
-                        @{(post as SavedPost).author?.username || "user"}
-                      </span>
-                    </div>
-                  )}
-                  <div 
-                    className="cursor-pointer"
-                    onClick={() => navigate(`/post/${post.id}`)}
-                  >
-                    <p className="text-foreground/90 text-sm leading-relaxed mb-4">{post.content}</p>
-                    {post.image_url && (
-                      <img
-                        src={post.image_url}
-                        alt="Post"
-                        className="w-full rounded-lg mb-4 max-h-64 object-cover"
-                      />
-                    )}
-                    {post.video_url && (
-                      <video
-                        src={post.video_url}
-                        controls
-                        className="w-full rounded-lg mb-4 max-h-64"
-                      />
-                    )}
-                  </div>
-                  <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-                    <span>❤️ {post.likes_count}</span>
-                    <span>💬 {post.comments_count}</span>
-                    <span>
-                      {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                    </span>
-                    {/* Only show delete for own posts (not saved) */}
-                    {activeTab !== "saved" && (
-                      <div className="ml-auto">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <button
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-muted-foreground hover:text-destructive transition-colors p-1"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Post</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete this post? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeletePost(post.id)}
-                                disabled={deletingPostId === post.id}
-                                className="bg-destructive hover:bg-destructive/90"
-                              >
-                                {deletingPostId === post.id ? "Deleting..." : "Delete"}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              ))
-            )}
-          </div>
-        )}
-      </section>
+      {/* Profile Content Grid */}
+      <ProfileContentGrid
+        posts={posts}
+        savedPosts={savedPosts}
+        reels={reels}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onReelClick={(index) => {
+          setReelViewerIndex(index);
+          setShowReelViewer(true);
+        }}
+        onPostDelete={handleDeletePost}
+        onReelDelete={(reelId) => {
+          setReels(reels.filter(r => r.id !== reelId));
+        }}
+        isOwnProfile={true}
+      />
 
       {/* Edit Profile Modal - Matching Settings style */}
       <AnimatePresence>
