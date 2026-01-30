@@ -25,8 +25,10 @@ interface Review {
   stars: number;
   review_text: string | null;
   created_at: string;
+  fan_id: string;
   profiles: {
     full_name: string | null;
+    username: string | null;
     avatar_url: string | null;
   } | null;
 }
@@ -83,7 +85,7 @@ const StreamerProfile = () => {
       const fanIds = [...new Set(ratingsData.map((r) => r.fan_id))];
       const { data: profilesData } = await supabase
         .from("profiles")
-        .select("id, full_name, avatar_url")
+        .select("id, full_name, username, avatar_url")
         .in("id", fanIds);
 
       const profilesMap = new Map(
@@ -97,8 +99,9 @@ const StreamerProfile = () => {
           stars: r.stars,
           review_text: r.review_text,
           created_at: r.created_at,
+          fan_id: r.fan_id,
           profiles: profile
-            ? { full_name: profile.full_name, avatar_url: profile.avatar_url }
+            ? { full_name: profile.full_name, username: profile.username, avatar_url: profile.avatar_url }
             : null,
         };
       });
@@ -431,10 +434,10 @@ const StreamerProfile = () => {
                     alt={review.profiles?.full_name || "User"}
                     className="w-10 h-10 rounded-full object-cover"
                   />
-                  <div className="flex-1">
+                    <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium text-foreground">
-                        {review.profiles?.full_name || "Anonymous"}
+                        {review.profiles?.username || review.profiles?.full_name || "Anonymous"}
                       </h4>
                       <StarRating rating={review.stars} size="sm" />
                     </div>
