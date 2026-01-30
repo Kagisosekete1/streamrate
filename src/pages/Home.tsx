@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { BottomNav } from "@/components/BottomNav";
 import { SearchBar } from "@/components/SearchBar";
 import { TrendingStreamersSection } from "@/components/TrendingStreamersSection";
+import { TrendingHashtags } from "@/components/TrendingHashtags";
 import { PostCard } from "@/components/PostCard";
 import { NotificationBell } from "@/components/NotificationBell";
 import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
@@ -365,6 +366,9 @@ const Home = () => {
         <TrendingStreamersSection 
           trendingStreamers={trendingStreamers} 
         />
+
+        {/* Trending Hashtags */}
+        <TrendingHashtags />
 
         {/* People You May Know */}
         {user && <PeopleYouMayKnow />}

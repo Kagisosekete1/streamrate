@@ -83,6 +83,30 @@ const Profile = () => {
       fetchSavedPosts();
       fetchUserReels();
     }
+
+    // Set up realtime subscription for profile changes
+    const profileChannel = supabase
+      .channel("profile-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+        },
+        () => {
+          // Refresh user data when any profile changes
+          if (user) {
+            fetchUserData();
+            fetchSavedPosts();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(profileChannel);
+    };
   }, [user, loading]);
 
   const fetchUserReels = async () => {
