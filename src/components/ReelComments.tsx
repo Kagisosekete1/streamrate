@@ -1,0 +1,361 @@
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Send, Heart, MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { formatDistanceToNow } from "date-fns";
+import { useNavigate } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { EmojiPicker } from "@/components/EmojiPicker";
+import { cn } from "@/lib/utils";
+
+interface Comment {
+  id: string;
+  content: string;
+  user_id: string;
+  created_at: string;
+  parent_id: string | null;
+  profiles: {
+    username: string | null;
+    avatar_url: string | null;
+  } | null;
+  likes_count?: number;
+  is_liked?: boolean;
+  replies?: Comment[];
+}
+
+interface ReelCommentsProps {
+  isOpen: boolean;
+  onClose: () => void;
+  reelId: string;
+  commentCount: number;
+  onCommentAdded: () => void;
+}
+
+export const ReelComments = ({ 
+  isOpen, 
+  onClose, 
+  reelId, 
+  commentCount,
+  onCommentAdded 
+}: ReelCommentsProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
+  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+
+  const fetchComments = useCallback(async () => {
+    setLoading(true);
+    
+    // Fetch top-level comments
+    const { data: commentsData } = await supabase
+      .from("reel_comments")
+      .select("*")
+      .eq("reel_id", reelId)
+      .is("parent_id", null)
+      .order("created_at", { ascending: false });
+
+    if (commentsData) {
+      const enrichedComments = await Promise.all(
+        commentsData.map(async (comment) => {
+          // Get profile
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("username, avatar_url")
+            .eq("id", comment.user_id)
+            .maybeSingle();
+
+          // Get replies count
+          const { count: repliesCount } = await supabase
+            .from("reel_comments")
+            .select("*", { count: "exact", head: true })
+            .eq("parent_id", comment.id);
+
+          return { 
+            ...comment, 
+            profiles: profileData,
+            replies_count: repliesCount || 0
+          };
+        })
+      );
+      setComments(enrichedComments);
+    }
+    
+    setLoading(false);
+  }, [reelId]);
+
+  const fetchReplies = async (parentId: string) => {
+    const { data: repliesData } = await supabase
+      .from("reel_comments")
+      .select("*")
+      .eq("parent_id", parentId)
+      .order("created_at", { ascending: true });
+
+    if (repliesData) {
+      const enrichedReplies = await Promise.all(
+        repliesData.map(async (reply) => {
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("username, avatar_url")
+            .eq("id", reply.user_id)
+            .maybeSingle();
+          return { ...reply, profiles: profileData };
+        })
+      );
+      
+      setComments(prev => prev.map(comment => 
+        comment.id === parentId 
+          ? { ...comment, replies: enrichedReplies }
+          : comment
+      ));
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchComments();
+    }
+  }, [isOpen, fetchComments]);
+
+  const handleAddComment = async () => {
+    if (!user) {
+      toast({ title: "Please sign in to comment", variant: "destructive" });
+      return;
+    }
+
+    if (!newComment.trim()) return;
+
+    const { error } = await supabase.from("reel_comments").insert({
+      reel_id: reelId,
+      user_id: user.id,
+      content: newComment.trim(),
+      parent_id: replyingTo?.id || null
+    });
+
+    if (error) {
+      toast({ title: "Failed to add comment", variant: "destructive" });
+      return;
+    }
+
+    setNewComment("");
+    setReplyingTo(null);
+    fetchComments();
+    onCommentAdded();
+  };
+
+  const toggleReplies = (commentId: string) => {
+    const newExpanded = new Set(expandedReplies);
+    if (newExpanded.has(commentId)) {
+      newExpanded.delete(commentId);
+    } else {
+      newExpanded.add(commentId);
+      fetchReplies(commentId);
+    }
+    setExpandedReplies(newExpanded);
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setNewComment(prev => prev + emoji);
+  };
+
+  const handleReply = (comment: Comment) => {
+    setReplyingTo(comment);
+    setNewComment(`@${comment.profiles?.username || "user"} `);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="absolute bottom-0 left-0 right-0 h-[75vh] sm:h-[70vh] bg-card rounded-t-3xl z-50 flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Handle */}
+        <div className="flex justify-center py-3 flex-shrink-0">
+          <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full" />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 pb-3 border-b border-border flex-shrink-0">
+          <h3 className="text-lg font-bold text-foreground">
+            {commentCount} Comments
+          </h3>
+          <button onClick={onClose} className="p-2 -mr-2">
+            <X className="w-6 h-6 text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* Comments list - Scrollable */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : comments.length === 0 ? (
+            <div className="text-center py-12">
+              <MessageCircle className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-muted-foreground">No comments yet</p>
+              <p className="text-sm text-muted-foreground/60">Be the first to comment!</p>
+            </div>
+          ) : (
+            comments.map((comment) => (
+              <div key={comment.id} className="space-y-2">
+                {/* Main comment */}
+                <div className="flex items-start gap-3">
+                  <img
+                    src={comment.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+                    alt={comment.profiles?.username || "User"}
+                    className="w-9 h-9 rounded-full object-cover cursor-pointer flex-shrink-0"
+                    onClick={() => navigate(`/streamer/${comment.user_id}`)}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span 
+                        className="font-semibold text-foreground text-sm cursor-pointer hover:underline"
+                        onClick={() => navigate(`/streamer/${comment.user_id}`)}
+                      >
+                        {comment.profiles?.username || "Anonymous"}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                      </span>
+                    </div>
+                    <p className="text-foreground text-sm mt-1 break-words">
+                      {comment.content}
+                    </p>
+                    
+                    {/* Comment actions */}
+                    <div className="flex items-center gap-4 mt-2">
+                      <button 
+                        onClick={() => handleReply(comment)}
+                        className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        Reply
+                      </button>
+                      
+                      {(comment as any).replies_count > 0 && (
+                        <button
+                          onClick={() => toggleReplies(comment.id)}
+                          className="flex items-center gap-1 text-xs text-primary"
+                        >
+                          {expandedReplies.has(comment.id) ? (
+                            <>
+                              <ChevronUp className="w-3 h-3" />
+                              Hide replies
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="w-3 h-3" />
+                              {(comment as any).replies_count} {(comment as any).replies_count === 1 ? "reply" : "replies"}
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Replies */}
+                <AnimatePresence>
+                  {expandedReplies.has(comment.id) && comment.replies && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="ml-12 space-y-3 overflow-hidden"
+                    >
+                      {comment.replies.map((reply) => (
+                        <div key={reply.id} className="flex items-start gap-3">
+                          <img
+                            src={reply.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+                            alt={reply.profiles?.username || "User"}
+                            className="w-7 h-7 rounded-full object-cover cursor-pointer flex-shrink-0"
+                            onClick={() => navigate(`/streamer/${reply.user_id}`)}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span 
+                                className="font-semibold text-foreground text-xs cursor-pointer hover:underline"
+                                onClick={() => navigate(`/streamer/${reply.user_id}`)}
+                              >
+                                {reply.profiles?.username || "Anonymous"}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
+                              </span>
+                            </div>
+                            <p className="text-foreground text-sm mt-0.5 break-words">
+                              {reply.content}
+                            </p>
+                            <button 
+                              onClick={() => handleReply(reply)}
+                              className="text-xs text-muted-foreground hover:text-primary transition-colors mt-1"
+                            >
+                              Reply
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Comment input - Fixed at bottom */}
+        <div className="flex-shrink-0 p-4 bg-card border-t border-border safe-area-bottom">
+          {/* Replying indicator */}
+          {replyingTo && (
+            <div className="flex items-center justify-between mb-2 px-1">
+              <span className="text-xs text-muted-foreground">
+                Replying to @{replyingTo.profiles?.username || "user"}
+              </span>
+              <button 
+                onClick={() => {
+                  setReplyingTo(null);
+                  setNewComment("");
+                }}
+                className="text-xs text-primary"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+          
+          <div className="flex items-center gap-2">
+            <EmojiPicker onSelect={handleEmojiSelect} />
+            
+            <Input
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder={replyingTo ? "Write a reply..." : "Add a comment..."}
+              className="flex-1 bg-secondary rounded-full h-11"
+              onKeyDown={(e) => e.key === "Enter" && handleAddComment()}
+            />
+            
+            <button
+              onClick={handleAddComment}
+              disabled={!newComment.trim()}
+              className="w-11 h-11 rounded-full bg-primary flex items-center justify-center disabled:opacity-50 flex-shrink-0"
+            >
+              <Send className="w-5 h-5 text-primary-foreground" />
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};

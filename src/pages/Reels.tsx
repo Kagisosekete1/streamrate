@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Film, Play, Hash, Eye, Sparkles, BarChart3 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -221,7 +221,7 @@ const Reels = () => {
   );
 };
 
-// Reusable Reel Card Component - Facebook Reels style
+// Reusable Reel Card Component - Uses video frame as thumbnail
 const ReelCard = ({ 
   reel, 
   index, 
@@ -232,50 +232,76 @@ const ReelCard = ({
   index: number; 
   onOpen: () => void;
   formatViewCount: (count: number) => string;
-}) => (
-  <motion.div
-    initial={{ opacity: 0, scale: 0.98 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ delay: index * 0.03 }}
-    className="aspect-[9/16] cursor-pointer relative group overflow-hidden bg-secondary"
-    onClick={onOpen}
-  >
-    <video
-      src={reel.video_url}
-      className="w-full h-full object-cover"
-      muted
-      loop
-      playsInline
-      onMouseEnter={(e) => e.currentTarget.play()}
-      onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
-    />
-    {/* Subtle play icon overlay */}
-    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-      <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-        <Play className="w-5 h-5 text-white fill-white ml-0.5" />
-      </div>
-    </div>
-    {/* Bottom gradient info */}
-    <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-gradient-to-t from-black/70 to-transparent">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1 flex-1 min-w-0">
-          <img
-            src={reel.user?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"}
-            alt={reel.user?.username || "User"}
-            className="w-4 h-4 rounded-full object-cover flex-shrink-0 border border-white/30"
-          />
-          <span className="text-white text-[10px] truncate font-medium">
-            {reel.user?.username || "user"}
-          </span>
+}) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isHovering, setIsHovering] = useState(false);
+
+  const handleMouseEnter = () => {
+    setIsHovering(true);
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => {});
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: index * 0.03 }}
+      className="aspect-[9/16] cursor-pointer relative group overflow-hidden bg-secondary rounded-lg"
+      onClick={onOpen}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Video element - shows first frame as thumbnail, plays on hover */}
+      <video
+        ref={videoRef}
+        src={reel.video_url}
+        className="w-full h-full object-cover"
+        muted
+        loop
+        playsInline
+        preload="metadata"
+      />
+      
+      {/* Play icon overlay - shown when not hovering */}
+      <div className={`absolute inset-0 flex items-center justify-center transition-opacity ${isHovering ? 'opacity-0' : 'opacity-100'}`}>
+        <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+          <Play className="w-5 h-5 text-white fill-white ml-0.5" />
         </div>
-        {/* View count */}
-        <div className="flex items-center gap-0.5 text-white/90">
-          <Eye className="w-2.5 h-2.5" />
-          <span className="text-[10px] font-medium">{formatViewCount(reel.view_count || 0)}</span>
+      </div>
+      
+      {/* Bottom gradient info */}
+      <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-gradient-to-t from-black/70 to-transparent">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1 flex-1 min-w-0">
+            <img
+              src={reel.user?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"}
+              alt={reel.user?.username || "User"}
+              className="w-4 h-4 rounded-full object-cover flex-shrink-0 border border-white/30"
+            />
+            <span className="text-white text-[10px] truncate font-medium">
+              {reel.user?.username || "user"}
+            </span>
+          </div>
+          {/* View count */}
+          <div className="flex items-center gap-0.5 text-white/90">
+            <Eye className="w-2.5 h-2.5" />
+            <span className="text-[10px] font-medium">{formatViewCount(reel.view_count || 0)}</span>
+          </div>
         </div>
       </div>
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
 export default Reels;
