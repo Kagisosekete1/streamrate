@@ -50,10 +50,61 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
   const [viewsCount, setViewsCount] = useState<Record<string, number>>({});
   const [viewRecorded, setViewRecorded] = useState<Record<string, boolean>>({});
   const [showDuetStitch, setShowDuetStitch] = useState(false);
+  const [preloadedVideos, setPreloadedVideos] = useState<Record<string, HTMLVideoElement>>({});
   const viewStartTime = useRef<number>(0);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Preload next 2 videos for instant switching
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const preloadVideo = (url: string, reelId: string) => {
+      if (preloadedVideos[reelId]) return; // Already preloaded
+      
+      const video = document.createElement('video');
+      video.src = url;
+      video.preload = 'auto';
+      video.muted = true;
+      video.playsInline = true;
+      // Remove default controls and poster to prevent grey play button
+      video.controls = false;
+      video.setAttribute('webkit-playsinline', 'true');
+      video.setAttribute('x-webkit-airplay', 'allow');
+      
+      // Start loading
+      video.load();
+      
+      setPreloadedVideos(prev => ({
+        ...prev,
+        [reelId]: video
+      }));
+    };
+
+    // Preload next 2 reels
+    for (let i = 1; i <= 2; i++) {
+      const nextIndex = currentIndex + i;
+      if (nextIndex < reels.length) {
+        preloadVideo(reels[nextIndex].video_url, reels[nextIndex].id);
+      }
+    }
+
+    // Also preload previous reel for going back
+    if (currentIndex > 0) {
+      preloadVideo(reels[currentIndex - 1].video_url, reels[currentIndex - 1].id);
+    }
+  }, [currentIndex, isOpen, reels]);
+
+  // Cleanup preloaded videos on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(preloadedVideos).forEach(video => {
+        video.src = '';
+        video.load();
+      });
+    };
+  }, []);
 
   const currentReel = reels[currentIndex];
 
@@ -318,12 +369,19 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
               <video
                 ref={videoRef}
                 src={currentReel.video_url}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain [&::-webkit-media-controls]:hidden [&::-webkit-media-controls-enclosure]:hidden [&::-webkit-media-controls-panel]:hidden [&::-webkit-media-controls-play-button]:hidden [&::-webkit-media-controls-start-playback-button]:!hidden [&::-webkit-media-controls-overlay-play-button]:hidden"
                 loop
                 playsInline
                 muted={isMuted}
                 autoPlay
-                poster="" // Remove poster to use video frame
+                controls={false}
+                preload="auto"
+                poster=""
+                style={{ 
+                  WebkitAppearance: 'none',
+                  // @ts-ignore - vendor prefix
+                  MozAppearance: 'none'
+                }}
               />
 
               {/* Play/Pause overlay */}
