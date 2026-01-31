@@ -127,4 +127,47 @@
   .animate-float {
     animation: float 3s ease-in-out infinite;
   }
+
+  /* Hide all video player default controls and grey play button on mobile */
+  video::-webkit-media-controls {
+    display: none !important;
+  }
+
+  video::-webkit-media-controls-enclosure {
+    display: none !important;
+  }
+
+  video::-webkit-media-controls-panel {
+    display: none !important;
+  }
+
+  video::-webkit-media-controls-play-button {
+    display: none !important;
+  }
+
+  video::-webkit-media-controls-start-playback-button {
+    display: none !important;
+    -webkit-appearance: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  video::-webkit-media-controls-overlay-play-button {
+    display: none !important;
+    opacity: 0 !important;
+  }
+
+  video::-moz-media-controls {
+    display: none !important;
+  }
+
+  /* iOS specific - hide the giant play button overlay */
+  video::slotted::-webkit-media-controls-container {
+    display: none !important;
+  }
+
+  *::-webkit-media-controls-start-playback-button {
+    display: none !important;
+    -webkit-appearance: none !important;
+  }
 }
