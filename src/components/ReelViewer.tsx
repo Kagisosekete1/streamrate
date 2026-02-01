@@ -11,6 +11,8 @@ import { HashtagText } from "@/components/HashtagText";
 import { useForYouAlgorithm } from "@/hooks/useForYouAlgorithm";
 import { DuetStitchModal } from "@/components/DuetStitchModal";
 import { ReelComments } from "@/components/ReelComments";
+import { AvatarZoomModal } from "@/components/AvatarZoomModal";
+import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 
 interface Reel {
   id: string;
@@ -51,6 +53,10 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
   const [viewRecorded, setViewRecorded] = useState<Record<string, boolean>>({});
   const [showDuetStitch, setShowDuetStitch] = useState(false);
   const [preloadedVideos, setPreloadedVideos] = useState<Record<string, HTMLVideoElement>>({});
+  const [showDoubleTapHeart, setShowDoubleTapHeart] = useState(false);
+  const [doubleTapPosition, setDoubleTapPosition] = useState({ x: 0, y: 0 });
+  const [showAvatarZoom, setShowAvatarZoom] = useState(false);
+  const lastTapTime = useRef<number>(0);
   const viewStartTime = useRef<number>(0);
   
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -315,7 +321,41 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
     setIsPlaying(prev => !prev);
   };
 
-  if (!isOpen || !currentReel) return null;
+  // Handle double tap to like
+  const handleVideoTap = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (showComments) return;
+    
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+    
+    if (now - lastTapTime.current < DOUBLE_TAP_DELAY) {
+      // Double tap detected
+      const rect = e.currentTarget.getBoundingClientRect();
+      setDoubleTapPosition({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+      
+      // Show heart animation
+      setShowDoubleTapHeart(true);
+      setTimeout(() => setShowDoubleTapHeart(false), 1000);
+      
+      // Like the reel if not already liked
+      if (!likesData[currentReel.id]?.isLiked) {
+        handleLike();
+      }
+      
+      lastTapTime.current = 0;
+    } else {
+      // Single tap - toggle play/pause after a short delay
+      lastTapTime.current = now;
+      setTimeout(() => {
+        if (lastTapTime.current === now) {
+          togglePlayPause();
+        }
+      }, DOUBLE_TAP_DELAY);
+    }
+  };
 
   const likeData = likesData[currentReel.id] || { count: 0, isLiked: false };
   const commentCount = commentsCount[currentReel.id] || 0;
@@ -364,7 +404,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
             {/* Video */}
             <div 
               className="relative w-full h-full max-w-lg mx-auto flex items-center justify-center"
-              onClick={togglePlayPause}
+              onClick={handleVideoTap}
             >
               <video
                 ref={videoRef}
@@ -377,12 +417,33 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
                 controls={false}
                 preload="auto"
                 poster=""
+                disablePictureInPicture
+                disableRemotePlayback
+                // @ts-ignore - webkit specific
+                webkit-playsinline="true"
+                x-webkit-airplay="deny"
                 style={{ 
                   WebkitAppearance: 'none',
                   // @ts-ignore - vendor prefix
                   MozAppearance: 'none'
                 }}
               />
+
+              {/* Double tap heart animation */}
+              <AnimatePresence>
+                {showDoubleTapHeart && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 1 }}
+                    animate={{ scale: 1.5, opacity: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.8 }}
+                    className="absolute pointer-events-none z-50"
+                    style={{ left: doubleTapPosition.x - 40, top: doubleTapPosition.y - 40 }}
+                  >
+                    <Heart className="w-20 h-20 text-red-500 fill-red-500 drop-shadow-lg" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Play/Pause overlay */}
               <AnimatePresence>
@@ -403,7 +464,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
 
             {/* Right side actions - Facebook Reels style */}
             <div className="absolute right-2 bottom-24 flex flex-col items-center gap-4 z-30">
-              {/* User avatar with follow button */}
+              {/* User avatar with follow button and online indicator */}
               <div className="relative mb-1">
                 <img
                   src={currentReel.user?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
@@ -411,9 +472,14 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
                   className="w-10 h-10 rounded-full object-cover border-2 border-white cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/streamer/${currentReel.user_id}`);
-                    onClose();
+                    setShowAvatarZoom(true);
                   }}
+                />
+                {/* Online indicator */}
+                <OnlineIndicator 
+                  userId={currentReel.user_id} 
+                  className="absolute -bottom-0.5 -right-0.5"
+                  size="sm"
                 />
                 {user && user.id !== currentReel.user_id && !isFollowing[currentReel.user_id] && (
                   <button
@@ -578,6 +644,14 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
             reelVideoUrl={currentReel.video_url}
             reelCaption={currentReel.caption || undefined}
             creatorUsername={currentReel.user?.username || undefined}
+          />
+
+          {/* Avatar Zoom Modal */}
+          <AvatarZoomModal
+            isOpen={showAvatarZoom}
+            onClose={() => setShowAvatarZoom(false)}
+            imageUrl={currentReel.user?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop&crop=face"}
+            username={currentReel.user?.username || undefined}
           />
         </motion.div>
       )}

@@ -9,6 +9,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { ShareMenu } from "@/components/ShareMenu";
 import { EditPostModal } from "@/components/EditPostModal";
+import { AvatarZoomModal } from "@/components/AvatarZoomModal";
+import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,6 +66,7 @@ export const PostCard = ({
   const [isBookmarked, setIsBookmarked] = useState(initialIsBookmarked);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showAvatarZoom, setShowAvatarZoom] = useState(false);
   const [content, setContent] = useState(initialContent);
   const [imageUrl, setImageUrl] = useState(initialImageUrl);
   const [wasEdited, setWasEdited] = useState(
@@ -157,17 +160,27 @@ export const PostCard = ({
       onClick={() => navigate(`/post/${id}`)}
     >
       {/* Header */}
-      <Link
-        to={`/streamer/${streamerId}`}
-        className="flex items-center gap-3 mb-3"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <img
-          src={streamerPicture}
-          alt={streamerName}
-          className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20"
-        />
-        <div>
+      <div className="flex items-center gap-3 mb-3">
+        <div className="relative">
+          <img
+            src={streamerPicture}
+            alt={streamerName}
+            className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20 cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowAvatarZoom(true);
+            }}
+          />
+          <OnlineIndicator 
+            userId={streamerId} 
+            className="absolute -bottom-0.5 -right-0.5"
+            size="sm"
+          />
+        </div>
+        <Link
+          to={`/streamer/${streamerId}`}
+          onClick={(e) => e.stopPropagation()}
+        >
           <h4 className="font-semibold text-foreground text-sm">{streamerName}</h4>
           <div className="flex items-center gap-2">
             <p className="text-xs text-muted-foreground">
@@ -177,8 +190,8 @@ export const PostCard = ({
               <span className="text-xs text-muted-foreground italic">• Edited</span>
             )}
           </div>
-        </div>
-      </Link>
+        </Link>
+      </div>
 
       {/* Content */}
       <p className="text-foreground/90 text-sm leading-relaxed mb-4">{content}</p>
@@ -303,6 +316,14 @@ export const PostCard = ({
           setWasEdited(true);
           onUpdate?.();
         }}
+      />
+
+      {/* Avatar Zoom Modal */}
+      <AvatarZoomModal
+        isOpen={showAvatarZoom}
+        onClose={() => setShowAvatarZoom(false)}
+        imageUrl={streamerPicture}
+        username={streamerName}
       />
     </motion.div>
   );
