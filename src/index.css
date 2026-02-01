@@ -128,6 +128,15 @@
     animation: float 3s ease-in-out infinite;
   }
 
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s infinite linear;
+  }
+
   /* Hide all video player default controls and grey play button on mobile */
   video::-webkit-media-controls {
     display: none !important;

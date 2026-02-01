@@ -8,6 +8,8 @@ import { BottomNav } from "@/components/BottomNav";
 import { useForYouAlgorithm } from "@/hooks/useForYouAlgorithm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
+import { ReelSkeleton } from "@/components/ReelSkeleton";
+import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 
 interface Reel {
   id: string;
@@ -98,8 +100,29 @@ const Reels = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-background pb-20">
+        {/* Header skeleton */}
+        <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="w-5 h-5 bg-secondary rounded animate-pulse" />
+            <div className="w-12 h-5 bg-secondary rounded animate-pulse" />
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 bg-secondary rounded animate-pulse" />
+            </div>
+          </div>
+        </header>
+        
+        {/* Tabs skeleton */}
+        <div className="sticky top-14 z-30 bg-background/80 backdrop-blur-lg px-4 py-2">
+          <div className="h-9 w-full max-w-xs mx-auto bg-secondary rounded-lg animate-pulse" />
+        </div>
+        
+        {/* Grid skeleton */}
+        <div className="p-1.5">
+          <ReelSkeleton count={9} />
+        </div>
+        
+        <BottomNav />
       </div>
     );
   }
@@ -266,11 +289,16 @@ const ReelCard = ({
       <video
         ref={videoRef}
         src={reel.video_url}
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover [&::-webkit-media-controls]:hidden [&::-webkit-media-controls-enclosure]:hidden [&::-webkit-media-controls-panel]:hidden [&::-webkit-media-controls-play-button]:hidden [&::-webkit-media-controls-start-playback-button]:!hidden [&::-webkit-media-controls-overlay-play-button]:hidden"
         muted
         loop
         playsInline
         preload="metadata"
+        controls={false}
+        poster=""
+        disablePictureInPicture
+        // @ts-ignore - webkit specific
+        webkit-playsinline="true"
       />
       
       {/* Play icon overlay - shown when not hovering */}
@@ -284,11 +312,18 @@ const ReelCard = ({
       <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-gradient-to-t from-black/70 to-transparent">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1 flex-1 min-w-0">
-            <img
-              src={reel.user?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"}
-              alt={reel.user?.username || "User"}
-              className="w-4 h-4 rounded-full object-cover flex-shrink-0 border border-white/30"
-            />
+            <div className="relative">
+              <img
+                src={reel.user?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"}
+                alt={reel.user?.username || "User"}
+                className="w-4 h-4 rounded-full object-cover flex-shrink-0 border border-white/30"
+              />
+              <OnlineIndicator 
+                userId={reel.user_id} 
+                className="absolute -bottom-0.5 -right-0.5"
+                size="sm"
+              />
+            </div>
             <span className="text-white text-[10px] truncate font-medium">
               {reel.user?.username || "user"}
             </span>

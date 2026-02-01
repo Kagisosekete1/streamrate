@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
+import { AvatarZoomModal } from "@/components/AvatarZoomModal";
+import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 
 interface StreamerData {
   id: string;
@@ -48,6 +50,8 @@ const StreamerProfile = () => {
   const [reviewText, setReviewText] = useState("");
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAvatarZoom, setShowAvatarZoom] = useState(false);
+  const [reviewAvatarZoom, setReviewAvatarZoom] = useState<{ url: string; name: string } | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -252,14 +256,23 @@ const StreamerProfile = () => {
             animate={{ scale: 1, opacity: 1 }}
             className="flex flex-col items-center"
           >
-            <img
-              src={
-                streamer.avatar_url ||
-                "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&crop=face"
-              }
-              alt={streamer.full_name || "Streamer"}
-              className="w-28 h-28 rounded-full object-cover ring-4 ring-primary/30 shadow-xl shadow-primary/20"
-            />
+            <div className="relative">
+              <img
+                src={
+                  streamer.avatar_url ||
+                  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&crop=face"
+                }
+                alt={streamer.full_name || "Streamer"}
+                className="w-28 h-28 rounded-full object-cover ring-4 ring-primary/30 shadow-xl shadow-primary/20 cursor-pointer"
+                onClick={() => setShowAvatarZoom(true)}
+              />
+              {/* Online indicator */}
+              <OnlineIndicator 
+                userId={id!} 
+                className="absolute bottom-1 right-1"
+                size="lg"
+              />
+            </div>
             <h1 className="mt-4 text-2xl font-bold text-foreground">
               {streamer.username || streamer.full_name || "Anonymous"}
             </h1>
@@ -426,15 +439,26 @@ const StreamerProfile = () => {
                 className="bg-card rounded-xl p-4 border border-border/50"
               >
                 <div className="flex items-start gap-3">
-                  <img
-                    src={
-                      review.profiles?.avatar_url ||
-                      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"
-                    }
-                    alt={review.profiles?.full_name || "User"}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                    <div className="flex-1">
+                  <div className="relative">
+                    <img
+                      src={
+                        review.profiles?.avatar_url ||
+                        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"
+                      }
+                      alt={review.profiles?.full_name || "User"}
+                      className="w-10 h-10 rounded-full object-cover cursor-pointer"
+                      onClick={() => setReviewAvatarZoom({
+                        url: review.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop&crop=face",
+                        name: review.profiles?.username || review.profiles?.full_name || "User"
+                      })}
+                    />
+                    <OnlineIndicator 
+                      userId={review.fan_id} 
+                      className="absolute -bottom-0.5 -right-0.5"
+                      size="sm"
+                    />
+                  </div>
+                  <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium text-foreground">
                         {review.profiles?.username || review.profiles?.full_name || "Anonymous"}
@@ -458,6 +482,21 @@ const StreamerProfile = () => {
           </div>
         )}
       </section>
+
+      {/* Avatar Zoom Modals */}
+      <AvatarZoomModal
+        isOpen={showAvatarZoom}
+        onClose={() => setShowAvatarZoom(false)}
+        imageUrl={streamer.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop&crop=face"}
+        username={streamer.username || streamer.full_name || undefined}
+      />
+
+      <AvatarZoomModal
+        isOpen={!!reviewAvatarZoom}
+        onClose={() => setReviewAvatarZoom(null)}
+        imageUrl={reviewAvatarZoom?.url || ""}
+        username={reviewAvatarZoom?.name}
+      />
 
       <BottomNav />
     </div>
