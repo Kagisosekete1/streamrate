@@ -11,7 +11,7 @@ import { HashtagText } from "@/components/HashtagText";
 import { useForYouAlgorithm } from "@/hooks/useForYouAlgorithm";
 import { DuetStitchModal } from "@/components/DuetStitchModal";
 import { ReelComments } from "@/components/ReelComments";
-import { AvatarZoomModal } from "@/components/AvatarZoomModal";
+import { AvatarViewModal } from "@/components/AvatarViewModal";
 import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 
 interface Reel {
@@ -55,7 +55,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
   const [preloadedVideos, setPreloadedVideos] = useState<Record<string, HTMLVideoElement>>({});
   const [showDoubleTapHeart, setShowDoubleTapHeart] = useState(false);
   const [doubleTapPosition, setDoubleTapPosition] = useState({ x: 0, y: 0 });
-  const [showAvatarZoom, setShowAvatarZoom] = useState(false);
+  const [showAvatarView, setShowAvatarView] = useState(false);
   const lastTapTime = useRef<number>(0);
   const viewStartTime = useRef<number>(0);
   
@@ -472,7 +472,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
                   className="w-10 h-10 rounded-full object-cover border-2 border-white cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowAvatarZoom(true);
+                    setShowAvatarView(true);
                   }}
                 />
                 {/* Online indicator */}
@@ -646,10 +646,10 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
             creatorUsername={currentReel.user?.username || undefined}
           />
 
-          {/* Avatar Zoom Modal */}
-          <AvatarZoomModal
-            isOpen={showAvatarZoom}
-            onClose={() => setShowAvatarZoom(false)}
+          {/* Avatar View Modal */}
+          <AvatarViewModal
+            isOpen={showAvatarView}
+            onClose={() => setShowAvatarView(false)}
             imageUrl={currentReel.user?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop&crop=face"}
             username={currentReel.user?.username || undefined}
           />

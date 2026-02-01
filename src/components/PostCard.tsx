@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { ShareMenu } from "@/components/ShareMenu";
 import { EditPostModal } from "@/components/EditPostModal";
-import { AvatarZoomModal } from "@/components/AvatarZoomModal";
+import { AvatarViewModal } from "@/components/AvatarViewModal";
 import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 import {
   AlertDialog,
@@ -66,7 +66,7 @@ export const PostCard = ({
   const [isBookmarked, setIsBookmarked] = useState(initialIsBookmarked);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showAvatarZoom, setShowAvatarZoom] = useState(false);
+  const [showAvatarView, setShowAvatarView] = useState(false);
   const [content, setContent] = useState(initialContent);
   const [imageUrl, setImageUrl] = useState(initialImageUrl);
   const [wasEdited, setWasEdited] = useState(
@@ -168,11 +168,11 @@ export const PostCard = ({
             className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20 cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
-              setShowAvatarZoom(true);
+              setShowAvatarView(true);
             }}
           />
           <OnlineIndicator 
-            userId={streamerId} 
+            userId={streamerId}
             className="absolute -bottom-0.5 -right-0.5"
             size="sm"
           />
@@ -318,10 +318,10 @@ export const PostCard = ({
         }}
       />
 
-      {/* Avatar Zoom Modal */}
-      <AvatarZoomModal
-        isOpen={showAvatarZoom}
-        onClose={() => setShowAvatarZoom(false)}
+      {/* Avatar View Modal */}
+      <AvatarViewModal
+        isOpen={showAvatarView}
+        onClose={() => setShowAvatarView(false)}
         imageUrl={streamerPicture}
         username={streamerName}
       />

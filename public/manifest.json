@@ -1,0 +1,38 @@
+{
+  "name": "StreamRate",
+  "short_name": "StreamRate",
+  "description": "Rate, Review Your Favorite Streamers",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0c10",
+  "theme_color": "#0a0c10",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["social", "entertainment"],
+  "screenshots": [],
+  "share_target": {
+    "action": "/create-post",
+    "method": "GET",
+    "params": {
+      "text": "content"
+    }
+  }
+}

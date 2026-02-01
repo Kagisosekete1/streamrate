@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useDraftPosts, DraftPost } from "@/hooks/useDraftPosts";
 import { ReelUploadModal } from "@/components/ReelUploadModal";
+import { AIWritingAssistant } from "@/components/AIWritingAssistant";
 
 const CreatePost = () => {
   const navigate = useNavigate();
@@ -318,8 +319,8 @@ const CreatePost = () => {
           )}
 
           {/* Actions */}
-          <div className="flex items-center justify-between gap-4 pt-4 border-t border-border/30 mt-4">
-            <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between gap-2 sm:gap-4 pt-4 border-t border-border/30 mt-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <input
                 type="file"
                 accept="image/*"
@@ -329,27 +330,33 @@ const CreatePost = () => {
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                className="flex items-center gap-1 sm:gap-2 text-muted-foreground hover:text-primary transition-colors"
               >
                 <Image className="w-5 h-5" />
-                <span className="text-sm">Photo</span>
+                <span className="text-sm hidden sm:inline">Photo</span>
               </button>
               <button
                 onClick={() => setShowReelModal(true)}
-                className="flex items-center gap-2 text-muted-foreground hover:text-accent transition-colors"
+                className="flex items-center gap-1 sm:gap-2 text-muted-foreground hover:text-accent transition-colors"
               >
                 <Film className="w-5 h-5" />
-                <span className="text-sm">Reel (60s)</span>
+                <span className="text-sm hidden sm:inline">Reel</span>
               </button>
             </div>
-            {(content.trim() || imagePreview) && (
-              <button
-                onClick={handleDiscardDraft}
-                className="text-sm text-muted-foreground hover:text-destructive transition-colors"
-              >
-                Discard
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              <AIWritingAssistant 
+                text={content} 
+                onApply={(newText) => setContent(newText)} 
+              />
+              {(content.trim() || imagePreview) && (
+                <button
+                  onClick={handleDiscardDraft}
+                  className="text-sm text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  Discard
+                </button>
+              )}
+            </div>
           </div>
         </motion.div>
 
