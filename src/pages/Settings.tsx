@@ -28,12 +28,15 @@ import {
   ChevronRight,
   RefreshCw,
   Smartphone,
+  Sun,
+  Monitor,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { BottomNav } from "@/components/BottomNav";
+import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/hooks/useTheme";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -74,6 +77,7 @@ type ModalType =
 const Settings = () => {
   const navigate = useNavigate();
   const { user, profile, userRole, signOut, updateProfile } = useAuth();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const { toast } = useToast();
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [editForm, setEditForm] = useState({
@@ -278,7 +282,8 @@ const Settings = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <AppLayout showBottomNav={true}>
+      <div className="min-h-screen bg-background pb-20 md:pb-8">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center gap-3 p-4">
@@ -388,9 +393,9 @@ const Settings = () => {
         <SectionTitle>App Settings</SectionTitle>
         <div className="space-y-2">
           <SettingItem
-            icon={Moon}
+            icon={resolvedTheme === "dark" ? Moon : Sun}
             title="Dark Mode"
-            subtitle={settings.darkMode}
+            subtitle={theme === "system" ? "System" : theme === "dark" ? "On" : "Off"}
             onClick={() => setActiveModal("darkMode")}
           />
           <SettingItem
@@ -741,19 +746,27 @@ const Settings = () => {
         )}
 
         {activeModal === "darkMode" && (
-          <Modal title="Dark Mode" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
+          <Modal title="Dark Mode" showSave onSave={() => { toast({ title: "Theme updated!" }); setActiveModal(null); }}>
             <div className="space-y-3">
-              {["System", "On", "Off"].map((mode) => (
+              {[
+                { value: "dark", label: "Dark", icon: Moon, description: "Always use dark theme" },
+                { value: "light", label: "Light", icon: Sun, description: "Always use light theme" },
+                { value: "system", label: "System", icon: Monitor, description: "Follow system preference" },
+              ].map((option) => (
                 <button
-                  key={mode}
-                  onClick={() => setSettings({ ...settings, darkMode: mode.toLowerCase() })}
-                  className={`w-full p-4 rounded-xl text-left transition-colors ${
-                    settings.darkMode === mode.toLowerCase()
+                  key={option.value}
+                  onClick={() => setTheme(option.value as "dark" | "light" | "system")}
+                  className={`w-full p-4 rounded-xl text-left transition-colors flex items-center gap-3 ${
+                    theme === option.value
                       ? "bg-primary/20 border-2 border-primary"
                       : "bg-secondary/50"
                   }`}
                 >
-                  <p className="font-medium text-foreground">{mode}</p>
+                  <option.icon className="w-5 h-5 text-primary" />
+                  <div>
+                    <p className="font-medium text-foreground">{option.label}</p>
+                    <p className="text-xs text-muted-foreground">{option.description}</p>
+                  </div>
                 </button>
               ))}
             </div>
@@ -1035,8 +1048,8 @@ const Settings = () => {
         )}
       </AnimatePresence>
 
-      <BottomNav />
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

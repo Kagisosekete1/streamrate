@@ -4,7 +4,7 @@ import { ArrowLeft, Film, Play, Hash, Eye, Sparkles, BarChart3 } from "lucide-re
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ReelViewer } from "@/components/ReelViewer";
-import { BottomNav } from "@/components/BottomNav";
+import { AppLayout } from "@/components/AppLayout";
 import { useForYouAlgorithm } from "@/hooks/useForYouAlgorithm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
@@ -100,35 +100,36 @@ const Reels = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background pb-20">
-        {/* Header skeleton */}
-        <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border">
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="w-5 h-5 bg-secondary rounded animate-pulse" />
-            <div className="w-12 h-5 bg-secondary rounded animate-pulse" />
-            <div className="flex items-center gap-2">
+      <AppLayout showBottomNav={true}>
+        <div className="min-h-screen bg-background pb-20 md:pb-8">
+          {/* Header skeleton */}
+          <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border">
+            <div className="flex items-center justify-between px-4 py-3">
               <div className="w-5 h-5 bg-secondary rounded animate-pulse" />
+              <div className="w-12 h-5 bg-secondary rounded animate-pulse" />
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 bg-secondary rounded animate-pulse" />
+              </div>
             </div>
+          </header>
+          
+          {/* Tabs skeleton */}
+          <div className="sticky top-14 z-30 bg-background/80 backdrop-blur-lg px-4 py-2">
+            <div className="h-9 w-full max-w-xs mx-auto bg-secondary rounded-lg animate-pulse" />
           </div>
-        </header>
-        
-        {/* Tabs skeleton */}
-        <div className="sticky top-14 z-30 bg-background/80 backdrop-blur-lg px-4 py-2">
-          <div className="h-9 w-full max-w-xs mx-auto bg-secondary rounded-lg animate-pulse" />
+          
+          {/* Grid skeleton */}
+          <div className="p-1.5">
+            <ReelSkeleton count={9} />
+          </div>
         </div>
-        
-        {/* Grid skeleton */}
-        <div className="p-1.5">
-          <ReelSkeleton count={9} />
-        </div>
-        
-        <BottomNav />
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <AppLayout showBottomNav={true}>
+      <div className="min-h-screen bg-background pb-20 md:pb-8">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="flex items-center justify-between px-4 py-3">
@@ -239,8 +240,8 @@ const Reels = () => {
         }}
       />
 
-      <BottomNav />
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

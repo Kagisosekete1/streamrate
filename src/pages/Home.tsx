@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { Loader2, Heart, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { BottomNav } from "@/components/BottomNav";
+import { AppLayout } from "@/components/AppLayout";
 import { TrendingStreamersSection } from "@/components/TrendingStreamersSection";
 import { PostCard } from "@/components/PostCard";
 import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
@@ -271,108 +271,109 @@ const Home = () => {
   };
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-background pb-12">
-      {/* Pull to refresh indicator */}
-      {showIndicator && (
-        <PullToRefreshIndicator
-          pullDistance={pullDistance}
-          isRefreshing={isRefreshing}
-        />
-      )}
-
-      {/* New posts banner */}
-      {newPostsCount > 0 && (
-        <NewPostsBanner count={newPostsCount} onClick={handleRefresh} />
-      )}
-
-      {/* Header - Instagram style */}
-      <header className="sticky top-0 z-40 bg-background border-b border-border">
-        <div className="flex items-center justify-between px-4 h-14">
-          <img
-            src="/logo.png"
-            alt="StreamRate"
-            className="h-8 w-auto cursor-pointer"
-            onClick={() => navigate("/home")}
+    <AppLayout>
+      <div ref={containerRef} className="min-h-screen bg-background pb-12 md:pb-0">
+        {/* Pull to refresh indicator */}
+        {showIndicator && (
+          <PullToRefreshIndicator
+            pullDistance={pullDistance}
+            isRefreshing={isRefreshing}
           />
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => navigate("/notifications")}
-              className="relative"
-            >
-              <Heart className="w-6 h-6 text-foreground" />
-              {unreadNotifications > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent text-accent-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
-                  {unreadNotifications > 9 ? "9+" : unreadNotifications}
-                </span>
-              )}
-            </button>
-            <button onClick={() => navigate("/settings")}>
-              <Settings className="w-6 h-6 text-foreground" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Trending Streamers - Instagram stories style */}
-      <TrendingStreamersSection trendingStreamers={trendingStreamers} />
-
-      {/* Feed */}
-      <main>
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : posts.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground">
-            <p>No posts yet</p>
-            <p className="text-sm mt-1">Follow streamers to see their posts</p>
-          </div>
-        ) : (
-          <>
-            {posts.map((post, index) => (
-              <PostCard
-                key={post.id}
-                id={post.id}
-                streamerId={post.user_id}
-                streamerName={post.profiles?.username || "Anonymous"}
-                streamerPicture={
-                  post.profiles?.avatar_url ||
-                  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"
-                }
-                content={post.content}
-                imageUrl={post.image_url}
-                likes={post.likes_count}
-                comments={post.comments_count}
-                createdAt={new Date(post.created_at)}
-                updatedAt={post.updated_at ? new Date(post.updated_at) : undefined}
-                isLiked={post.is_liked}
-                isBookmarked={post.is_bookmarked}
-                index={index}
-                onDelete={() => setPosts((prev) => prev.filter((p) => p.id !== post.id))}
-              />
-            ))}
-
-            {/* Infinite scroll trigger */}
-            <div ref={loadMoreAllRef} className="h-1" />
-
-            {loadingMore && (
-              <div className="flex justify-center py-4">
-                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-              </div>
-            )}
-
-            {!hasMorePosts && posts.length > 0 && (
-              <div className="text-center py-8 text-muted-foreground text-sm">
-                You're all caught up
-              </div>
-            )}
-          </>
         )}
-      </main>
 
-      <PushNotificationPrompt />
-      <BottomNav />
-    </div>
+        {/* New posts banner */}
+        {newPostsCount > 0 && (
+          <NewPostsBanner count={newPostsCount} onClick={handleRefresh} />
+        )}
+
+        {/* Header - Instagram style */}
+        <header className="sticky top-0 z-40 bg-background border-b border-border md:hidden">
+          <div className="flex items-center justify-between px-4 h-14">
+            <img
+              src="/logo.png"
+              alt="StreamRate"
+              className="h-8 w-auto cursor-pointer"
+              onClick={() => navigate("/home")}
+            />
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => navigate("/notifications")}
+                className="relative"
+              >
+                <Heart className="w-6 h-6 text-foreground" />
+                {unreadNotifications > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent text-accent-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                  </span>
+                )}
+              </button>
+              <button onClick={() => navigate("/settings")}>
+                <Settings className="w-6 h-6 text-foreground" />
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Trending Streamers - Instagram stories style */}
+        <TrendingStreamersSection trendingStreamers={trendingStreamers} />
+
+        {/* Feed */}
+        <main className="max-w-xl mx-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="text-center py-20 text-muted-foreground">
+              <p>No posts yet</p>
+              <p className="text-sm mt-1">Follow streamers to see their posts</p>
+            </div>
+          ) : (
+            <>
+              {posts.map((post, index) => (
+                <PostCard
+                  key={post.id}
+                  id={post.id}
+                  streamerId={post.user_id}
+                  streamerName={post.profiles?.username || "Anonymous"}
+                  streamerPicture={
+                    post.profiles?.avatar_url ||
+                    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"
+                  }
+                  content={post.content}
+                  imageUrl={post.image_url}
+                  likes={post.likes_count}
+                  comments={post.comments_count}
+                  createdAt={new Date(post.created_at)}
+                  updatedAt={post.updated_at ? new Date(post.updated_at) : undefined}
+                  isLiked={post.is_liked}
+                  isBookmarked={post.is_bookmarked}
+                  index={index}
+                  onDelete={() => setPosts((prev) => prev.filter((p) => p.id !== post.id))}
+                />
+              ))}
+
+              {/* Infinite scroll trigger */}
+              <div ref={loadMoreAllRef} className="h-1" />
+
+              {loadingMore && (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              )}
+
+              {!hasMorePosts && posts.length > 0 && (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  You're all caught up
+                </div>
+              )}
+            </>
+          )}
+        </main>
+
+        <PushNotificationPrompt />
+      </div>
+    </AppLayout>
   );
 };
 

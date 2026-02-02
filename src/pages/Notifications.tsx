@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Bell, Users, FileText, Star, TrendingUp, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { BottomNav } from "@/components/BottomNav";
+import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
@@ -167,7 +167,8 @@ const Notifications = () => {
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <AppLayout showBottomNav={true}>
+      <div className="min-h-screen bg-background pb-20 md:pb-8">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between p-4">
@@ -297,8 +298,8 @@ const Notifications = () => {
         )}
       </ScrollArea>
 
-      <BottomNav />
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 
