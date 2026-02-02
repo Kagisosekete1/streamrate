@@ -1,7 +1,8 @@
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, ChevronDown, ChevronUp } from "lucide-react";
-import { TrendingStreamer } from "@/components/TrendingStreamer";
+import { AvatarViewModal } from "@/components/AvatarViewModal";
 
 interface Streamer {
   id: string;
@@ -15,67 +16,67 @@ interface TrendingStreamersSectionProps {
 }
 
 export const TrendingStreamersSection = ({ trendingStreamers }: TrendingStreamersSectionProps) => {
-  const [isVisible, setIsVisible] = useState(true);
+  const [avatarView, setAvatarView] = useState<{ url: string; name: string } | null>(null);
+
+  if (trendingStreamers.length === 0) {
+    return null;
+  }
 
   return (
-    <section className="py-4">
-      <button 
-        onClick={() => setIsVisible(!isVisible)}
-        className="flex items-center gap-2 mb-4 w-full justify-between"
-      >
-        <h2 className="text-lg font-semibold text-foreground">
-          🔥 Trending Streamers
-        </h2>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <span className="text-xs">{isVisible ? "Hide" : "View"}</span>
-          {isVisible ? (
-            <ChevronUp className="w-4 h-4" />
-          ) : (
-            <ChevronDown className="w-4 h-4" />
-          )}
+    <section className="border-b border-border bg-background">
+      <div className="overflow-x-auto scrollbar-hide py-4 px-4">
+        <div className="flex gap-4">
+          {trendingStreamers.map((streamer, index) => (
+            <motion.div
+              key={streamer.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.05 }}
+              className="flex flex-col items-center gap-1.5 flex-shrink-0"
+            >
+              <Link to={`/streamer/${streamer.id}`} className="block">
+                <div className="relative">
+                  {/* Instagram-style gradient ring */}
+                  <div className="p-[3px] rounded-full story-ring">
+                    <div className="p-[2px] rounded-full bg-background">
+                      <img
+                        src={streamer.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+                        alt={streamer.username || "Streamer"}
+                        className="w-16 h-16 rounded-full object-cover cursor-pointer"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setAvatarView({
+                            url: streamer.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop&crop=face",
+                            name: streamer.username || "Streamer"
+                          });
+                        }}
+                      />
+                    </div>
+                  </div>
+                  {/* Online indicator */}
+                  <OnlineIndicator 
+                    userId={streamer.id} 
+                    className="absolute bottom-1 right-1"
+                    size="sm"
+                  />
+                </div>
+              </Link>
+              <span className="text-xs text-foreground truncate max-w-[72px] text-center">
+                {streamer.username || "user"}
+              </span>
+            </motion.div>
+          ))}
         </div>
-      </button>
-      
-      <AnimatePresence>
-        {isVisible && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            {trendingStreamers.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground text-sm">
-                No streamers yet. Be the first to join!
-              </div>
-            ) : (
-              <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex gap-4"
-                >
-                  {trendingStreamers.map((streamer, index) => (
-                    <TrendingStreamer
-                      key={streamer.id}
-                      id={streamer.id}
-                      name={streamer.username || "Anonymous"}
-                      profilePicture={
-                        streamer.avatar_url ||
-                        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"
-                      }
-                      rank={index + 1}
-                      averageRating={streamer.average_rating}
-                      index={index}
-                    />
-                  ))}
-                </motion.div>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </div>
+
+      {/* Avatar View Modal */}
+      <AvatarViewModal
+        isOpen={!!avatarView}
+        onClose={() => setAvatarView(null)}
+        imageUrl={avatarView?.url || ""}
+        username={avatarView?.name}
+      />
     </section>
   );
 };

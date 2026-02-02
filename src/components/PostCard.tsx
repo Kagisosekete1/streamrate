@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Bookmark, Trash2, Edit2 } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Send, MoreHorizontal, Trash2, Edit2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -22,6 +22,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface PostCardProps {
   id: string;
@@ -72,6 +78,7 @@ export const PostCard = ({
   const [wasEdited, setWasEdited] = useState(
     updatedAt && createdAt && updatedAt.getTime() > createdAt.getTime() + 1000
   );
+  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
 
   const isOwner = user?.id === streamerId;
 
@@ -145,6 +152,23 @@ export const PostCard = ({
     }
   };
 
+  const handleDoubleClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!user || isLiked) return;
+
+    setShowHeartAnimation(true);
+    setTimeout(() => setShowHeartAnimation(false), 1000);
+
+    await supabase.from("post_likes").insert({
+      post_id: id,
+      user_id: user.id,
+    });
+    setIsLiked(true);
+    setLikes(likes + 1);
+  };
+
   const handleCommentClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -152,135 +176,73 @@ export const PostCard = ({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1, duration: 0.4 }}
-      className="bg-card rounded-xl p-4 border border-border/50 card-glow cursor-pointer"
-      onClick={() => navigate(`/post/${id}`)}
+    <motion.article
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: index * 0.05 }}
+      className="bg-card border-b border-border"
     >
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-3">
-        <div className="relative">
-          <img
-            src={streamerPicture}
-            alt={streamerName}
-            className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20 cursor-pointer"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowAvatarView(true);
-            }}
-          />
-          <OnlineIndicator 
-            userId={streamerId}
-            className="absolute -bottom-0.5 -right-0.5"
-            size="sm"
-          />
-        </div>
-        <Link
-          to={`/streamer/${streamerId}`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <h4 className="font-semibold text-foreground text-sm">{streamerName}</h4>
-          <div className="flex items-center gap-2">
-            <p className="text-xs text-muted-foreground">
-              {formatDistanceToNow(createdAt, { addSuffix: true })}
-            </p>
-            {wasEdited && (
-              <span className="text-xs text-muted-foreground italic">• Edited</span>
-            )}
-          </div>
-        </Link>
-      </div>
-
-      {/* Content */}
-      <p className="text-foreground/90 text-sm leading-relaxed mb-4">{content}</p>
-
-      {/* Image */}
-      {imageUrl && (
-        <div className="relative mb-4 rounded-lg overflow-hidden">
-          <img
-            src={imageUrl}
-            alt="Post image"
-            className="w-full max-h-96 object-contain bg-secondary/30 md:max-h-[500px] lg:max-h-[600px]"
-          />
-        </div>
-      )}
-
-      {/* Actions */}
-      <div className="flex items-center justify-between pt-3 border-t border-border/30">
-        <div className="flex items-center gap-6">
-          <button
-            onClick={handleLike}
-            className="flex items-center gap-2 group transition-all duration-200"
-          >
-            <motion.div
-              whileTap={{ scale: 1.3 }}
-              transition={{ type: "spring", stiffness: 500 }}
-            >
-              <Heart
-                className={cn(
-                  "w-5 h-5 transition-colors",
-                  isLiked
-                    ? "fill-accent text-accent"
-                    : "text-muted-foreground group-hover:text-accent"
-                )}
-              />
-            </motion.div>
-            <span
-              className={cn("text-sm", isLiked ? "text-accent" : "text-muted-foreground")}
-            >
-              {likes}
-            </span>
-          </button>
-
-          <button
-            onClick={handleCommentClick}
-            className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
-          >
-            <MessageCircle className="w-5 h-5" />
-            <span className="text-sm">{comments}</span>
-          </button>
-
-          <ShareMenu postId={id} title={content.slice(0, 50)} />
-        </div>
-
+      {/* Header - Instagram style */}
+      <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
-          <button
-            onClick={handleBookmark}
-            className="text-muted-foreground hover:text-primary transition-colors"
-          >
-            <Bookmark
-              className={cn(
-                "w-5 h-5 transition-colors",
-                isBookmarked && "fill-primary text-primary"
-              )}
+          <div className="relative">
+            <div className="p-[2px] rounded-full story-ring">
+              <div className="p-[1px] rounded-full bg-background">
+                <img
+                  src={streamerPicture}
+                  alt={streamerName}
+                  className="w-8 h-8 rounded-full object-cover cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowAvatarView(true);
+                  }}
+                />
+              </div>
+            </div>
+            <OnlineIndicator 
+              userId={streamerId}
+              className="absolute -bottom-0.5 -right-0.5"
+              size="sm"
             />
-          </button>
-
-          {isOwner && (
-            <>
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setShowEditModal(true);
-                }}
-                className="text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Edit2 className="w-5 h-5" />
+          </div>
+          <div>
+            <Link
+              to={`/streamer/${streamerId}`}
+              onClick={(e) => e.stopPropagation()}
+              className="font-semibold text-sm text-foreground hover:text-muted-foreground"
+            >
+              {streamerName}
+            </Link>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span>{formatDistanceToNow(createdAt, { addSuffix: false })}</span>
+              {wasEdited && <span>• Edited</span>}
+            </div>
+          </div>
+        </div>
+        
+        {isOwner && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="p-1 text-foreground hover:text-muted-foreground">
+                <MoreHorizontal className="w-5 h-5" />
               </button>
-
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem onClick={() => setShowEditModal(true)}>
+                <Edit2 className="w-4 h-4 mr-2" />
+                Edit
+              </DropdownMenuItem>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <button
-                    onClick={(e) => e.stopPropagation()}
-                    className="text-muted-foreground hover:text-destructive transition-colors"
+                  <DropdownMenuItem
+                    onSelect={(e) => e.preventDefault()}
+                    className="text-destructive focus:text-destructive"
                   >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
                 </AlertDialogTrigger>
-                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete Post</AlertDialogTitle>
                     <AlertDialogDescription>
@@ -299,10 +261,96 @@ export const PostCard = ({
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-            </>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+
+      {/* Image - Instagram style (full width, double tap to like) */}
+      {imageUrl && (
+        <div 
+          className="relative w-full bg-black cursor-pointer"
+          onDoubleClick={handleDoubleClick}
+          onClick={() => navigate(`/post/${id}`)}
+        >
+          <img
+            src={imageUrl}
+            alt="Post"
+            className="w-full object-contain max-h-[600px]"
+          />
+          {/* Heart animation on double tap */}
+          {showHeartAnimation && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="absolute inset-0 flex items-center justify-center pointer-events-none"
+            >
+              <Heart className="w-24 h-24 text-white fill-white drop-shadow-lg" />
+            </motion.div>
           )}
         </div>
+      )}
+
+      {/* Actions - Instagram style */}
+      <div className="px-4 pt-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-4">
+            <button onClick={handleLike} className="hover:opacity-60 transition-opacity">
+              <Heart
+                className={cn(
+                  "w-6 h-6",
+                  isLiked ? "fill-accent text-accent" : "text-foreground"
+                )}
+              />
+            </button>
+            <button onClick={handleCommentClick} className="hover:opacity-60 transition-opacity">
+              <MessageCircle className="w-6 h-6 text-foreground" />
+            </button>
+            <ShareMenu postId={id} title={content.slice(0, 50)} />
+          </div>
+          <button onClick={handleBookmark} className="hover:opacity-60 transition-opacity">
+            <Bookmark
+              className={cn(
+                "w-6 h-6",
+                isBookmarked ? "fill-foreground text-foreground" : "text-foreground"
+              )}
+            />
+          </button>
+        </div>
+
+        {/* Likes count */}
+        <button className="font-semibold text-sm text-foreground mb-1">
+          {likes.toLocaleString()} likes
+        </button>
+
+        {/* Caption */}
+        <div className="mb-2">
+          <span className="text-sm">
+            <Link 
+              to={`/streamer/${streamerId}`} 
+              className="font-semibold text-foreground mr-1"
+            >
+              {streamerName}
+            </Link>
+            <span className="text-foreground">{content}</span>
+          </span>
+        </div>
+
+        {/* View comments */}
+        {comments > 0 && (
+          <button 
+            onClick={handleCommentClick}
+            className="text-sm text-muted-foreground mb-2"
+          >
+            View all {comments} comments
+          </button>
+        )}
       </div>
+
+      {/* Spacing */}
+      <div className="h-3" />
 
       <EditPostModal
         isOpen={showEditModal}
@@ -325,6 +373,6 @@ export const PostCard = ({
         imageUrl={streamerPicture}
         username={streamerName}
       />
-    </motion.div>
+    </motion.article>
   );
 };
