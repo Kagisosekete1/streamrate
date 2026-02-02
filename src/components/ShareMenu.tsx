@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { Share2, Link, Twitter, Facebook, Copy, Check } from "lucide-react";
+import { useState, useRef } from "react";
+import { Send, Link, Copy, Check, MessageCircle, Instagram, Twitter, Facebook, Download } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
@@ -11,13 +12,15 @@ import { useToast } from "@/hooks/use-toast";
 interface ShareMenuProps {
   postId: string;
   title?: string;
+  imageUrl?: string;
 }
 
-export const ShareMenu = ({ postId, title = "Check out this post" }: ShareMenuProps) => {
+export const ShareMenu = ({ postId, title = "Check out this post", imageUrl }: ShareMenuProps) => {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   
   const shareUrl = `${window.location.origin}/post/${postId}`;
+  const shareText = `${title} - StreamRate`;
 
   const handleCopyLink = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -33,13 +36,25 @@ export const ShareMenu = ({ postId, title = "Check out this post" }: ShareMenuPr
 
   const handleShareTwitter = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(shareUrl)}`;
-    window.open(url, "_blank", "noopener,noreferrer");
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+    window.open(url, "_blank", "noopener,noreferrer,width=550,height=450");
   };
 
   const handleShareFacebook = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`;
+    window.open(url, "_blank", "noopener,noreferrer,width=550,height=450");
+  };
+
+  const handleShareWhatsApp = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const url = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${shareUrl}`)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const handleShareTelegram = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const url = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -48,11 +63,12 @@ export const ShareMenu = ({ postId, title = "Check out this post" }: ShareMenuPr
     if (navigator.share) {
       try {
         await navigator.share({
-          title,
+          title: "StreamRate",
+          text: shareText,
           url: shareUrl,
         });
       } catch {
-        // User cancelled or error
+        // User cancelled
       }
     }
   };
@@ -60,32 +76,50 @@ export const ShareMenu = ({ postId, title = "Check out this post" }: ShareMenuPr
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <button className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors ml-auto">
-          <Share2 className="w-5 h-5" />
+        <button className="flex items-center gap-2 text-foreground hover:opacity-60 transition-opacity">
+          <Send className="w-6 h-6" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem onClick={handleCopyLink} className="cursor-pointer">
+      <DropdownMenuContent align="end" className="w-56 bg-card border-border">
+        <DropdownMenuItem onClick={handleCopyLink} className="cursor-pointer gap-3">
           {copied ? (
-            <Check className="w-4 h-4 mr-2 text-green-500" />
+            <Check className="w-5 h-5 text-green-500" />
           ) : (
-            <Link className="w-4 h-4 mr-2" />
+            <Link className="w-5 h-5" />
           )}
-          Copy Link
+          <span>Copy Link</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleShareTwitter} className="cursor-pointer">
-          <Twitter className="w-4 h-4 mr-2" />
-          Share on X
+        
+        <DropdownMenuSeparator />
+        
+        <DropdownMenuItem onClick={handleShareWhatsApp} className="cursor-pointer gap-3">
+          <MessageCircle className="w-5 h-5 text-green-500" />
+          <span>WhatsApp</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleShareFacebook} className="cursor-pointer">
-          <Facebook className="w-4 h-4 mr-2" />
-          Share on Facebook
+        
+        <DropdownMenuItem onClick={handleShareTelegram} className="cursor-pointer gap-3">
+          <Send className="w-5 h-5 text-blue-400" />
+          <span>Telegram</span>
         </DropdownMenuItem>
+        
+        <DropdownMenuItem onClick={handleShareTwitter} className="cursor-pointer gap-3">
+          <Twitter className="w-5 h-5" />
+          <span>X (Twitter)</span>
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem onClick={handleShareFacebook} className="cursor-pointer gap-3">
+          <Facebook className="w-5 h-5 text-blue-500" />
+          <span>Facebook</span>
+        </DropdownMenuItem>
+
         {navigator.share && (
-          <DropdownMenuItem onClick={handleNativeShare} className="cursor-pointer">
-            <Share2 className="w-4 h-4 mr-2" />
-            More Options
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleNativeShare} className="cursor-pointer gap-3">
+              <Send className="w-5 h-5 text-primary" />
+              <span>More Options...</span>
+            </DropdownMenuItem>
+          </>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

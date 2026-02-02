@@ -221,9 +221,14 @@ const Auth = () => {
               <h1 className="text-3xl font-bold text-foreground mb-2 text-center">
                 Choose your role
               </h1>
-              <p className="text-muted-foreground mb-8 text-center">
+              <p className="text-muted-foreground mb-4 text-center">
                 What brings you to StreamRate?
               </p>
+              <div className="mb-6 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                <p className="text-sm text-amber-500 text-center font-medium">
+                  ⚠️ Your role cannot be changed after registration
+                </p>
+              </div>
 
               <div className="space-y-4">
                 <motion.button

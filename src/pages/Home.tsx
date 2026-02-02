@@ -121,9 +121,26 @@ const Home = () => {
       )
       .subscribe();
 
+    // Realtime ratings subscription for live rating updates
+    const ratingsChannel = supabase
+      .channel("home-ratings-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "ratings",
+        },
+        () => {
+          fetchTrendingStreamers();
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(postsChannel);
       supabase.removeChannel(profilesChannel);
+      supabase.removeChannel(ratingsChannel);
     };
   }, [user]);
 

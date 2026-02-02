@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Bookmark, Send, MoreHorizontal, Trash2, Edit2 } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, MoreHorizontal, Trash2, Edit2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -87,7 +87,7 @@ export const PostCard = ({
     e.stopPropagation();
 
     if (!user) {
-      toast({ title: "Please sign in to bookmark", variant: "destructive" });
+      toast({ title: "Please sign in to save", variant: "destructive" });
       return;
     }
 
@@ -98,14 +98,14 @@ export const PostCard = ({
         .eq("post_id", id)
         .eq("user_id", user.id);
       setIsBookmarked(false);
-      toast({ title: "Removed from bookmarks" });
+      toast({ title: "Removed from saved" });
     } else {
       await supabase.from("bookmarks").insert({
         post_id: id,
         user_id: user.id,
       });
       setIsBookmarked(true);
-      toast({ title: "Saved to bookmarks" });
+      toast({ title: "Saved" });
     }
   };
 
@@ -191,7 +191,7 @@ export const PostCard = ({
                 <img
                   src={streamerPicture}
                   alt={streamerName}
-                  className="w-8 h-8 rounded-full object-cover cursor-pointer"
+                  className="w-9 h-9 rounded-full object-cover cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowAvatarView(true);
@@ -220,50 +220,57 @@ export const PostCard = ({
           </div>
         </div>
         
-        {isOwner && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="p-1 text-foreground hover:text-muted-foreground">
-                <MoreHorizontal className="w-5 h-5" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem onClick={() => setShowEditModal(true)}>
-                <Edit2 className="w-4 h-4 mr-2" />
-                Edit
-              </DropdownMenuItem>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <DropdownMenuItem
-                    onSelect={(e) => e.preventDefault()}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Post</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete this post? This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDelete}
-                      disabled={isDeleting}
-                      className="bg-destructive hover:bg-destructive/90"
+        {/* 3-dot menu for edit/delete */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="p-2 text-foreground hover:text-muted-foreground rounded-full hover:bg-secondary/50 transition-colors">
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44 bg-card border-border">
+            {isOwner && (
+              <>
+                <DropdownMenuItem onClick={() => setShowEditModal(true)} className="gap-3">
+                  <Edit2 className="w-4 h-4" />
+                  Edit Post
+                </DropdownMenuItem>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem
+                      onSelect={(e) => e.preventDefault()}
+                      className="text-destructive focus:text-destructive gap-3"
                     >
-                      {isDeleting ? "Deleting..." : "Delete"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+                      <Trash2 className="w-4 h-4" />
+                      Delete Post
+                    </DropdownMenuItem>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Post</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete this post? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        disabled={isDeleting}
+                        className="bg-destructive hover:bg-destructive/90"
+                      >
+                        {isDeleting ? "Deleting..." : "Delete"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            )}
+            <DropdownMenuItem onClick={handleBookmark} className="gap-3">
+              <Bookmark className={cn("w-4 h-4", isBookmarked && "fill-current")} />
+              {isBookmarked ? "Unsave" : "Save"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Image - Instagram style (full width, double tap to like) */}
@@ -293,31 +300,31 @@ export const PostCard = ({
         </div>
       )}
 
-      {/* Actions - Instagram style */}
+      {/* Actions - Instagram style with save next to share */}
       <div className="px-4 pt-3">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
             <button onClick={handleLike} className="hover:opacity-60 transition-opacity">
               <Heart
                 className={cn(
-                  "w-6 h-6",
-                  isLiked ? "fill-accent text-accent" : "text-foreground"
+                  "w-6 h-6 transition-all",
+                  isLiked ? "fill-red-500 text-red-500 scale-110" : "text-foreground"
                 )}
               />
             </button>
             <button onClick={handleCommentClick} className="hover:opacity-60 transition-opacity">
               <MessageCircle className="w-6 h-6 text-foreground" />
             </button>
-            <ShareMenu postId={id} title={content.slice(0, 50)} />
+            <ShareMenu postId={id} title={content.slice(0, 50)} imageUrl={imageUrl} />
+            <button onClick={handleBookmark} className="hover:opacity-60 transition-opacity">
+              <Bookmark
+                className={cn(
+                  "w-6 h-6 transition-all",
+                  isBookmarked ? "fill-foreground text-foreground" : "text-foreground"
+                )}
+              />
+            </button>
           </div>
-          <button onClick={handleBookmark} className="hover:opacity-60 transition-opacity">
-            <Bookmark
-              className={cn(
-                "w-6 h-6",
-                isBookmarked ? "fill-foreground text-foreground" : "text-foreground"
-              )}
-            />
-          </button>
         </div>
 
         {/* Likes count */}
