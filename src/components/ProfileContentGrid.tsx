@@ -227,10 +227,15 @@ export const ProfileContentGrid = ({
                   >
                     <video
                       src={reel.video_url}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover [&::-webkit-media-controls]:hidden [&::-webkit-media-controls-enclosure]:hidden [&::-webkit-media-controls-panel]:hidden [&::-webkit-media-controls-play-button]:hidden [&::-webkit-media-controls-start-playback-button]:!hidden [&::-webkit-media-controls-overlay-play-button]:hidden"
                       muted
                       loop
                       playsInline
+                      preload="metadata"
+                      controls={false}
+                      disablePictureInPicture
+                      // @ts-ignore - webkit specific
+                      webkit-playsinline="true"
                       onMouseEnter={(e) => e.currentTarget.play()}
                       onMouseLeave={(e) => {
                         e.currentTarget.pause();
