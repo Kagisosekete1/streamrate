@@ -13,6 +13,8 @@ import {
   X,
   Trophy,
   LogOut,
+  Hash,
+  TrendingUp,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -25,7 +27,7 @@ interface NavItem {
 
 const mainNavItems: NavItem[] = [
   { icon: Home, label: "Home", path: "/home" },
-  { icon: Search, label: "Search", path: "/streamers" },
+  { icon: Search, label: "Discover", path: "/streamers" },
   { icon: PlusSquare, label: "Create", path: "/create-post" },
   { icon: Film, label: "Reels", path: "/reels" },
   { icon: Heart, label: "Notifications", path: "/notifications" },
@@ -33,7 +35,8 @@ const mainNavItems: NavItem[] = [
 ];
 
 const bottomNavItems: NavItem[] = [
-  { icon: Trophy, label: "Leaderboard", path: "/streamers" },
+  { icon: Trophy, label: "Leaderboard", path: "/streamers?filter=leaderboard" },
+  { icon: Hash, label: "Hashtags", path: "/hashtags" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
@@ -43,7 +46,12 @@ export const AppSidebar = () => {
   const { profile, signOut } = useAuth();
   const [isExpanded, setIsExpanded] = useState(true);
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    if (path.includes("?")) {
+      return location.pathname === path.split("?")[0];
+    }
+    return location.pathname === path;
+  };
 
   const handleLogout = async () => {
     await signOut();
@@ -104,6 +112,7 @@ export const AppSidebar = () => {
                 "w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-110",
                 isActive(item.path) ? "text-primary" : ""
               )}
+              strokeWidth={isActive(item.path) ? 2.5 : 1.5}
             />
             <AnimatePresence>
               {isExpanded && (
@@ -129,12 +138,15 @@ export const AppSidebar = () => {
             to={item.path}
             className={cn(
               "flex items-center gap-4 px-3 py-3 rounded-xl transition-all duration-200 group",
-              isActive(item.path) && item.label === "Settings"
+              isActive(item.path)
                 ? "bg-primary/10 text-primary font-semibold"
                 : "text-foreground hover:bg-secondary"
             )}
           >
-            <item.icon className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-110" />
+            <item.icon 
+              className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-110" 
+              strokeWidth={isActive(item.path) ? 2.5 : 1.5}
+            />
             <AnimatePresence>
               {isExpanded && (
                 <motion.span

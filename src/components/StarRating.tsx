@@ -1,3 +1,4 @@
+import React, { forwardRef } from "react";
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -7,6 +8,7 @@ interface StarRatingProps {
   size?: "sm" | "md" | "lg";
   interactive?: boolean;
   onRatingChange?: (rating: number) => void;
+  className?: string;
 }
 
 const sizeClasses = {
@@ -15,15 +17,16 @@ const sizeClasses = {
   lg: "w-6 h-6",
 };
 
-export const StarRating = ({
+export const StarRating = forwardRef<HTMLDivElement, StarRatingProps>(({
   rating,
   maxRating = 5,
   size = "md",
   interactive = false,
   onRatingChange,
-}: StarRatingProps) => {
+  className,
+}, ref) => {
   return (
-    <div className="flex gap-0.5">
+    <div ref={ref} className={cn("flex gap-0.5", className)}>
       {Array.from({ length: maxRating }, (_, i) => {
         const starValue = i + 1;
         const isFilled = starValue <= rating;
@@ -54,4 +57,6 @@ export const StarRating = ({
       })}
     </div>
   );
-};
+});
+
+StarRating.displayName = "StarRating";
