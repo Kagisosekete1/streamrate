@@ -4,7 +4,7 @@ import { Settings, LogOut, Edit2, Users, Star, MessageCircle, Camera, X, ImageIc
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BottomNav } from "@/components/BottomNav";
+import { AppLayout } from "@/components/AppLayout";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -530,7 +530,8 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <AppLayout showBottomNav={true}>
+      <div className="min-h-screen bg-background pb-20 md:pb-8">
       {/* Header with Banner - Header now behind profile picture */}
       <header className="relative">
         {/* Header Banner - clickable to upload */}
@@ -888,8 +889,8 @@ const Profile = () => {
         />
       )}
 
-      <BottomNav />
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

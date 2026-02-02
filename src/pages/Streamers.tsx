@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { BottomNav } from "@/components/BottomNav";
 import { StreamerCard } from "@/components/StreamerCard";
 import { Search, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Streamer {
@@ -124,7 +124,8 @@ const Streamers = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <AppLayout showBottomNav={true}>
+      <div className="min-h-screen bg-background pb-20 md:pb-8">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border/50">
         <div className="px-4 py-4">
@@ -210,14 +211,15 @@ const Streamers = () => {
                 averageRating={streamer.average_rating}
                 totalReviews={streamer.total_reviews}
                 index={index}
+                rank={index + 1}
               />
             ))}
           </div>
         )}
       </main>
 
-      <BottomNav />
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

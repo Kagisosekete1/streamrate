@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Image, Send, X, FileText, Trash2, Film } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { BottomNav } from "@/components/BottomNav";
+import { AppLayout } from "@/components/AppLayout";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -185,7 +185,8 @@ const CreatePost = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <AppLayout showBottomNav={true}>
+      <div className="min-h-screen bg-background pb-20 md:pb-8">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border/50">
         <div className="flex items-center justify-between px-4 py-4">
@@ -381,8 +382,8 @@ const CreatePost = () => {
         onSuccess={() => navigate("/profile")}
       />
 
-      <BottomNav />
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 import { useState } from "react";
 import { AvatarViewModal } from "@/components/AvatarViewModal";
+import { Star } from "lucide-react";
 
 interface Streamer {
   id: string;
@@ -36,6 +37,10 @@ export const TrendingStreamersSection = ({ trendingStreamers }: TrendingStreamer
             >
               <Link to={`/streamer/${streamer.id}`} className="block">
                 <div className="relative">
+                  {/* Rank badge */}
+                  <div className="absolute -top-1 -left-1 z-10 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shadow-lg">
+                    #{index + 1}
+                  </div>
                   {/* Instagram-style gradient ring */}
                   <div className="p-[3px] rounded-full story-ring">
                     <div className="p-[2px] rounded-full bg-background">
@@ -62,9 +67,16 @@ export const TrendingStreamersSection = ({ trendingStreamers }: TrendingStreamer
                   />
                 </div>
               </Link>
-              <span className="text-xs text-foreground truncate max-w-[72px] text-center">
+              <span className="text-xs text-foreground truncate max-w-[72px] text-center font-medium">
                 {streamer.username || "user"}
               </span>
+              {/* Rating display */}
+              <div className="flex items-center gap-1">
+                <Star className="w-3 h-3 text-primary fill-primary" />
+                <span className="text-[10px] text-muted-foreground">
+                  {streamer.average_rating.toFixed(1)}
+                </span>
+              </div>
             </motion.div>
           ))}
         </div>

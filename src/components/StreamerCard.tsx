@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { MapPin } from "lucide-react";
+import { MapPin, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 import { StarRating } from "./StarRating";
 
@@ -11,6 +11,7 @@ interface StreamerCardProps {
   averageRating: number;
   totalReviews: number;
   index?: number;
+  rank?: number;
 }
 
 export const StreamerCard = ({
@@ -21,7 +22,24 @@ export const StreamerCard = ({
   averageRating,
   totalReviews,
   index = 0,
+  rank,
 }: StreamerCardProps) => {
+  const displayRank = rank ?? index + 1;
+  
+  // Medal colors for top 3
+  const getMedalColor = (rankNum: number) => {
+    switch (rankNum) {
+      case 1:
+        return "bg-yellow-500 text-yellow-950";
+      case 2:
+        return "bg-gray-400 text-gray-900";
+      case 3:
+        return "bg-amber-600 text-amber-950";
+      default:
+        return "bg-secondary text-muted-foreground";
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -31,6 +49,17 @@ export const StreamerCard = ({
       <Link to={`/streamer/${id}`}>
         <div className="bg-card rounded-xl p-4 card-glow card-glow-hover transition-all duration-300 hover:translate-y-[-2px] border border-border/50">
           <div className="flex items-center gap-4">
+            {/* Rank Badge */}
+            <div
+              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${getMedalColor(displayRank)}`}
+            >
+              {displayRank <= 3 ? (
+                <Trophy className="w-5 h-5" />
+              ) : (
+                `#${displayRank}`
+              )}
+            </div>
+
             <div className="relative">
               <img
                 src={profilePicture}
