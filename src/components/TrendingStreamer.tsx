@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 import { useState } from "react";
-import { AvatarZoomModal } from "@/components/AvatarZoomModal";
+import { AvatarViewModal } from "@/components/AvatarViewModal";
 
 interface TrendingStreamerProps {
   id: string;
@@ -78,8 +78,8 @@ export const TrendingStreamer = ({
         </Link>
       </motion.div>
 
-      {/* Avatar Zoom Modal */}
-      <AvatarZoomModal
+      {/* Avatar View Modal */}
+      <AvatarViewModal
         isOpen={showAvatarZoom}
         onClose={() => setShowAvatarZoom(false)}
         imageUrl={profilePicture}

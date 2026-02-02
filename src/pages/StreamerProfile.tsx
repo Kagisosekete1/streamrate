@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
-import { AvatarZoomModal } from "@/components/AvatarZoomModal";
+import { AvatarViewModal } from "@/components/AvatarViewModal";
 import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 
 interface StreamerData {
@@ -483,15 +483,15 @@ const StreamerProfile = () => {
         )}
       </section>
 
-      {/* Avatar Zoom Modals */}
-      <AvatarZoomModal
+      {/* Avatar View Modals */}
+      <AvatarViewModal
         isOpen={showAvatarZoom}
         onClose={() => setShowAvatarZoom(false)}
         imageUrl={streamer.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop&crop=face"}
         username={streamer.username || streamer.full_name || undefined}
       />
 
-      <AvatarZoomModal
+      <AvatarViewModal
         isOpen={!!reviewAvatarZoom}
         onClose={() => setReviewAvatarZoom(null)}
         imageUrl={reviewAvatarZoom?.url || ""}
