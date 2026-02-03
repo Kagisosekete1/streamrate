@@ -154,41 +154,50 @@ export const MusicTrimmer = ({
         </span>
       </div>
 
-      {/* Play button and waveform preview */}
-      <div className="flex items-center gap-4">
+      {/* Preview play button - more prominent with label */}
+      <div className="flex items-center gap-4 bg-secondary/50 rounded-xl p-3">
         <button
           onClick={togglePlayPause}
-          className="w-12 h-12 rounded-full bg-primary flex items-center justify-center flex-shrink-0"
+          className="w-14 h-14 rounded-full bg-primary hover:bg-primary/90 active:scale-95 transition-all flex items-center justify-center flex-shrink-0 shadow-lg"
         >
           {isPlaying ? (
-            <Pause className="w-5 h-5 text-primary-foreground" />
+            <Pause className="w-6 h-6 text-primary-foreground" />
           ) : (
-            <Play className="w-5 h-5 text-primary-foreground ml-0.5" />
+            <Play className="w-6 h-6 text-primary-foreground ml-0.5" />
           )}
         </button>
         
-        {/* Waveform visualization */}
-        <div className="flex-1 h-12 flex items-center gap-0.5">
-          {waveformBars.map((height, i) => {
-            const barPosition = (i / waveformBars.length) * duration;
-            const isInRange = barPosition >= startTime && barPosition <= endTime;
-            const isPlayed = barPosition <= currentTime;
-            
-            return (
-              <div
-                key={i}
-                className={`flex-1 rounded-full transition-colors ${
-                  isInRange 
-                    ? isPlayed 
-                      ? "bg-primary" 
-                      : "bg-primary/40"
-                    : "bg-muted"
-                }`}
-                style={{ height: `${height * 100}%` }}
-              />
-            );
-          })}
+        <div className="flex-1">
+          <p className="text-sm font-medium text-foreground">
+            {isPlaying ? "Playing preview..." : "Tap to preview selection"}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {formatTime(startTime)} → {formatTime(endTime)}
+          </p>
         </div>
+      </div>
+      
+      {/* Waveform visualization */}
+      <div className="flex items-center gap-0.5 h-12">
+        {waveformBars.map((height, i) => {
+          const barPosition = (i / waveformBars.length) * duration;
+          const isInRange = barPosition >= startTime && barPosition <= endTime;
+          const isPlayed = barPosition <= currentTime && currentTime >= startTime;
+          
+          return (
+            <div
+              key={i}
+              className={`flex-1 rounded-full transition-colors ${
+                isInRange 
+                  ? isPlayed 
+                    ? "bg-primary" 
+                    : "bg-primary/40"
+                  : "bg-muted"
+              }`}
+              style={{ height: `${height * 100}%` }}
+            />
+          );
+        })}
       </div>
 
       {/* Timeline with handles */}
