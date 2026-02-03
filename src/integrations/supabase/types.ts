@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocked_users: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       bookmarks: {
         Row: {
           created_at: string
@@ -285,6 +309,8 @@ export type Database = {
           full_name: string | null
           header_url: string | null
           id: string
+          last_seen: string | null
+          last_seen_visibility: string | null
           updated_at: string | null
           username: string | null
         }
@@ -297,6 +323,8 @@ export type Database = {
           full_name?: string | null
           header_url?: string | null
           id: string
+          last_seen?: string | null
+          last_seen_visibility?: string | null
           updated_at?: string | null
           username?: string | null
         }
@@ -309,6 +337,8 @@ export type Database = {
           full_name?: string | null
           header_url?: string | null
           id?: string
+          last_seen?: string | null
+          last_seen_visibility?: string | null
           updated_at?: string | null
           username?: string | null
         }
@@ -513,6 +543,36 @@ export type Database = {
           user_id?: string
           video_url?: string
           view_count?: number
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          created_at: string
+          id: string
+          reason: string
+          reported_post_id: string | null
+          reported_reel_id: string | null
+          reported_user_id: string | null
+          reporter_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reason: string
+          reported_post_id?: string | null
+          reported_reel_id?: string | null
+          reported_user_id?: string | null
+          reporter_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reason?: string
+          reported_post_id?: string | null
+          reported_reel_id?: string | null
+          reported_user_id?: string | null
+          reporter_id?: string
         }
         Relationships: []
       }

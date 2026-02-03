@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Bookmark, MoreHorizontal, Trash2, Edit2 } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, MoreHorizontal, Trash2, Edit2, Flag } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -11,6 +11,7 @@ import { ShareMenu } from "@/components/ShareMenu";
 import { EditPostModal } from "@/components/EditPostModal";
 import { AvatarViewModal } from "@/components/AvatarViewModal";
 import { OnlineIndicator } from "@/hooks/useOnlinePresence";
+import { ReportBlockModal } from "@/components/ReportBlockModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -79,6 +80,7 @@ export const PostCard = ({
     updatedAt && createdAt && updatedAt.getTime() > createdAt.getTime() + 1000
   );
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+  const [showReportBlock, setShowReportBlock] = useState(false);
 
   const isOwner = user?.id === streamerId;
 
@@ -265,10 +267,15 @@ export const PostCard = ({
                 </AlertDialog>
               </>
             )}
-            <DropdownMenuItem onClick={handleBookmark} className="gap-3">
-              <Bookmark className={cn("w-4 h-4", isBookmarked && "fill-current")} />
-              {isBookmarked ? "Unsave" : "Save"}
-            </DropdownMenuItem>
+            {!isOwner && (
+              <DropdownMenuItem 
+                onClick={() => setShowReportBlock(true)} 
+                className="gap-3 text-destructive focus:text-destructive"
+              >
+                <Flag className="w-4 h-4" />
+                Report & Block
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -379,6 +386,15 @@ export const PostCard = ({
         onClose={() => setShowAvatarView(false)}
         imageUrl={streamerPicture}
         username={streamerName}
+      />
+
+      {/* Report & Block Modal */}
+      <ReportBlockModal
+        isOpen={showReportBlock}
+        onClose={() => setShowReportBlock(false)}
+        userId={streamerId}
+        username={streamerName}
+        postId={id}
       />
     </motion.article>
   );

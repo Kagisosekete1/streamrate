@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Music2, Bookmark, UserPlus, Eye, Layers } from "lucide-react";
+import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Music2, Flag, UserPlus, Eye, Layers } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,7 @@ import { DuetStitchModal } from "@/components/DuetStitchModal";
 import { ReelComments } from "@/components/ReelComments";
 import { AvatarViewModal } from "@/components/AvatarViewModal";
 import { OnlineIndicator } from "@/hooks/useOnlinePresence";
+import { ReportBlockModal } from "@/components/ReportBlockModal";
 
 interface Reel {
   id: string;
@@ -56,6 +57,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
   const [showDoubleTapHeart, setShowDoubleTapHeart] = useState(false);
   const [doubleTapPosition, setDoubleTapPosition] = useState({ x: 0, y: 0 });
   const [showAvatarView, setShowAvatarView] = useState(false);
+  const [showReportBlock, setShowReportBlock] = useState(false);
   const lastTapTime = useRef<number>(0);
   const viewStartTime = useRef<number>(0);
   
@@ -530,15 +532,17 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
                 <span className="text-white text-[10px] font-medium mt-0.5">{formatCount(commentCount)}</span>
               </button>
 
-              {/* Bookmark */}
-              <button
-                onClick={(e) => { e.stopPropagation(); toast({ title: "Saved!" }); }}
-                className="flex flex-col items-center"
-              >
-                <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                  <Bookmark className="w-5 h-5 text-white" />
-                </div>
-              </button>
+              {/* Report & Block - only show for other users */}
+              {user && user.id !== currentReel.user_id && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowReportBlock(true); }}
+                  className="flex flex-col items-center"
+                >
+                  <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                    <Flag className="w-5 h-5 text-white" />
+                  </div>
+                </button>
+              )}
 
               {/* Duet/Stitch */}
               {user && user.id !== currentReel.user_id && (
@@ -663,6 +667,15 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
             onClose={() => setShowAvatarView(false)}
             imageUrl={currentReel.user?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop&crop=face"}
             username={currentReel.user?.username || undefined}
+          />
+
+          {/* Report & Block Modal */}
+          <ReportBlockModal
+            isOpen={showReportBlock}
+            onClose={() => setShowReportBlock(false)}
+            userId={currentReel.user_id}
+            username={currentReel.user?.username || undefined}
+            reelId={currentReel.id}
           />
         </motion.div>
       )}

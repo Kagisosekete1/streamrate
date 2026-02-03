@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, LogOut, Edit2, Users, Star, MessageCircle, Camera, X, ImageIcon, Eye } from "lucide-react";
+import { Settings, LogOut, Edit2, Users, Star, MessageCircle, Camera, X, ImageIcon, Eye, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import { HeaderPositionModal } from "@/components/HeaderPositionModal";
 import { ReelViewer } from "@/components/ReelViewer";
 import { ProfileContentGrid } from "@/components/ProfileContentGrid";
 import { FollowersModal } from "@/components/FollowersModal";
+import { LastSeenDisplay } from "@/components/LastSeenDisplay";
 
 interface Post {
   id: string;
@@ -656,6 +657,15 @@ const Profile = () => {
                 {profile.bio}
               </p>
             )}
+            
+            {/* Country & Last Seen */}
+            {profile.country && (
+              <div className="flex items-center gap-1 text-muted-foreground text-sm mt-1">
+                <MapPin className="w-3 h-3" />
+                <span>{profile.country}</span>
+              </div>
+            )}
+            <LastSeenDisplay userId={user.id} className="mt-1" />
           </motion.div>
 
           {/* Stats */}
