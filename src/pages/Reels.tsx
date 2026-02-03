@@ -114,9 +114,13 @@ const Reels = () => {
   };
 
   const openReel = (index: number, isForYou: boolean = false) => {
-    setViewerIndex(index);
-    setActiveTab(isForYou ? "foryou" : "latest");
-    setShowViewer(true);
+    const targetReels = isForYou ? forYouReels : reels;
+    // Only open viewer if we have valid reels
+    if (targetReels.length > 0 && index >= 0 && index < targetReels.length) {
+      setViewerIndex(index);
+      setActiveTab(isForYou ? "foryou" : "latest");
+      setShowViewer(true);
+    }
   };
 
   const currentReelsList = activeTab === "foryou" ? forYouReels : reels;
@@ -247,21 +251,23 @@ const Reels = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Reel Viewer */}
-      <ReelViewer
-        reels={currentReelsList}
-        initialIndex={viewerIndex}
-        isOpen={showViewer}
-        onClose={() => {
-          setShowViewer(false);
-          // Update URL when closing viewer
-          if (id) {
-            navigate("/reels", { replace: true });
-          }
-          // Refresh For You feed after watching
-          fetchForYouReels();
-        }}
-      />
+      {/* Reel Viewer - only render if we have reels */}
+      {currentReelsList.length > 0 && (
+        <ReelViewer
+          reels={currentReelsList}
+          initialIndex={Math.min(viewerIndex, currentReelsList.length - 1)}
+          isOpen={showViewer}
+          onClose={() => {
+            setShowViewer(false);
+            // Update URL when closing viewer
+            if (id) {
+              navigate("/reels", { replace: true });
+            }
+            // Refresh For You feed after watching
+            fetchForYouReels();
+          }}
+        />
+      )}
 
       </div>
     </AppLayout>

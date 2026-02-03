@@ -143,8 +143,8 @@ const Leaderboard = () => {
           </div>
         </header>
 
-        {/* Top 3 Podium */}
-        {!loading && streamers.length >= 3 && (
+        {/* Top 3 Podium - Only show if we have at least 3 streamers */}
+        {!loading && streamers.length >= 3 && streamers[0] && streamers[1] && streamers[2] && (
           <div className="px-4 py-6">
             <div className="flex items-end justify-center gap-3">
               {/* 2nd Place */}
