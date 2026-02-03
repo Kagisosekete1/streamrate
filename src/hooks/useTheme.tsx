@@ -11,12 +11,18 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const stored = localStorage.getItem("streamrate-theme") as Theme;
-    return stored || "dark"; // Default to dark
-  });
-
+  const [theme, setTheme] = useState<Theme>("dark");
   const [resolvedTheme, setResolvedTheme] = useState<"dark" | "light">("dark");
+  const [mounted, setMounted] = useState(false);
+
+  // Load theme from localStorage after mount
+  useEffect(() => {
+    const stored = localStorage.getItem("streamrate-theme") as Theme;
+    if (stored) {
+      setTheme(stored);
+    }
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const root = window.document.documentElement;
