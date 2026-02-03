@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 
 // Time in milliseconds before the app should refresh (20 minutes)
 const REFRESH_THRESHOLD = 20 * 60 * 1000;
