@@ -75,11 +75,13 @@ const Profile = () => {
 
 
   useEffect(() => {
+    // Redirect only after auth check completes
     if (!loading && !user) {
       navigate("/auth");
       return;
     }
 
+    // Fetch data immediately when user is available
     if (user) {
       fetchUserData();
       fetchHeaderUrl();
@@ -521,12 +523,22 @@ const Profile = () => {
     setShowEditModal(false);
   };
 
-  // Show content immediately, don't block on loading
-  if (!user) {
+  // Show skeleton while loading or no user (will redirect)
+  if (loading || !user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-primary">Redirecting...</div>
-      </div>
+      <AppLayout showBottomNav={true}>
+        <div className="min-h-screen bg-background pb-20 md:pb-8">
+          {/* Header skeleton */}
+          <div className="h-40 w-full bg-secondary animate-pulse" />
+          <div className="px-4 -mt-12 relative z-10">
+            <div className="w-24 h-24 rounded-full bg-secondary border-4 border-background animate-pulse" />
+            <div className="mt-3 space-y-2">
+              <div className="h-5 w-32 bg-secondary rounded animate-pulse" />
+              <div className="h-4 w-24 bg-secondary rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </AppLayout>
     );
   }
 
