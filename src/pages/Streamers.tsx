@@ -279,17 +279,14 @@ const Streamers = () => {
           {!searchQuery && topStreamers.length > 0 && (
             <section>
               <button 
-                onClick={() => {
-                  setActiveFilter("Most Rated");
-                  setShowFilters(true);
-                }}
+                onClick={() => navigate("/leaderboard")}
                 className="flex items-center gap-2 mb-3 group"
               >
                 <Trophy className="w-5 h-5 text-yellow-500" />
                 <h2 className="font-semibold text-foreground group-hover:text-primary transition-colors">
                   Leaderboard
                 </h2>
-                <span className="text-xs text-muted-foreground">• Top Rated Streamers</span>
+                <span className="text-xs text-muted-foreground">• View Full Rankings →</span>
               </button>
               <div className="space-y-2">
                 {topStreamers.slice(0, 3).map((streamer, index) => (

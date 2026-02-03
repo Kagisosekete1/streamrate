@@ -38,13 +38,30 @@ const Reels = () => {
   const { getForYouFeed } = useForYouAlgorithm();
 
   const fetchReels = useCallback(async () => {
+    // Fetch reels without blocking
     const { data: reelsData } = await supabase
       .from("reels")
       .select("*")
       .order("created_at", { ascending: false });
 
     if (reelsData) {
-      // Enrich with user data
+      // Set reels immediately without waiting for profile enrichment
+      setReels(reelsData.map(reel => ({
+        ...reel,
+        user: { username: null, avatar_url: null }
+      })));
+      setLoading(false);
+
+      // If specific reel ID is provided, open viewer at that index
+      if (id) {
+        const index = reelsData.findIndex(r => r.id === id);
+        if (index !== -1) {
+          setViewerIndex(index);
+          setShowViewer(true);
+        }
+      }
+
+      // Enrich with user data in background
       const enrichedReels = await Promise.all(
         reelsData.map(async (reel) => {
           const { data: profileData } = await supabase
@@ -60,17 +77,9 @@ const Reels = () => {
         })
       );
       setReels(enrichedReels);
-
-      // If specific reel ID is provided, open viewer at that index
-      if (id) {
-        const index = enrichedReels.findIndex(r => r.id === id);
-        if (index !== -1) {
-          setViewerIndex(index);
-          setShowViewer(true);
-        }
-      }
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, [id]);
 
   const fetchForYouReels = useCallback(async () => {
