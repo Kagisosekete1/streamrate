@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Music, Play, Pause, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,8 +27,11 @@ export const MusicTrimmer = ({
   const [isDraggingEnd, setIsDraggingEnd] = useState(false);
   const timelineRef = useRef<HTMLDivElement>(null);
 
-  // Audio waveform visualization bars
-  const waveformBars = Array.from({ length: 40 }, () => Math.random() * 0.6 + 0.4);
+  // Memoize waveform bars so they don't regenerate on every render
+  const waveformBars = useMemo(() => 
+    Array.from({ length: 40 }, () => Math.random() * 0.6 + 0.4), 
+    [audioSrc] // Only regenerate when audio source changes
+  );
 
   useEffect(() => {
     const audio = audioRef.current;

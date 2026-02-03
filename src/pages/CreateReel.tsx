@@ -99,40 +99,84 @@ const CreateReel = () => {
       video.crossOrigin = "anonymous";
       video.muted = true;
       video.playsInline = true;
+      video.preload = "metadata";
 
       await new Promise<void>((resolve, reject) => {
-        video.onloadeddata = () => resolve();
-        video.onerror = () => reject(new Error("Failed to load video"));
-        setTimeout(() => reject(new Error("Timeout loading video")), 10000);
+        const onLoadedData = () => {
+          video.removeEventListener("loadeddata", onLoadedData);
+          video.removeEventListener("error", onError);
+          clearTimeout(timeoutId);
+          resolve();
+        };
+        const onError = () => {
+          video.removeEventListener("loadeddata", onLoadedData);
+          video.removeEventListener("error", onError);
+          clearTimeout(timeoutId);
+          reject(new Error("Failed to load video"));
+        };
+        const timeoutId = setTimeout(() => {
+          video.removeEventListener("loadeddata", onLoadedData);
+          video.removeEventListener("error", onError);
+          reject(new Error("Timeout loading video"));
+        }, 15000);
+        
+        video.addEventListener("loadeddata", onLoadedData);
+        video.addEventListener("error", onError);
       });
 
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       if (!ctx) {
+        console.warn("Canvas 2D context not available");
         setIsGeneratingThumbnails(false);
+        video.remove();
         return;
       }
 
+      // Use video dimensions for better quality
+      const aspectRatio = video.videoWidth / video.videoHeight || 9 / 16;
       canvas.width = 180;
-      canvas.height = 320;
+      canvas.height = Math.round(180 / aspectRatio);
 
-      const thumbnailTimes = [0.1, 0.25, 0.5, 0.75].map((t) => t * duration);
+      // Generate thumbnails at different points
+      const thumbnailTimes = [0.1, 0.25, 0.5, 0.75].map((t) => Math.min(t * duration, duration - 0.1));
       const newThumbnails: string[] = [];
 
       for (const time of thumbnailTimes) {
-        video.currentTime = time;
-        await new Promise<void>((resolve) => {
-          video.onseeked = () => resolve();
-        });
+        try {
+          video.currentTime = time;
+          await new Promise<void>((resolve, reject) => {
+            const onSeeked = () => {
+              video.removeEventListener("seeked", onSeeked);
+              clearTimeout(seekTimeout);
+              resolve();
+            };
+            const seekTimeout = setTimeout(() => {
+              video.removeEventListener("seeked", onSeeked);
+              resolve(); // Don't reject, just continue
+            }, 3000);
+            video.addEventListener("seeked", onSeeked);
+          });
 
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        newThumbnails.push(canvas.toDataURL("image/jpeg", 0.8));
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          newThumbnails.push(canvas.toDataURL("image/jpeg", 0.8));
+        } catch (e) {
+          console.warn(`Failed to generate thumbnail at ${time}s:`, e);
+        }
       }
 
-      setThumbnails(newThumbnails);
+      if (newThumbnails.length > 0) {
+        setThumbnails(newThumbnails);
+      }
       video.remove();
+      canvas.remove();
     } catch (error) {
       console.error("Error generating thumbnails:", error);
+      toast({
+        title: "Thumbnail generation failed",
+        description: "We couldn't generate preview thumbnails, but you can still upload your video.",
+        variant: "destructive",
+      });
     } finally {
       setIsGeneratingThumbnails(false);
     }
