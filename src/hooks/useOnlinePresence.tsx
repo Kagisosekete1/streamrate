@@ -50,6 +50,12 @@ export const useOnlinePresence = () => {
             user_id: user.id,
             online_at: new Date().toISOString(),
           });
+          
+          // Also update last_seen in the profiles table
+          await supabase
+            .from("profiles")
+            .update({ last_seen: new Date().toISOString() })
+            .eq("id", user.id);
         }
       });
 

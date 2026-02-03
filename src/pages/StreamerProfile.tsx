@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { AvatarViewModal } from "@/components/AvatarViewModal";
 import { OnlineIndicator } from "@/hooks/useOnlinePresence";
+import { LastSeenDisplay } from "@/components/LastSeenDisplay";
 
 interface StreamerData {
   id: string;
@@ -282,6 +283,9 @@ const StreamerProfile = () => {
                 <span>{streamer.country}</span>
               </div>
             )}
+            
+            {/* Last Seen */}
+            <LastSeenDisplay userId={id!} className="mt-1" />
           </motion.div>
 
           <motion.div

@@ -30,6 +30,7 @@ import {
   Smartphone,
   Sun,
   Monitor,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +73,7 @@ type ModalType =
   | "logout"
   | "deleteAccount"
   | "appUpdate"
+  | "lastSeenVisibility"
   | null;
 
 const Settings = () => {
@@ -120,7 +122,42 @@ const Settings = () => {
     showTrending: true,
     darkMode: "system",
     dataSaver: false,
+    lastSeenVisibility: "everyone",
   });
+
+  // Fetch last seen visibility from profile
+  useEffect(() => {
+    const fetchSettings = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("last_seen_visibility")
+        .eq("id", user.id)
+        .maybeSingle();
+      
+      if (data && (data as any).last_seen_visibility) {
+        setSettings(prev => ({ ...prev, lastSeenVisibility: (data as any).last_seen_visibility }));
+      }
+    };
+    fetchSettings();
+  }, [user]);
+
+  const handleSaveLastSeenVisibility = async () => {
+    if (!user) return;
+    
+    const { error } = await supabase
+      .from("profiles")
+      .update({ last_seen_visibility: settings.lastSeenVisibility })
+      .eq("id", user.id);
+
+    if (error) {
+      toast({ title: "Failed to update", variant: "destructive" });
+      return;
+    }
+    
+    toast({ title: "Settings saved!" });
+    setActiveModal(null);
+  };
 
   const handleLogout = async () => {
     await signOut();
@@ -281,6 +318,101 @@ const Settings = () => {
     </motion.div>
   );
 
+  // Blocked Users Modal with actual data
+  const BlockedUsersModal = ({ onClose }: { onClose: () => void }) => {
+    const [blockedUsers, setBlockedUsers] = useState<Array<{
+      id: string;
+      blocked_id: string;
+      username: string | null;
+      avatar_url: string | null;
+    }>>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      const fetchBlockedUsers = async () => {
+        if (!user) return;
+        
+        const { data } = await supabase
+          .from("blocked_users")
+          .select("id, blocked_id")
+          .eq("blocker_id", user.id);
+
+        if (data && data.length > 0) {
+          const blockedWithProfiles = await Promise.all(
+            data.map(async (block) => {
+              const { data: profile } = await supabase
+                .from("profiles")
+                .select("username, avatar_url")
+                .eq("id", block.blocked_id)
+                .maybeSingle();
+              return {
+                ...block,
+                username: profile?.username || null,
+                avatar_url: profile?.avatar_url || null,
+              };
+            })
+          );
+          setBlockedUsers(blockedWithProfiles);
+        }
+        setLoading(false);
+      };
+
+      fetchBlockedUsers();
+    }, [user]);
+
+    const handleUnblock = async (blockId: string, username: string | null) => {
+      const { error } = await supabase
+        .from("blocked_users")
+        .delete()
+        .eq("id", blockId);
+
+      if (error) {
+        toast({ title: "Failed to unblock", variant: "destructive" });
+        return;
+      }
+
+      setBlockedUsers(prev => prev.filter(b => b.id !== blockId));
+      toast({ title: `Unblocked ${username || "user"}` });
+    };
+
+    return (
+      <Modal title="Blocked Users">
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          </div>
+        ) : blockedUsers.length === 0 ? (
+          <div className="text-center py-8">
+            <Ban className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+            <p className="text-muted-foreground">You haven't blocked any users.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {blockedUsers.map((blocked) => (
+              <div key={blocked.id} className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl">
+                <img
+                  src={blocked.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+                  alt={blocked.username || "User"}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">{blocked.username || "Anonymous"}</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleUnblock(blocked.id, blocked.username)}
+                >
+                  Unblock
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
+    );
+  };
+
   return (
     <AppLayout showBottomNav={true}>
       <div className="min-h-screen bg-background pb-20 md:pb-8">
@@ -347,6 +479,12 @@ const Settings = () => {
               onClick={() => setActiveModal("whoCanRate")}
             />
           )}
+          <SettingItem
+            icon={Clock}
+            title="Last Seen"
+            subtitle={settings.lastSeenVisibility === "everyone" ? "Everyone" : settings.lastSeenVisibility === "followers" ? "Followers only" : "Off"}
+            onClick={() => setActiveModal("lastSeenVisibility")}
+          />
           <SettingItem
             icon={Ban}
             title="Blocked Users"
@@ -657,10 +795,33 @@ const Settings = () => {
         )}
 
         {activeModal === "blockedUsers" && (
-          <Modal title="Blocked Users">
-            <div className="text-center py-8">
-              <Ban className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">You haven't blocked any users.</p>
+          <BlockedUsersModal onClose={() => setActiveModal(null)} />
+        )}
+
+        {activeModal === "lastSeenVisibility" && (
+          <Modal title="Last Seen Visibility" showSave onSave={handleSaveLastSeenVisibility}>
+            <p className="text-sm text-muted-foreground mb-4">
+              Control who can see when you were last active.
+            </p>
+            <div className="space-y-3">
+              {[
+                { value: "everyone", label: "Everyone", description: "Anyone can see your last seen" },
+                { value: "followers", label: "Followers only", description: "Only people who follow you" },
+                { value: "off", label: "Off", description: "Hide your last seen from everyone" },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setSettings({ ...settings, lastSeenVisibility: option.value })}
+                  className={`w-full p-4 rounded-xl text-left transition-colors ${
+                    settings.lastSeenVisibility === option.value
+                      ? "bg-primary/20 border-2 border-primary"
+                      : "bg-secondary/50"
+                  }`}
+                >
+                  <p className="font-medium text-foreground">{option.label}</p>
+                  <p className="text-xs text-muted-foreground">{option.description}</p>
+                </button>
+              ))}
             </div>
           </Modal>
         )}
