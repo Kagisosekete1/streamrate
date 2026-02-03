@@ -16,13 +16,14 @@ import {
   Split,
   Check,
   Loader2,
-  ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ReelTrimmer } from "@/components/ReelTrimmer";
+import { ThumbnailUploader } from "@/components/ThumbnailUploader";
+import { MusicUploader } from "@/components/MusicUploader";
 import { Progress } from "@/components/ui/progress";
 
 interface DuetStitchState {
@@ -53,14 +54,23 @@ const CreateReel = () => {
   const [videoDuration, setVideoDuration] = useState(0);
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(60);
+  
+  // Thumbnail state
   const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [selectedThumbnail, setSelectedThumbnail] = useState(0);
+  const [customThumbnail, setCustomThumbnail] = useState<string | null>(null);
+  const [customThumbnailFile, setCustomThumbnailFile] = useState<File | null>(null);
+  const [isCustomThumbnailSelected, setIsCustomThumbnailSelected] = useState(false);
   const [isGeneratingThumbnails, setIsGeneratingThumbnails] = useState(false);
+
+  // Music state
+  const [musicFile, setMusicFile] = useState<File | null>(null);
+  const [musicTrimStart, setMusicTrimStart] = useState(0);
+  const [musicTrimEnd, setMusicTrimEnd] = useState(0);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const originalVideoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (!user) {
@@ -68,45 +78,64 @@ const CreateReel = () => {
     }
   }, [user]);
 
+  // Cleanup URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (videoPreview) {
+        URL.revokeObjectURL(videoPreview);
+      }
+      if (customThumbnail) {
+        URL.revokeObjectURL(customThumbnail);
+      }
+    };
+  }, []);
+
   // Generate thumbnails from video
   const generateThumbnails = async (videoUrl: string, duration: number) => {
     setIsGeneratingThumbnails(true);
-    const video = document.createElement("video");
-    video.src = videoUrl;
-    video.crossOrigin = "anonymous";
-    video.muted = true;
-    video.playsInline = true;
+    try {
+      const video = document.createElement("video");
+      video.src = videoUrl;
+      video.crossOrigin = "anonymous";
+      video.muted = true;
+      video.playsInline = true;
 
-    await new Promise<void>((resolve) => {
-      video.onloadeddata = () => resolve();
-    });
-
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      setIsGeneratingThumbnails(false);
-      return;
-    }
-
-    canvas.width = 180;
-    canvas.height = 320;
-
-    const thumbnailTimes = [0.1, 0.25, 0.5, 0.75].map((t) => t * duration);
-    const newThumbnails: string[] = [];
-
-    for (const time of thumbnailTimes) {
-      video.currentTime = time;
-      await new Promise<void>((resolve) => {
-        video.onseeked = () => resolve();
+      await new Promise<void>((resolve, reject) => {
+        video.onloadeddata = () => resolve();
+        video.onerror = () => reject(new Error("Failed to load video"));
+        setTimeout(() => reject(new Error("Timeout loading video")), 10000);
       });
 
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      newThumbnails.push(canvas.toDataURL("image/jpeg", 0.8));
-    }
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        setIsGeneratingThumbnails(false);
+        return;
+      }
 
-    setThumbnails(newThumbnails);
-    setIsGeneratingThumbnails(false);
-    video.remove();
+      canvas.width = 180;
+      canvas.height = 320;
+
+      const thumbnailTimes = [0.1, 0.25, 0.5, 0.75].map((t) => t * duration);
+      const newThumbnails: string[] = [];
+
+      for (const time of thumbnailTimes) {
+        video.currentTime = time;
+        await new Promise<void>((resolve) => {
+          video.onseeked = () => resolve();
+        });
+
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        newThumbnails.push(canvas.toDataURL("image/jpeg", 0.8));
+      }
+
+      setThumbnails(newThumbnails);
+      video.remove();
+    } catch (error) {
+      console.error("Error generating thumbnails:", error);
+    } finally {
+      setIsGeneratingThumbnails(false);
+    }
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,6 +160,16 @@ const CreateReel = () => {
       });
       return;
     }
+
+    // Clear previous state
+    if (videoPreview) {
+      URL.revokeObjectURL(videoPreview);
+    }
+    setThumbnails([]);
+    setSelectedThumbnail(0);
+    setCustomThumbnail(null);
+    setCustomThumbnailFile(null);
+    setIsCustomThumbnailSelected(false);
 
     setVideoFile(file);
     const url = URL.createObjectURL(file);
@@ -180,6 +219,27 @@ const CreateReel = () => {
     setShowTrimmer(false);
   };
 
+  const handleThumbnailSelect = (index: number) => {
+    setSelectedThumbnail(index);
+    setIsCustomThumbnailSelected(false);
+  };
+
+  const handleCustomThumbnailUpload = (file: File) => {
+    if (customThumbnail) {
+      URL.revokeObjectURL(customThumbnail);
+    }
+    const url = URL.createObjectURL(file);
+    setCustomThumbnail(url);
+    setCustomThumbnailFile(file);
+    setIsCustomThumbnailSelected(true);
+  };
+
+  const handleMusicSelect = (file: File | null, startTime: number, endTime: number) => {
+    setMusicFile(file);
+    setMusicTrimStart(startTime);
+    setMusicTrimEnd(endTime);
+  };
+
   const extractHashtags = (text: string): string[] => {
     const hashtagRegex = /#(\w+)/g;
     const matches = text.match(hashtagRegex);
@@ -205,20 +265,51 @@ const CreateReel = () => {
       }, 200);
 
       // Upload video to storage
-      const fileName = `${user.id}/${Date.now()}_${videoFile.name}`;
+      const videoFileName = `${user.id}/${Date.now()}_${videoFile.name}`;
       const { error: uploadError } = await supabase.storage
         .from("reels")
-        .upload(fileName, videoFile);
-
-      clearInterval(progressInterval);
+        .upload(videoFileName, videoFile);
 
       if (uploadError) {
+        clearInterval(progressInterval);
         throw uploadError;
       }
 
-      setUploadProgress(95);
+      const { data: urlData } = supabase.storage.from("reels").getPublicUrl(videoFileName);
 
-      const { data: urlData } = supabase.storage.from("reels").getPublicUrl(fileName);
+      setUploadProgress(70);
+
+      // Upload custom thumbnail if selected
+      let thumbnailUrl: string | null = null;
+      if (isCustomThumbnailSelected && customThumbnailFile) {
+        const thumbFileName = `${user.id}/thumbnails/${Date.now()}_thumb.jpg`;
+        const { error: thumbError } = await supabase.storage
+          .from("reels")
+          .upload(thumbFileName, customThumbnailFile);
+        
+        if (!thumbError) {
+          const { data: thumbUrlData } = supabase.storage.from("reels").getPublicUrl(thumbFileName);
+          thumbnailUrl = thumbUrlData.publicUrl;
+        }
+      }
+
+      setUploadProgress(85);
+
+      // Upload music if provided
+      let musicUrl: string | null = null;
+      if (musicFile) {
+        const musicFileName = `${user.id}/music/${Date.now()}_${musicFile.name}`;
+        const { error: musicError } = await supabase.storage
+          .from("reels")
+          .upload(musicFileName, musicFile);
+        
+        if (!musicError) {
+          const { data: musicUrlData } = supabase.storage.from("reels").getPublicUrl(musicFileName);
+          musicUrl = musicUrlData.publicUrl;
+        }
+      }
+
+      setUploadProgress(95);
 
       // Determine caption based on mode
       let finalCaption = caption;
@@ -238,6 +329,8 @@ const CreateReel = () => {
         })
         .select()
         .single();
+
+      clearInterval(progressInterval);
 
       if (reelError) {
         throw reelError;
@@ -306,18 +399,21 @@ const CreateReel = () => {
     if (videoPreview) {
       URL.revokeObjectURL(videoPreview);
     }
+    if (customThumbnail) {
+      URL.revokeObjectURL(customThumbnail);
+    }
     setVideoFile(null);
     setVideoPreview(null);
     setIsPlaying(false);
     setThumbnails([]);
     setSelectedThumbnail(0);
+    setCustomThumbnail(null);
+    setCustomThumbnailFile(null);
+    setIsCustomThumbnailSelected(false);
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hidden canvas for thumbnail generation */}
-      <canvas ref={canvasRef} className="hidden" />
-
+    <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between p-4">
@@ -497,46 +593,25 @@ const CreateReel = () => {
           />
         </div>
 
-        {/* Thumbnail Selector */}
+        {/* Thumbnail Selector - now with upload option */}
         {videoPreview && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <ImageIcon className="w-5 h-5 text-primary" />
-              <label className="font-medium text-foreground">Choose Cover</label>
-            </div>
-            
-            {isGeneratingThumbnails ? (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
-                <span className="text-sm text-muted-foreground">Generating thumbnails...</span>
-              </div>
-            ) : thumbnails.length > 0 ? (
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {thumbnails.map((thumb, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedThumbnail(index)}
-                    className={`relative flex-shrink-0 w-20 h-36 rounded-xl overflow-hidden border-2 transition-all ${
-                      selectedThumbnail === index
-                        ? "border-primary ring-2 ring-primary/30"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <img
-                      src={thumb}
-                      alt={`Thumbnail ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                    {selectedThumbnail === index && (
-                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                        <Check className="w-6 h-6 text-white drop-shadow-lg" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
+          <ThumbnailUploader
+            videoThumbnails={thumbnails}
+            isGenerating={isGeneratingThumbnails}
+            onSelectVideoFrame={handleThumbnailSelect}
+            onUploadCustom={handleCustomThumbnailUpload}
+            selectedIndex={selectedThumbnail}
+            customThumbnail={customThumbnail}
+            isCustomSelected={isCustomThumbnailSelected}
+          />
+        )}
+
+        {/* Music Upload with Preview and Trimmer */}
+        {videoPreview && (
+          <MusicUploader
+            onMusicSelect={handleMusicSelect}
+            maxDuration={Math.round(trimEnd - trimStart)}
+          />
         )}
 
         {/* Caption Input */}
