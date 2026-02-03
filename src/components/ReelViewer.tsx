@@ -112,7 +112,12 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
     };
   }, []);
 
-  const currentReel = reels[currentIndex];
+  const currentReel = reels[currentIndex] || null;
+
+  // Early return if no reels or current reel is undefined
+  if (!isOpen || !currentReel || reels.length === 0) {
+    return null;
+  }
 
   // Fetch likes, comments, and views data
   const fetchReelData = useCallback(async (reelId: string) => {
@@ -370,7 +375,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
 
   return (
     <AnimatePresence>
-      {isOpen && (
+      {isOpen && currentReel && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
