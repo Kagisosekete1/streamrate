@@ -38,46 +38,60 @@ const Reels = () => {
   const { getForYouFeed } = useForYouAlgorithm();
 
   const fetchReels = useCallback(async () => {
-    // Fetch reels without blocking
-    const { data: reelsData } = await supabase
-      .from("reels")
-      .select("*")
-      .order("created_at", { ascending: false });
+    try {
+      // Fetch reels without blocking
+      const { data: reelsData, error } = await supabase
+        .from("reels")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    if (reelsData) {
-      // Set reels immediately without waiting for profile enrichment
-      setReels(reelsData.map(reel => ({
-        ...reel,
-        user: { username: null, avatar_url: null }
-      })));
-      setLoading(false);
-
-      // If specific reel ID is provided, open viewer at that index
-      if (id) {
-        const index = reelsData.findIndex(r => r.id === id);
-        if (index !== -1) {
-          setViewerIndex(index);
-          setShowViewer(true);
-        }
+      if (error) {
+        console.error("Error fetching reels:", error);
+        setLoading(false);
+        return;
       }
 
-      // Enrich with user data in background
-      const enrichedReels = await Promise.all(
-        reelsData.map(async (reel) => {
-          const { data: profileData } = await supabase
-            .from("profiles")
-            .select("username, avatar_url")
-            .eq("id", reel.user_id)
-            .maybeSingle();
+      if (reelsData && reelsData.length > 0) {
+        // Set reels immediately without waiting for profile enrichment
+        const initialReels = reelsData.map(reel => ({
+          ...reel,
+          user: { username: null, avatar_url: null }
+        }));
+        setReels(initialReels);
+        setLoading(false);
 
-          return {
-            ...reel,
-            user: profileData || { username: null, avatar_url: null }
-          };
-        })
-      );
-      setReels(enrichedReels);
-    } else {
+        // If specific reel ID is provided, open viewer at that index
+        if (id) {
+          const index = reelsData.findIndex(r => r.id === id);
+          if (index !== -1) {
+            setViewerIndex(index);
+            setShowViewer(true);
+          }
+        }
+
+        // Enrich with user data in background (non-blocking)
+        Promise.all(
+          reelsData.map(async (reel) => {
+            const { data: profileData } = await supabase
+              .from("profiles")
+              .select("username, avatar_url")
+              .eq("id", reel.user_id)
+              .maybeSingle();
+
+            return {
+              ...reel,
+              user: profileData || { username: null, avatar_url: null }
+            };
+          })
+        ).then(enrichedReels => {
+          setReels(enrichedReels);
+        });
+      } else {
+        setReels([]);
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error("Error in fetchReels:", err);
       setLoading(false);
     }
   }, [id]);
