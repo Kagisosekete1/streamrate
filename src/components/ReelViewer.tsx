@@ -62,65 +62,13 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Preload next 2 videos for instant switching
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const preloadVideo = (url: string, reelId: string) => {
-      if (preloadedVideos[reelId]) return; // Already preloaded
-      
-      const video = document.createElement('video');
-      video.src = url;
-      video.preload = 'auto';
-      video.muted = true;
-      video.playsInline = true;
-      // Remove default controls and poster to prevent grey play button
-      video.controls = false;
-      video.setAttribute('webkit-playsinline', 'true');
-      video.setAttribute('x-webkit-airplay', 'allow');
-      
-      // Start loading
-      video.load();
-      
-      setPreloadedVideos(prev => ({
-        ...prev,
-        [reelId]: video
-      }));
-    };
-
-    // Preload next 2 reels
-    for (let i = 1; i <= 2; i++) {
-      const nextIndex = currentIndex + i;
-      if (nextIndex < reels.length) {
-        preloadVideo(reels[nextIndex].video_url, reels[nextIndex].id);
-      }
-    }
-
-    // Also preload previous reel for going back
-    if (currentIndex > 0) {
-      preloadVideo(reels[currentIndex - 1].video_url, reels[currentIndex - 1].id);
-    }
-  }, [currentIndex, isOpen, reels]);
-
-  // Cleanup preloaded videos on unmount
-  useEffect(() => {
-    return () => {
-      Object.values(preloadedVideos).forEach(video => {
-        video.src = '';
-        video.load();
-      });
-    };
-  }, []);
-
+  // Get current reel safely
   const currentReel = reels[currentIndex] || null;
-
-  // Early return if no reels or current reel is undefined
-  if (!isOpen || !currentReel || reels.length === 0) {
-    return null;
-  }
 
   // Fetch likes, comments, and views data
   const fetchReelData = useCallback(async (reelId: string) => {
+    if (!reelId) return;
+    
     const { count: likesCount } = await supabase
       .from("reel_likes")
       .select("*", { count: "exact", head: true })
@@ -167,7 +115,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
 
   // Check if following user
   const checkFollowing = useCallback(async (userId: string) => {
-    if (!user || user.id === userId) return;
+    if (!user || !userId || user.id === userId) return;
     
     const { data } = await supabase
       .from("follows")
@@ -182,6 +130,56 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
     }));
   }, [user]);
 
+  // Preload next 2 videos for instant switching
+  useEffect(() => {
+    if (!isOpen || reels.length === 0) return;
+
+    const preloadVideo = (url: string, reelId: string) => {
+      if (preloadedVideos[reelId]) return; // Already preloaded
+      
+      const video = document.createElement('video');
+      video.src = url;
+      video.preload = 'auto';
+      video.muted = true;
+      video.playsInline = true;
+      // Remove default controls and poster to prevent grey play button
+      video.controls = false;
+      video.setAttribute('webkit-playsinline', 'true');
+      video.setAttribute('x-webkit-airplay', 'allow');
+      
+      // Start loading
+      video.load();
+      
+      setPreloadedVideos(prev => ({
+        ...prev,
+        [reelId]: video
+      }));
+    };
+
+    // Preload next 2 reels
+    for (let i = 1; i <= 2; i++) {
+      const nextIndex = currentIndex + i;
+      if (nextIndex < reels.length) {
+        preloadVideo(reels[nextIndex].video_url, reels[nextIndex].id);
+      }
+    }
+
+    // Also preload previous reel for going back
+    if (currentIndex > 0) {
+      preloadVideo(reels[currentIndex - 1].video_url, reels[currentIndex - 1].id);
+    }
+  }, [currentIndex, isOpen, reels, preloadedVideos]);
+
+  // Cleanup preloaded videos on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(preloadedVideos).forEach(video => {
+        video.src = '';
+        video.load();
+      });
+    };
+  }, [preloadedVideos]);
+
   useEffect(() => {
     if (isOpen && currentReel) {
       fetchReelData(currentReel.id);
@@ -191,19 +189,22 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
       // Update user interest for viewing this creator
       updateUserInterest("creator", currentReel.user_id, "view");
     }
-  }, [isOpen, currentReel?.id, fetchReelData, checkFollowing, updateUserInterest]);
+  }, [isOpen, currentReel?.id, currentReel?.user_id, fetchReelData, checkFollowing, updateUserInterest]);
 
   // Record view when switching reels or closing
   useEffect(() => {
+    const reelId = currentReel?.id;
+    const duration = currentReel?.duration;
+    
     return () => {
-      if (currentReel && viewStartTime.current > 0 && !viewRecorded[currentReel.id]) {
+      if (reelId && viewStartTime.current > 0 && !viewRecorded[reelId]) {
         const watchDuration = Math.floor((Date.now() - viewStartTime.current) / 1000);
-        const completed = watchDuration >= currentReel.duration * 0.8; // 80% watched
-        recordView(currentReel.id, watchDuration, completed);
-        setViewRecorded(prev => ({ ...prev, [currentReel.id]: true }));
+        const completed = duration ? watchDuration >= duration * 0.8 : false; // 80% watched
+        recordView(reelId, watchDuration, completed);
+        setViewRecorded(prev => ({ ...prev, [reelId]: true }));
       }
     };
-  }, [currentReel?.id]);
+  }, [currentReel?.id, currentReel?.duration, recordView, viewRecorded]);
 
   useEffect(() => {
     setCurrentIndex(initialIndex);
@@ -211,19 +212,19 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
 
   // Play/pause video
   useEffect(() => {
-    if (videoRef.current) {
-      if (isPlaying && isOpen && !showComments) {
+    if (videoRef.current && isOpen && currentReel) {
+      if (isPlaying && !showComments) {
         videoRef.current.play();
       } else {
         videoRef.current.pause();
       }
     }
-  }, [isPlaying, currentIndex, isOpen, showComments]);
+  }, [isPlaying, currentIndex, isOpen, showComments, currentReel]);
 
   // Video progress
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !isOpen || !currentReel) return;
 
     const handleTimeUpdate = () => {
       const progress = (video.currentTime / video.duration) * 100;
@@ -232,7 +233,12 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
 
     video.addEventListener("timeupdate", handleTimeUpdate);
     return () => video.removeEventListener("timeupdate", handleTimeUpdate);
-  }, [currentIndex]);
+  }, [currentIndex, isOpen, currentReel]);
+
+  // Early return AFTER all hooks
+  if (!isOpen || !currentReel || reels.length === 0) {
+    return null;
+  }
 
   // Handle swipe
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
