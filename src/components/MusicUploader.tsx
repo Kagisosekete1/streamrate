@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Music, Upload, Play, Pause, Scissors, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,9 +18,16 @@ export const MusicUploader = ({ onMusicSelect, maxDuration = 60 }: MusicUploader
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Memoize waveform bars so they don't regenerate on every render
+  const waveformBars = useMemo(() => 
+    Array.from({ length: 30 }, () => Math.random() * 0.6 + 0.4), 
+    [musicFile] // Only regenerate when music file changes
+  );
 
   // Cleanup URL on unmount
   useEffect(() => {
@@ -31,12 +38,13 @@ export const MusicUploader = ({ onMusicSelect, maxDuration = 60 }: MusicUploader
     };
   }, [musicUrl]);
 
-  // Handle playback loop within trim range
+  // Handle playback loop within trim range and update current time
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
     const handleTimeUpdate = () => {
+      setCurrentTime(audio.currentTime);
       if (audio.currentTime >= trimEnd && trimEnd > 0) {
         audio.currentTime = trimStart;
         audio.pause();
@@ -44,8 +52,17 @@ export const MusicUploader = ({ onMusicSelect, maxDuration = 60 }: MusicUploader
       }
     };
 
+    const handleEnded = () => {
+      setIsPlaying(false);
+      audio.currentTime = trimStart;
+    };
+
     audio.addEventListener("timeupdate", handleTimeUpdate);
-    return () => audio.removeEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("ended", handleEnded);
+    return () => {
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("ended", handleEnded);
+    };
   }, [trimStart, trimEnd]);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -209,18 +226,23 @@ export const MusicUploader = ({ onMusicSelect, maxDuration = 60 }: MusicUploader
             </div>
           </div>
 
-          {/* Simple waveform visualization */}
+          {/* Waveform visualization with playback indicator */}
           <div className="mt-3 h-8 flex items-center gap-0.5 px-1">
-            {Array.from({ length: 30 }, (_, i) => {
-              const barPosition = (i / 30) * musicDuration;
+            {waveformBars.map((height, i) => {
+              const barPosition = (i / waveformBars.length) * musicDuration;
               const isInRange = barPosition >= trimStart && barPosition <= trimEnd;
+              const isPlayed = barPosition <= currentTime && currentTime >= trimStart;
               return (
                 <div
                   key={i}
                   className={`flex-1 rounded-full transition-colors ${
-                    isInRange ? "bg-primary" : "bg-muted"
+                    isInRange 
+                      ? isPlayed 
+                        ? "bg-primary" 
+                        : "bg-primary/40"
+                      : "bg-muted"
                   }`}
-                  style={{ height: `${(Math.random() * 0.6 + 0.4) * 100}%` }}
+                  style={{ height: `${height * 100}%` }}
                 />
               );
             })}
