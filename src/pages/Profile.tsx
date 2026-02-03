@@ -521,10 +521,11 @@ const Profile = () => {
     setShowEditModal(false);
   };
 
-  if (loading || !user || !profile) {
+  // Show content immediately, don't block on loading
+  if (!user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-primary">Loading...</div>
+        <div className="animate-pulse text-primary">Redirecting...</div>
       </div>
     );
   }

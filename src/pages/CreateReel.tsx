@@ -16,13 +16,14 @@ import {
   Split,
   Check,
   Loader2,
+  ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ReelTrimmer } from "@/components/ReelTrimmer";
+import { Progress } from "@/components/ui/progress";
 
 interface DuetStitchState {
   mode: "duet" | "stitch";
@@ -47,14 +48,19 @@ const CreateReel = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [showTrimmer, setShowTrimmer] = useState(false);
   const [videoDuration, setVideoDuration] = useState(0);
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(60);
+  const [thumbnails, setThumbnails] = useState<string[]>([]);
+  const [selectedThumbnail, setSelectedThumbnail] = useState(0);
+  const [isGeneratingThumbnails, setIsGeneratingThumbnails] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const originalVideoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (!user) {
@@ -62,7 +68,48 @@ const CreateReel = () => {
     }
   }, [user]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Generate thumbnails from video
+  const generateThumbnails = async (videoUrl: string, duration: number) => {
+    setIsGeneratingThumbnails(true);
+    const video = document.createElement("video");
+    video.src = videoUrl;
+    video.crossOrigin = "anonymous";
+    video.muted = true;
+    video.playsInline = true;
+
+    await new Promise<void>((resolve) => {
+      video.onloadeddata = () => resolve();
+    });
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      setIsGeneratingThumbnails(false);
+      return;
+    }
+
+    canvas.width = 180;
+    canvas.height = 320;
+
+    const thumbnailTimes = [0.1, 0.25, 0.5, 0.75].map((t) => t * duration);
+    const newThumbnails: string[] = [];
+
+    for (const time of thumbnailTimes) {
+      video.currentTime = time;
+      await new Promise<void>((resolve) => {
+        video.onseeked = () => resolve();
+      });
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      newThumbnails.push(canvas.toDataURL("image/jpeg", 0.8));
+    }
+
+    setThumbnails(newThumbnails);
+    setIsGeneratingThumbnails(false);
+    video.remove();
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -88,6 +135,17 @@ const CreateReel = () => {
     setVideoFile(file);
     const url = URL.createObjectURL(file);
     setVideoPreview(url);
+
+    // Get duration and generate thumbnails
+    const tempVideo = document.createElement("video");
+    tempVideo.src = url;
+    tempVideo.onloadedmetadata = () => {
+      const duration = tempVideo.duration;
+      setVideoDuration(duration);
+      setTrimEnd(Math.min(duration, 60));
+      generateThumbnails(url, duration);
+      tempVideo.remove();
+    };
   };
 
   const handleVideoLoad = () => {
@@ -132,17 +190,33 @@ const CreateReel = () => {
     if (!videoFile || !user) return;
 
     setIsUploading(true);
+    setUploadProgress(0);
 
     try {
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
       // Upload video to storage
       const fileName = `${user.id}/${Date.now()}_${videoFile.name}`;
       const { error: uploadError } = await supabase.storage
         .from("reels")
         .upload(fileName, videoFile);
 
+      clearInterval(progressInterval);
+
       if (uploadError) {
         throw uploadError;
       }
+
+      setUploadProgress(95);
 
       const { data: urlData } = supabase.storage.from("reels").getPublicUrl(fileName);
 
@@ -168,6 +242,8 @@ const CreateReel = () => {
       if (reelError) {
         throw reelError;
       }
+
+      setUploadProgress(98);
 
       // Process hashtags
       const hashtags = extractHashtags(caption);
@@ -204,20 +280,25 @@ const CreateReel = () => {
         }
       }
 
+      setUploadProgress(100);
+
       toast({
         title: "Reel uploaded!",
         description: "Your reel is now live",
       });
 
-      navigate("/reels");
+      // Small delay to show 100%
+      setTimeout(() => {
+        navigate("/reels");
+      }, 500);
     } catch (error: any) {
       toast({
         title: "Upload failed",
         description: error.message,
         variant: "destructive",
       });
-    } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -228,10 +309,15 @@ const CreateReel = () => {
     setVideoFile(null);
     setVideoPreview(null);
     setIsPlaying(false);
+    setThumbnails([]);
+    setSelectedThumbnail(0);
   };
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Hidden canvas for thumbnail generation */}
+      <canvas ref={canvasRef} className="hidden" />
+
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between p-4">
@@ -293,6 +379,25 @@ const CreateReel = () => {
                   @{duetStitchState.originalCreator || "user"}
                 </p>
               </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Upload Progress Overlay */}
+        {isUploading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-8"
+          >
+            <div className="bg-card rounded-3xl p-8 w-full max-w-sm text-center">
+              <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-6">
+                <Upload className="w-10 h-10 text-primary animate-pulse" />
+              </div>
+              <h2 className="text-xl font-bold text-foreground mb-2">Uploading Reel</h2>
+              <p className="text-muted-foreground text-sm mb-6">Please wait while we upload your video...</p>
+              <Progress value={uploadProgress} className="h-2 mb-3" />
+              <p className="text-sm font-medium text-primary">{uploadProgress}%</p>
             </div>
           </motion.div>
         )}
@@ -391,6 +496,48 @@ const CreateReel = () => {
             className="hidden"
           />
         </div>
+
+        {/* Thumbnail Selector */}
+        {videoPreview && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="w-5 h-5 text-primary" />
+              <label className="font-medium text-foreground">Choose Cover</label>
+            </div>
+            
+            {isGeneratingThumbnails ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
+                <span className="text-sm text-muted-foreground">Generating thumbnails...</span>
+              </div>
+            ) : thumbnails.length > 0 ? (
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {thumbnails.map((thumb, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedThumbnail(index)}
+                    className={`relative flex-shrink-0 w-20 h-36 rounded-xl overflow-hidden border-2 transition-all ${
+                      selectedThumbnail === index
+                        ? "border-primary ring-2 ring-primary/30"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <img
+                      src={thumb}
+                      alt={`Thumbnail ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    {selectedThumbnail === index && (
+                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                        <Check className="w-6 h-6 text-white drop-shadow-lg" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        )}
 
         {/* Caption Input */}
         <div className="space-y-3">

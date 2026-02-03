@@ -19,6 +19,7 @@ import Reels from "./pages/Reels";
 import Hashtags from "./pages/Hashtags";
 import ReelAnalytics from "./pages/ReelAnalytics";
 import CreateReel from "./pages/CreateReel";
+import Leaderboard from "./pages/Leaderboard";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/reel/:id" element={<Reels />} />
               <Route path="/hashtags" element={<Hashtags />} />
               <Route path="/hashtags/:tag" element={<Hashtags />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/analytics/reels" element={<ReelAnalytics />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

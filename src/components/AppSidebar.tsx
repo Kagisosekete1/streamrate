@@ -13,8 +13,6 @@ import {
   X,
   Trophy,
   LogOut,
-  Hash,
-  TrendingUp,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -35,8 +33,7 @@ const mainNavItems: NavItem[] = [
 ];
 
 const bottomNavItems: NavItem[] = [
-  { icon: Trophy, label: "Leaderboard", path: "/streamers?filter=leaderboard" },
-  { icon: Hash, label: "Hashtags", path: "/hashtags" },
+  { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
