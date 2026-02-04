@@ -40,6 +40,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { HelpFAQModal } from "@/components/settings/HelpFAQModal";
+import { CommunityGuidelinesModal } from "@/components/settings/CommunityGuidelinesModal";
+import { PrivacyPolicyModal } from "@/components/settings/PrivacyPolicyModal";
+import { TermsOfServiceModal } from "@/components/settings/TermsOfServiceModal";
+import { ReportProblemModal } from "@/components/settings/ReportProblemModal";
 
 // App version info
 const APP_VERSION = "1.0.0";
@@ -968,151 +973,23 @@ const Settings = () => {
         )}
 
         {activeModal === "helpFaq" && (
-          <Modal title="Help & FAQ">
-            <div className="space-y-4">
-              {[
-                {
-                  q: "What is StreamRate?",
-                  a: "StreamRate lets fans rate and review streamers worldwide.",
-                },
-                {
-                  q: "How do ratings work?",
-                  a: "Fans rate streamers from 1 to 5 stars.",
-                },
-                {
-                  q: "Can I change my username?",
-                  a: "Yes, from Edit Profile in settings.",
-                },
-                {
-                  q: "How do I report a user?",
-                  a: "Use Report a Problem in settings.",
-                },
-              ].map((faq, i) => (
-                <div key={i} className="p-4 bg-secondary/50 rounded-xl">
-                  <p className="font-medium text-foreground mb-1">{faq.q}</p>
-                  <p className="text-sm text-muted-foreground">{faq.a}</p>
-                </div>
-              ))}
-            </div>
-          </Modal>
+          <HelpFAQModal onClose={() => setActiveModal(null)} />
         )}
 
         {activeModal === "reportProblem" && (
-          <Modal title="Report a Problem">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">
-                  Problem Type
-                </label>
-                <select
-                  value={reportForm.type}
-                  onChange={(e) => setReportForm({ ...reportForm, type: e.target.value })}
-                  className="w-full rounded-lg border border-border bg-secondary/50 px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                >
-                  <option>Bug</option>
-                  <option>Abuse / Harassment</option>
-                  <option>Fake profile</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">
-                  Message
-                </label>
-                <textarea
-                  value={reportForm.message}
-                  onChange={(e) => setReportForm({ ...reportForm, message: e.target.value })}
-                  placeholder="Describe the problem..."
-                  className="w-full min-h-[100px] rounded-lg border border-border bg-secondary/50 px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Our team will review your report.
-              </p>
-              <Button variant="gaming" onClick={handleReportProblem} className="w-full">
-                Submit Report
-              </Button>
-            </div>
-          </Modal>
+          <ReportProblemModal onClose={() => setActiveModal(null)} />
         )}
 
         {activeModal === "communityGuidelines" && (
-          <Modal title="Community Guidelines">
-            <div className="space-y-3">
-              {[
-                "Be respectful",
-                "No hate speech",
-                "No harassment",
-                "No fake ratings or spam",
-                "No impersonation",
-                "Follow platform rules",
-              ].map((rule, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
-                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs text-primary font-medium">
-                    {i + 1}
-                  </div>
-                  <p className="text-foreground">{rule}</p>
-                </div>
-              ))}
-              <p className="text-sm text-muted-foreground mt-4">
-                Violations may result in account suspension.
-              </p>
-            </div>
-          </Modal>
+          <CommunityGuidelinesModal onClose={() => setActiveModal(null)} />
         )}
 
         {activeModal === "privacyPolicy" && (
-          <Modal title="Privacy Policy">
-            <div className="space-y-4 text-sm text-muted-foreground">
-              <div>
-                <h4 className="font-medium text-foreground mb-1">Data We Collect</h4>
-                <p>We collect information you provide directly, including profile data and content.</p>
-              </div>
-              <div>
-                <h4 className="font-medium text-foreground mb-1">How Data is Used</h4>
-                <p>Your data is used to provide and improve our services.</p>
-              </div>
-              <div>
-                <h4 className="font-medium text-foreground mb-1">Profile Visibility</h4>
-                <p>You control who can see your profile through privacy settings.</p>
-              </div>
-              <div>
-                <h4 className="font-medium text-foreground mb-1">Cookies & Analytics</h4>
-                <p>We use cookies to improve your experience.</p>
-              </div>
-              <div>
-                <h4 className="font-medium text-foreground mb-1">Contact</h4>
-                <p>For privacy concerns, contact support@streamrate.app</p>
-              </div>
-            </div>
-          </Modal>
+          <PrivacyPolicyModal onClose={() => setActiveModal(null)} />
         )}
 
         {activeModal === "termsOfService" && (
-          <Modal title="Terms of Service">
-            <div className="space-y-4 text-sm text-muted-foreground">
-              <div>
-                <h4 className="font-medium text-foreground mb-1">Account Responsibility</h4>
-                <p>You are responsible for maintaining the security of your account.</p>
-              </div>
-              <div>
-                <h4 className="font-medium text-foreground mb-1">User-Generated Content</h4>
-                <p>You retain ownership of content you post but grant us license to display it.</p>
-              </div>
-              <div>
-                <h4 className="font-medium text-foreground mb-1">Ratings & Reviews</h4>
-                <p>All ratings must be honest and based on genuine experience.</p>
-              </div>
-              <div>
-                <h4 className="font-medium text-foreground mb-1">Termination</h4>
-                <p>We may terminate accounts that violate our guidelines.</p>
-              </div>
-              <div>
-                <h4 className="font-medium text-foreground mb-1">Liability</h4>
-                <p>We are not liable for user-generated content or third-party services.</p>
-              </div>
-            </div>
-          </Modal>
+          <TermsOfServiceModal onClose={() => setActiveModal(null)} />
         )}
 
         {activeModal === "logout" && (
