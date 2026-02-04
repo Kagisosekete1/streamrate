@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -16,13 +16,13 @@ import {
   Split,
   Check,
   Loader2,
+  Image,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ReelTrimmer } from "@/components/ReelTrimmer";
-import { ThumbnailUploader } from "@/components/ThumbnailUploader";
 import { MusicUploader } from "@/components/MusicUploader";
 import { Progress } from "@/components/ui/progress";
 
@@ -37,10 +37,9 @@ interface DuetStitchState {
 const CreateReel = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
 
-  // Duet/Stitch state from navigation
   const duetStitchState = location.state as DuetStitchState | null;
 
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -54,13 +53,13 @@ const CreateReel = () => {
   const [videoDuration, setVideoDuration] = useState(0);
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(60);
-  
-  // Thumbnail state
+
+  // Thumbnail state - simplified
   const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [selectedThumbnail, setSelectedThumbnail] = useState(0);
   const [customThumbnail, setCustomThumbnail] = useState<string | null>(null);
   const [customThumbnailFile, setCustomThumbnailFile] = useState<File | null>(null);
-  const [isCustomThumbnailSelected, setIsCustomThumbnailSelected] = useState(false);
+  const [useCustomThumbnail, setUseCustomThumbnail] = useState(false);
   const [isGeneratingThumbnails, setIsGeneratingThumbnails] = useState(false);
 
   // Music state
@@ -71,199 +70,106 @@ const CreateReel = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const originalVideoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) {
       navigate("/auth");
     }
-  }, [user]);
+  }, [user, navigate]);
 
   // Cleanup URLs on unmount
   useEffect(() => {
     return () => {
-      if (videoPreview) {
-        URL.revokeObjectURL(videoPreview);
-      }
-      if (customThumbnail) {
-        URL.revokeObjectURL(customThumbnail);
-      }
+      if (videoPreview) URL.revokeObjectURL(videoPreview);
+      if (customThumbnail) URL.revokeObjectURL(customThumbnail);
+      thumbnails.forEach((t) => {
+        if (t.startsWith("blob:")) URL.revokeObjectURL(t);
+      });
     };
   }, []);
 
-  // Generate thumbnails from video with robust error handling
-  const generateThumbnails = async (videoUrl: string, duration: number) => {
+  // Generate thumbnails from video
+  const generateThumbnails = useCallback(async (videoUrl: string, duration: number) => {
     setIsGeneratingThumbnails(true);
-    
-    let video: HTMLVideoElement | null = null;
-    let canvas: HTMLCanvasElement | null = null;
-    let loadTimeoutId: ReturnType<typeof setTimeout> | null = null;
-    
-    const cleanup = () => {
-      if (loadTimeoutId) clearTimeout(loadTimeoutId);
-      if (video) {
-        video.pause();
-        video.src = "";
-        video.load();
-        video.remove();
-        video = null;
-      }
-      if (canvas) {
-        canvas.remove();
-        canvas = null;
-      }
-    };
+    const generatedThumbnails: string[] = [];
 
     try {
-      video = document.createElement("video");
+      const video = document.createElement("video");
       video.src = videoUrl;
       video.crossOrigin = "anonymous";
       video.muted = true;
       video.playsInline = true;
       video.preload = "auto";
-      video.controls = false;
 
-      // Wait for video to be ready with timeout
       await new Promise<void>((resolve, reject) => {
-        if (!video) {
-          reject(new Error("Video element not created"));
-          return;
-        }
-        
-        const onCanPlay = () => {
-          video?.removeEventListener("canplaythrough", onCanPlay);
-          video?.removeEventListener("loadeddata", onLoadedData);
-          video?.removeEventListener("error", onError);
-          if (loadTimeoutId) clearTimeout(loadTimeoutId);
+        const timeout = setTimeout(() => resolve(), 15000);
+        video.onloadeddata = () => {
+          clearTimeout(timeout);
           resolve();
         };
-        
-        const onLoadedData = () => {
-          // Also resolve on loadeddata as fallback
-          video?.removeEventListener("canplaythrough", onCanPlay);
-          video?.removeEventListener("loadeddata", onLoadedData);
-          video?.removeEventListener("error", onError);
-          if (loadTimeoutId) clearTimeout(loadTimeoutId);
-          resolve();
+        video.onerror = () => {
+          clearTimeout(timeout);
+          reject(new Error("Video load error"));
         };
-        
-        const onError = (e: Event) => {
-          video?.removeEventListener("canplaythrough", onCanPlay);
-          video?.removeEventListener("loadeddata", onLoadedData);
-          video?.removeEventListener("error", onError);
-          if (loadTimeoutId) clearTimeout(loadTimeoutId);
-          reject(new Error("Failed to load video for thumbnails"));
-        };
-        
-        loadTimeoutId = setTimeout(() => {
-          video?.removeEventListener("canplaythrough", onCanPlay);
-          video?.removeEventListener("loadeddata", onLoadedData);
-          video?.removeEventListener("error", onError);
-          // Don't reject on timeout, try to continue with what we have
-          console.warn("Video load timeout, attempting to continue...");
-          resolve();
-        }, 20000);
-        
-        video.addEventListener("canplaythrough", onCanPlay);
-        video.addEventListener("loadeddata", onLoadedData);
-        video.addEventListener("error", onError);
-        
-        // Trigger load
         video.load();
       });
 
-      if (!video || video.videoWidth === 0) {
-        console.warn("Video dimensions not available");
+      if (video.videoWidth === 0) {
         setIsGeneratingThumbnails(false);
-        cleanup();
         return;
       }
 
-      canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
       if (!ctx) {
-        console.warn("Canvas 2D context not available");
         setIsGeneratingThumbnails(false);
-        cleanup();
         return;
       }
 
-      // Use video dimensions for better quality
-      const aspectRatio = video.videoWidth / video.videoHeight || 9 / 16;
-      canvas.width = Math.min(320, video.videoWidth);
-      canvas.height = Math.round(canvas.width / aspectRatio);
+      canvas.width = 180;
+      canvas.height = 320;
 
-      // Generate thumbnails at different points with safe times
-      const safeDuration = Math.max(duration - 0.5, 0.1);
-      const thumbnailTimes = [
-        Math.max(0.1, safeDuration * 0.1),
-        safeDuration * 0.25,
-        safeDuration * 0.5,
-        safeDuration * 0.75
-      ].filter(t => t < duration);
-      
-      const newThumbnails: string[] = [];
+      const times = [0.1, duration * 0.25, duration * 0.5, duration * 0.75].filter(
+        (t) => t < duration
+      );
 
-      for (const time of thumbnailTimes) {
+      for (const time of times) {
         try {
-          if (!video) break;
-          
-          // Seek to time
           video.currentTime = time;
-          
           await new Promise<void>((resolve) => {
-            if (!video) {
-              resolve();
-              return;
-            }
-            
             const onSeeked = () => {
-              video?.removeEventListener("seeked", onSeeked);
-              clearTimeout(seekTimeout);
-              // Small delay to ensure frame is rendered
-              setTimeout(resolve, 50);
+              video.removeEventListener("seeked", onSeeked);
+              setTimeout(resolve, 100);
             };
-            
-            const seekTimeout = setTimeout(() => {
-              video?.removeEventListener("seeked", onSeeked);
-              resolve(); // Continue even if seek times out
-            }, 5000);
-            
             video.addEventListener("seeked", onSeeked);
+            setTimeout(resolve, 3000); // Fallback timeout
           });
 
-          if (!video || !canvas || !ctx) break;
-          
-          // Draw frame to canvas
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-          
-          // Verify the thumbnail is not blank
-          if (dataUrl && dataUrl.length > 1000) {
-            newThumbnails.push(dataUrl);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+          if (dataUrl.length > 1000) {
+            generatedThumbnails.push(dataUrl);
           }
         } catch (e) {
-          console.warn(`Failed to generate thumbnail at ${time}s:`, e);
+          console.warn("Thumbnail generation error:", e);
         }
       }
 
-      if (newThumbnails.length > 0) {
-        setThumbnails(newThumbnails);
+      video.src = "";
+      video.load();
+      canvas.remove();
+
+      if (generatedThumbnails.length > 0) {
+        setThumbnails(generatedThumbnails);
         setSelectedThumbnail(0);
-      } else {
-        console.warn("No thumbnails were generated successfully");
       }
     } catch (error) {
       console.error("Error generating thumbnails:", error);
-      toast({
-        title: "Thumbnail generation issue",
-        description: "We'll use a default cover. You can still upload a custom thumbnail.",
-        variant: "default",
-      });
     } finally {
-      cleanup();
       setIsGeneratingThumbnails(false);
     }
-  };
+  }, []);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -278,7 +184,6 @@ const CreateReel = () => {
       return;
     }
 
-    // Check file size (max 100MB)
     if (file.size > 100 * 1024 * 1024) {
       toast({
         title: "File too large",
@@ -289,20 +194,18 @@ const CreateReel = () => {
     }
 
     // Clear previous state
-    if (videoPreview) {
-      URL.revokeObjectURL(videoPreview);
-    }
+    if (videoPreview) URL.revokeObjectURL(videoPreview);
     setThumbnails([]);
     setSelectedThumbnail(0);
     setCustomThumbnail(null);
     setCustomThumbnailFile(null);
-    setIsCustomThumbnailSelected(false);
+    setUseCustomThumbnail(false);
 
     setVideoFile(file);
     const url = URL.createObjectURL(file);
     setVideoPreview(url);
 
-    // Get duration and generate thumbnails
+    // Get duration
     const tempVideo = document.createElement("video");
     tempVideo.src = url;
     tempVideo.onloadedmetadata = () => {
@@ -316,9 +219,8 @@ const CreateReel = () => {
 
   const handleVideoLoad = () => {
     if (videoRef.current) {
-      const duration = videoRef.current.duration;
-      setVideoDuration(duration);
-      setTrimEnd(Math.min(duration, 60));
+      setVideoDuration(videoRef.current.duration);
+      setTrimEnd(Math.min(videoRef.current.duration, 60));
     }
   };
 
@@ -348,17 +250,19 @@ const CreateReel = () => {
 
   const handleThumbnailSelect = (index: number) => {
     setSelectedThumbnail(index);
-    setIsCustomThumbnailSelected(false);
+    setUseCustomThumbnail(false);
   };
 
-  const handleCustomThumbnailUpload = (file: File) => {
-    if (customThumbnail) {
-      URL.revokeObjectURL(customThumbnail);
-    }
+  const handleCustomThumbnailSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+
+    if (customThumbnail) URL.revokeObjectURL(customThumbnail);
+
     const url = URL.createObjectURL(file);
     setCustomThumbnail(url);
     setCustomThumbnailFile(file);
-    setIsCustomThumbnailSelected(true);
+    setUseCustomThumbnail(true);
   };
 
   const handleMusicSelect = (file: File | null, startTime: number, endTime: number) => {
@@ -380,18 +284,11 @@ const CreateReel = () => {
     setUploadProgress(0);
 
     try {
-      // Simulate upload progress
       const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
+        setUploadProgress((prev) => (prev >= 90 ? 90 : prev + 10));
       }, 200);
 
-      // Upload video to storage
+      // Upload video
       const videoFileName = `${user.id}/${Date.now()}_${videoFile.name}`;
       const { error: uploadError } = await supabase.storage
         .from("reels")
@@ -403,19 +300,20 @@ const CreateReel = () => {
       }
 
       const { data: urlData } = supabase.storage.from("reels").getPublicUrl(videoFileName);
-
       setUploadProgress(70);
 
       // Upload custom thumbnail if selected
       let thumbnailUrl: string | null = null;
-      if (isCustomThumbnailSelected && customThumbnailFile) {
+      if (useCustomThumbnail && customThumbnailFile) {
         const thumbFileName = `${user.id}/thumbnails/${Date.now()}_thumb.jpg`;
         const { error: thumbError } = await supabase.storage
           .from("reels")
           .upload(thumbFileName, customThumbnailFile);
-        
+
         if (!thumbError) {
-          const { data: thumbUrlData } = supabase.storage.from("reels").getPublicUrl(thumbFileName);
+          const { data: thumbUrlData } = supabase.storage
+            .from("reels")
+            .getPublicUrl(thumbFileName);
           thumbnailUrl = thumbUrlData.publicUrl;
         }
       }
@@ -429,16 +327,18 @@ const CreateReel = () => {
         const { error: musicError } = await supabase.storage
           .from("reels")
           .upload(musicFileName, musicFile);
-        
+
         if (!musicError) {
-          const { data: musicUrlData } = supabase.storage.from("reels").getPublicUrl(musicFileName);
+          const { data: musicUrlData } = supabase.storage
+            .from("reels")
+            .getPublicUrl(musicFileName);
           musicUrl = musicUrlData.publicUrl;
         }
       }
 
       setUploadProgress(95);
 
-      // Determine caption based on mode
+      // Caption with duet/stitch info
       let finalCaption = caption;
       if (duetStitchState) {
         const modeLabel = duetStitchState.mode === "duet" ? "Duet" : "Stitch";
@@ -459,16 +359,13 @@ const CreateReel = () => {
 
       clearInterval(progressInterval);
 
-      if (reelError) {
-        throw reelError;
-      }
+      if (reelError) throw reelError;
 
       setUploadProgress(98);
 
       // Process hashtags
       const hashtags = extractHashtags(caption);
       for (const tagName of hashtags) {
-        // Upsert hashtag
         const { data: existingTag } = await supabase
           .from("hashtags")
           .select("id, use_count")
@@ -491,7 +388,6 @@ const CreateReel = () => {
           hashtagId = newTag?.id;
         }
 
-        // Link hashtag to reel
         if (hashtagId) {
           await supabase.from("reel_hashtags").insert({
             reel_id: reelData.id,
@@ -507,10 +403,7 @@ const CreateReel = () => {
         description: "Your reel is now live",
       });
 
-      // Small delay to show 100%
-      setTimeout(() => {
-        navigate("/reels");
-      }, 500);
+      setTimeout(() => navigate("/reels"), 500);
     } catch (error: any) {
       toast({
         title: "Upload failed",
@@ -523,12 +416,8 @@ const CreateReel = () => {
   };
 
   const clearVideo = () => {
-    if (videoPreview) {
-      URL.revokeObjectURL(videoPreview);
-    }
-    if (customThumbnail) {
-      URL.revokeObjectURL(customThumbnail);
-    }
+    if (videoPreview) URL.revokeObjectURL(videoPreview);
+    if (customThumbnail) URL.revokeObjectURL(customThumbnail);
     setVideoFile(null);
     setVideoPreview(null);
     setIsPlaying(false);
@@ -536,7 +425,7 @@ const CreateReel = () => {
     setSelectedThumbnail(0);
     setCustomThumbnail(null);
     setCustomThumbnailFile(null);
-    setIsCustomThumbnailSelected(false);
+    setUseCustomThumbnail(false);
   };
 
   return (
@@ -583,8 +472,6 @@ const CreateReel = () => {
                 </p>
               </div>
             </div>
-
-            {/* Original video preview */}
             <div className="mt-3 flex items-center gap-3 p-2 bg-secondary/50 rounded-xl">
               <div className="w-12 h-16 rounded-lg overflow-hidden bg-black flex-shrink-0">
                 <video
@@ -618,7 +505,9 @@ const CreateReel = () => {
                 <Upload className="w-10 h-10 text-primary animate-pulse" />
               </div>
               <h2 className="text-xl font-bold text-foreground mb-2">Uploading Reel</h2>
-              <p className="text-muted-foreground text-sm mb-6">Please wait while we upload your video...</p>
+              <p className="text-muted-foreground text-sm mb-6">
+                Please wait while we upload your video...
+              </p>
               <Progress value={uploadProgress} className="h-2 mb-3" />
               <p className="text-sm font-medium text-primary">{uploadProgress}%</p>
             </div>
@@ -658,20 +547,24 @@ const CreateReel = () => {
                 playsInline
                 muted={isMuted}
                 onLoadedMetadata={handleVideoLoad}
+                onClick={togglePlay}
               />
 
-              {/* Video Controls Overlay */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <button
-                  onClick={togglePlay}
-                  className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center"
-                >
-                  {isPlaying ? (
-                    <Pause className="w-8 h-8 text-white" />
-                  ) : (
-                    <Play className="w-8 h-8 text-white ml-1" />
+              {/* Play/Pause overlay */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <AnimatePresence>
+                  {!isPlaying && (
+                    <motion.button
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center pointer-events-auto"
+                      onClick={togglePlay}
+                    >
+                      <Play className="w-8 h-8 text-white ml-1" />
+                    </motion.button>
                   )}
-                </button>
+                </AnimatePresence>
               </div>
 
               {/* Bottom Controls */}
@@ -720,20 +613,97 @@ const CreateReel = () => {
           />
         </div>
 
-        {/* Thumbnail Selector - now with upload option */}
+        {/* Thumbnail Selector */}
         {videoPreview && (
-          <ThumbnailUploader
-            videoThumbnails={thumbnails}
-            isGenerating={isGeneratingThumbnails}
-            onSelectVideoFrame={handleThumbnailSelect}
-            onUploadCustom={handleCustomThumbnailUpload}
-            selectedIndex={selectedThumbnail}
-            customThumbnail={customThumbnail}
-            isCustomSelected={isCustomThumbnailSelected}
-          />
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Image className="w-5 h-5 text-primary" />
+              <label className="font-medium text-foreground">Choose Cover</label>
+            </div>
+
+            {isGeneratingThumbnails ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
+                <span className="text-sm text-muted-foreground">Generating thumbnails...</span>
+              </div>
+            ) : (
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {/* Custom upload button */}
+                <button
+                  onClick={() => thumbnailInputRef.current?.click()}
+                  className={`relative flex-shrink-0 w-20 h-36 rounded-xl overflow-hidden border-2 border-dashed transition-all flex flex-col items-center justify-center gap-1 ${
+                    useCustomThumbnail && customThumbnail
+                      ? "border-primary ring-2 ring-primary/30 bg-primary/10"
+                      : "border-border hover:border-primary/50 bg-secondary/50"
+                  }`}
+                >
+                  {customThumbnail ? (
+                    <>
+                      <img
+                        src={customThumbnail}
+                        alt="Custom thumbnail"
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                      {useCustomThumbnail && (
+                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                          <Check className="w-6 h-6 text-white drop-shadow-lg" />
+                        </div>
+                      )}
+                      <div className="absolute bottom-1 left-1 right-1 text-[10px] text-white bg-black/60 rounded px-1 py-0.5 text-center">
+                        Custom
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-5 h-5 text-muted-foreground" />
+                      <span className="text-[10px] text-muted-foreground text-center px-1">
+                        Upload
+                      </span>
+                    </>
+                  )}
+                </button>
+
+                {/* Video frame thumbnails */}
+                {thumbnails.map((thumb, index) => (
+                  <motion.button
+                    key={index}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleThumbnailSelect(index)}
+                    className={`relative flex-shrink-0 w-20 h-36 rounded-xl overflow-hidden border-2 transition-all ${
+                      !useCustomThumbnail && selectedThumbnail === index
+                        ? "border-primary ring-2 ring-primary/30"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <img
+                      src={thumb}
+                      alt={`Frame ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    {!useCustomThumbnail && selectedThumbnail === index && (
+                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                        <Check className="w-6 h-6 text-white drop-shadow-lg" />
+                      </div>
+                    )}
+                    <div className="absolute bottom-1 left-1 right-1 text-[10px] text-white bg-black/60 rounded px-1 py-0.5 text-center">
+                      {index === 0 ? "Start" : index === 1 ? "25%" : index === 2 ? "50%" : "75%"}
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+            )}
+
+            <input
+              ref={thumbnailInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleCustomThumbnailSelect}
+              className="hidden"
+            />
+          </div>
         )}
 
-        {/* Music Upload with Preview and Trimmer */}
+        {/* Music Upload */}
         {videoPreview && (
           <MusicUploader
             onMusicSelect={handleMusicSelect}

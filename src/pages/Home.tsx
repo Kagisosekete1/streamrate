@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import { Loader2, Heart, Settings } from "lucide-react";
+import { Loader2, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { TrendingStreamersSection } from "@/components/TrendingStreamersSection";
@@ -323,9 +323,6 @@ const Home = () => {
                     {unreadNotifications > 9 ? "9+" : unreadNotifications}
                   </span>
                 )}
-              </button>
-              <button onClick={() => navigate("/settings")}>
-                <Settings className="w-6 h-6 text-foreground" />
               </button>
             </div>
           </div>

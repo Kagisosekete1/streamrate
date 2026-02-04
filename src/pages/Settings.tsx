@@ -31,6 +31,7 @@ import {
   Sun,
   Monitor,
   Clock,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -593,6 +594,12 @@ const Settings = () => {
             title="Terms of Service"
             subtitle="Usage terms and conditions"
             onClick={() => setActiveModal("termsOfService")}
+          />
+          <SettingItem
+            icon={Info}
+            title="About Us"
+            subtitle="Learn more about StreamRate"
+            onClick={() => navigate("/about")}
           />
         </div>
 

@@ -200,6 +200,27 @@ const Auth = () => {
                 </Button>
               </form>
 
+              {mode === "signup" && (
+                <p className="text-center text-xs text-muted-foreground mt-4">
+                  By signing up, you agree to our{" "}
+                  <button
+                    type="button"
+                    onClick={() => navigate("/about")}
+                    className="text-primary hover:underline"
+                  >
+                    Terms of Service
+                  </button>{" "}
+                  and{" "}
+                  <button
+                    type="button"
+                    onClick={() => navigate("/about")}
+                    className="text-primary hover:underline"
+                  >
+                    Privacy Policy
+                  </button>
+                </p>
+              )}
+
               <p className="text-center text-muted-foreground mt-8">
                 {mode === "login" ? "Don't have an account?" : "Already have an account?"}
                 <button

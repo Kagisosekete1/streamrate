@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { useAppVisibility } from "@/hooks/useAppVisibility";
+import { CookieConsent } from "@/components/CookieConsent";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
@@ -21,7 +22,7 @@ import Hashtags from "./pages/Hashtags";
 import ReelAnalytics from "./pages/ReelAnalytics";
 import CreateReel from "./pages/CreateReel";
 import Leaderboard from "./pages/Leaderboard";
-
+import About from "./pages/About";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -60,9 +61,11 @@ const AppContent = () => {
           <Route path="/hashtags/:tag" element={<Hashtags />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/analytics/reels" element={<ReelAnalytics />} />
+          <Route path="/about" element={<About />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <CookieConsent />
       </AuthProvider>
     </BrowserRouter>
   );
