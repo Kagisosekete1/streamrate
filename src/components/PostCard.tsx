@@ -12,6 +12,8 @@ import { EditPostModal } from "@/components/EditPostModal";
 import { AvatarViewModal } from "@/components/AvatarViewModal";
 import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 import { ReportBlockModal } from "@/components/ReportBlockModal";
+import { PostCommentsModal } from "@/components/PostCommentsModal";
+import { LikesModal } from "@/components/LikesModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -81,6 +83,8 @@ export const PostCard = ({
   );
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [showReportBlock, setShowReportBlock] = useState(false);
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [showLikesModal, setShowLikesModal] = useState(false);
 
   const isOwner = user?.id === streamerId;
 
@@ -174,7 +178,15 @@ export const PostCard = ({
   const handleCommentClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    navigate(`/post/${id}`);
+    setShowCommentsModal(true);
+  };
+
+  const handleLikesClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (likes > 0) {
+      setShowLikesModal(true);
+    }
   };
 
   return (
@@ -334,8 +346,11 @@ export const PostCard = ({
           </div>
         </div>
 
-        {/* Likes count */}
-        <button className="font-semibold text-sm text-foreground mb-1">
+        {/* Likes count - clickable */}
+        <button 
+          onClick={handleLikesClick}
+          className="font-semibold text-sm text-foreground mb-1 hover:opacity-70 transition-opacity text-left"
+        >
           {likes.toLocaleString()} likes
         </button>
 
@@ -395,6 +410,25 @@ export const PostCard = ({
         userId={streamerId}
         username={streamerName}
         postId={id}
+      />
+
+      {/* Comments Modal */}
+      <PostCommentsModal
+        isOpen={showCommentsModal}
+        onClose={() => setShowCommentsModal(false)}
+        postId={id}
+        postImage={imageUrl}
+        postContent={content}
+        authorName={streamerName}
+        authorAvatar={streamerPicture}
+      />
+
+      {/* Likes Modal */}
+      <LikesModal
+        isOpen={showLikesModal}
+        onClose={() => setShowLikesModal(false)}
+        postId={id}
+        type="post"
       />
     </motion.article>
   );

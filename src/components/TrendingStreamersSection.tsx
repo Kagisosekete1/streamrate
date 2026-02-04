@@ -1,8 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { OnlineIndicator } from "@/hooks/useOnlinePresence";
-import { useState } from "react";
-import { AvatarViewModal } from "@/components/AvatarViewModal";
 import { Star } from "lucide-react";
 
 interface Streamer {
@@ -17,8 +15,6 @@ interface TrendingStreamersSectionProps {
 }
 
 export const TrendingStreamersSection = ({ trendingStreamers }: TrendingStreamersSectionProps) => {
-  const [avatarView, setAvatarView] = useState<{ url: string; name: string } | null>(null);
-
   if (trendingStreamers.length === 0) {
     return null;
   }
@@ -47,15 +43,7 @@ export const TrendingStreamersSection = ({ trendingStreamers }: TrendingStreamer
                       <img
                         src={streamer.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
                         alt={streamer.username || "Streamer"}
-                        className="w-16 h-16 rounded-full object-cover cursor-pointer"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setAvatarView({
-                            url: streamer.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop&crop=face",
-                            name: streamer.username || "Streamer"
-                          });
-                        }}
+                        className="w-16 h-16 rounded-full object-cover"
                       />
                     </div>
                   </div>
@@ -81,14 +69,6 @@ export const TrendingStreamersSection = ({ trendingStreamers }: TrendingStreamer
           ))}
         </div>
       </div>
-
-      {/* Avatar View Modal */}
-      <AvatarViewModal
-        isOpen={!!avatarView}
-        onClose={() => setAvatarView(null)}
-        imageUrl={avatarView?.url || ""}
-        username={avatarView?.name}
-      />
     </section>
   );
 };
