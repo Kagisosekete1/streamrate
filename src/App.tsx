@@ -1,3 +1,4 @@
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,21 +24,18 @@ import ReelAnalytics from "./pages/ReelAnalytics";
 import CreateReel from "./pages/CreateReel";
 import Leaderboard from "./pages/Leaderboard";
 import About from "./pages/About";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Keep data fresh for 5 minutes
       staleTime: 5 * 60 * 1000,
-      // Cache data for 30 minutes
       gcTime: 30 * 60 * 1000,
-      // Don't refetch on window focus if data is fresh
       refetchOnWindowFocus: false,
     },
   },
 });
 
-// Component that uses the visibility hook
-const AppContent = () => {
+function AppContent() {
   useAppVisibility();
   
   return (
@@ -62,25 +60,26 @@ const AppContent = () => {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/analytics/reels" element={<ReelAnalytics />} />
           <Route path="/about" element={<About />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
         <CookieConsent />
       </AuthProvider>
     </BrowserRouter>
   );
-};
+}
 
-const App = () => (
-  <ThemeProvider>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <AppContent />
-      </TooltipProvider>
-    </QueryClientProvider>
-  </ThemeProvider>
-);
+function App() {
+  return (
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <AppContent />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  );
+}
 
 export default App;
