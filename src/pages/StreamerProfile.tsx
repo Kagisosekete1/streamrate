@@ -57,8 +57,22 @@ const StreamerProfile = () => {
   useEffect(() => {
     if (id) {
       fetchStreamerData();
+      // Track profile view
+      trackProfileView();
     }
   }, [id, user]);
+
+  const trackProfileView = async () => {
+    if (!id) return;
+    
+    // Insert profile view (will trigger notification via database trigger)
+    await supabase
+      .from("profile_views")
+      .insert({
+        profile_id: id,
+        viewer_id: user?.id || null,
+      });
+  };
 
   const fetchStreamerData = async () => {
     if (!id) return;
