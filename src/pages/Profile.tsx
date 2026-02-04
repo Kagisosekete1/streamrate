@@ -73,6 +73,9 @@ const Profile = () => {
   const [reelViewerIndex, setReelViewerIndex] = useState(0);
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [followersModalType, setFollowersModalType] = useState<"followers" | "following">("followers");
+  const [showUpdatePostsDialog, setShowUpdatePostsDialog] = useState(false);
+  const [newAvatarUrl, setNewAvatarUrl] = useState<string | null>(null);
+  const [isUpdatingPosts, setIsUpdatingPosts] = useState(false);
 
 
   useEffect(() => {
@@ -326,6 +329,12 @@ const Profile = () => {
       toast({ title: "Failed to update avatar", variant: "destructive" });
     } else {
       toast({ title: "Profile picture saved!" });
+      
+      // Check if user has posts and ask if they want to update them
+      if (posts.length > 0) {
+        setNewAvatarUrl(urlData.publicUrl);
+        setShowUpdatePostsDialog(true);
+      }
     }
     
     setIsUploading(false);
@@ -335,6 +344,30 @@ const Profile = () => {
     }
     setPreviewImageSrc(null);
     setSelectedFile(null);
+  };
+
+  const handleUpdatePostsWithNewAvatar = async () => {
+    if (!user || !newAvatarUrl) return;
+    
+    setIsUpdatingPosts(true);
+    
+    // Note: Posts don't store avatar_url directly - they reference user_id
+    // The avatar is fetched from profiles when displaying posts
+    // So we just need to confirm the profile is updated (which it already is)
+    
+    toast({ 
+      title: "Posts updated!", 
+      description: "Your new profile picture will appear on all your posts." 
+    });
+    
+    setIsUpdatingPosts(false);
+    setShowUpdatePostsDialog(false);
+    setNewAvatarUrl(null);
+  };
+
+  const handleSkipUpdatePosts = () => {
+    setShowUpdatePostsDialog(false);
+    setNewAvatarUrl(null);
   };
 
   const handleCancelImagePreview = () => {
@@ -911,6 +944,47 @@ const Profile = () => {
           type={followersModalType}
         />
       )}
+
+      {/* Update Posts with New Avatar Dialog */}
+      <AnimatePresence>
+        {showUpdatePostsDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="w-full max-w-sm bg-card rounded-3xl p-6 border border-border shadow-2xl"
+            >
+              <div className="text-center">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <Camera className="w-8 h-8 text-primary" />
+                </div>
+                <h2 className="text-xl font-bold text-foreground mb-2">
+                  Update Your Posts?
+                </h2>
+                <p className="text-muted-foreground text-sm mb-6">
+                  Your new profile picture has been saved. It will automatically appear on all your posts and reels.
+                </p>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={handleSkipUpdatePosts}
+                  >
+                    Got it!
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       </div>
     </AppLayout>
