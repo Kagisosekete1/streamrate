@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import React from "react";
 
 type Theme = "dark" | "light" | "system";
 
@@ -8,15 +8,14 @@ interface ThemeContextType {
   resolvedTheme: "dark" | "light";
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const ThemeContext = React.createContext<ThemeContextType | undefined>(undefined);
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark");
-  const [resolvedTheme, setResolvedTheme] = useState<"dark" | "light">("dark");
-  const [mounted, setMounted] = useState(false);
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setTheme] = React.useState<Theme>("dark");
+  const [resolvedTheme, setResolvedTheme] = React.useState<"dark" | "light">("dark");
+  const [mounted, setMounted] = React.useState(false);
 
-  // Load theme from localStorage after mount
-  useEffect(() => {
+  React.useEffect(() => {
     const stored = localStorage.getItem("streamrate-theme") as Theme;
     if (stored) {
       setTheme(stored);
@@ -24,7 +23,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const root = window.document.documentElement;
 
     const applyTheme = (newTheme: "dark" | "light") => {
@@ -50,7 +49,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [theme]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     localStorage.setItem("streamrate-theme", theme);
   }, [theme]);
 
@@ -62,7 +61,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 }
 
 export function useTheme() {
-  const context = useContext(ThemeContext);
+  const context = React.useContext(ThemeContext);
   if (!context) {
     throw new Error("useTheme must be used within a ThemeProvider");
   }
