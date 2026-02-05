@@ -15,6 +15,7 @@ import { ReelViewer } from "@/components/ReelViewer";
 import { ProfileContentGrid } from "@/components/ProfileContentGrid";
 import { FollowersModal } from "@/components/FollowersModal";
 import { LastSeenDisplay } from "@/components/LastSeenDisplay";
+import { SocialLinks } from "@/components/SocialLinks";
 
 interface Post {
   id: string;
@@ -51,6 +52,16 @@ const Profile = () => {
     username: "",
     bio: "",
     country: "",
+    twitch_url: "",
+    discord_url: "",
+    kick_url: "",
+    youtube_gaming_url: "",
+  });
+  const [socialLinks, setSocialLinks] = useState({
+    twitch_url: null as string | null,
+    discord_url: null as string | null,
+    kick_url: null as string | null,
+    youtube_gaming_url: null as string | null,
   });
   const [isUploading, setIsUploading] = useState(false);
   const [showImagePreview, setShowImagePreview] = useState(false);
@@ -148,6 +159,10 @@ const Profile = () => {
         username: profile.username || "",
         bio: profile.bio || "",
         country: profile.country || "",
+        twitch_url: socialLinks.twitch_url || "",
+        discord_url: socialLinks.discord_url || "",
+        kick_url: socialLinks.kick_url || "",
+        youtube_gaming_url: socialLinks.youtube_gaming_url || "",
       });
     }
   }, [showEditModal]);
@@ -156,12 +171,20 @@ const Profile = () => {
     if (!user) return;
     const { data } = await supabase
       .from("profiles")
-      .select("header_url")
+      .select("header_url, twitch_url, discord_url, kick_url, youtube_gaming_url")
       .eq("id", user.id)
       .single();
     
-    if (data?.header_url) {
-      setHeaderUrl(data.header_url);
+    if (data) {
+      if (data.header_url) {
+        setHeaderUrl(data.header_url);
+      }
+      setSocialLinks({
+        twitch_url: (data as any).twitch_url || null,
+        discord_url: (data as any).discord_url || null,
+        kick_url: (data as any).kick_url || null,
+        youtube_gaming_url: (data as any).youtube_gaming_url || null,
+      });
     }
   };
 
@@ -540,7 +563,20 @@ const Profile = () => {
       }
     }
 
-    const { error } = await updateProfile(editForm);
+    // Update profile with basic info and social links
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: editForm.full_name,
+        username: editForm.username,
+        bio: editForm.bio,
+        country: editForm.country,
+        twitch_url: editForm.twitch_url || null,
+        discord_url: editForm.discord_url || null,
+        kick_url: editForm.kick_url || null,
+        youtube_gaming_url: editForm.youtube_gaming_url || null,
+      })
+      .eq("id", user.id);
 
     if (error) {
       toast({
@@ -550,6 +586,17 @@ const Profile = () => {
       });
       return;
     }
+
+    // Update local social links state
+    setSocialLinks({
+      twitch_url: editForm.twitch_url || null,
+      discord_url: editForm.discord_url || null,
+      kick_url: editForm.kick_url || null,
+      youtube_gaming_url: editForm.youtube_gaming_url || null,
+    });
+
+    // Refresh profile in auth context
+    await updateProfile({});
 
     toast({
       title: "Profile updated!",
@@ -699,6 +746,15 @@ const Profile = () => {
               </div>
             )}
             <LastSeenDisplay userId={user.id} className="mt-1" />
+            
+            {/* Social Links */}
+            <SocialLinks
+              twitchUrl={socialLinks.twitch_url}
+              discordUrl={socialLinks.discord_url}
+              kickUrl={socialLinks.kick_url}
+              youtubeGamingUrl={socialLinks.youtube_gaming_url}
+              className="mt-3"
+            />
           </motion.div>
 
           {/* Stats */}
@@ -866,6 +922,61 @@ const Profile = () => {
                     }
                     placeholder="Your country"
                   />
+                </div>
+
+                {/* Social Links Section */}
+                <div className="pt-4 border-t border-border">
+                  <p className="text-sm font-semibold text-foreground mb-3">Social Links</p>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                        Twitch
+                      </label>
+                      <Input
+                        value={editForm.twitch_url}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, twitch_url: e.target.value })
+                        }
+                        placeholder="twitch.tv/yourusername"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                        Discord
+                      </label>
+                      <Input
+                        value={editForm.discord_url}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, discord_url: e.target.value })
+                        }
+                        placeholder="discord.gg/invite"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                        Kick
+                      </label>
+                      <Input
+                        value={editForm.kick_url}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, kick_url: e.target.value })
+                        }
+                        placeholder="kick.com/yourusername"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                        YouTube Gaming
+                      </label>
+                      <Input
+                        value={editForm.youtube_gaming_url}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, youtube_gaming_url: e.target.value })
+                        }
+                        placeholder="youtube.com/@yourchannel"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>

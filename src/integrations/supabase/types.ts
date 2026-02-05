@@ -326,42 +326,54 @@ export type Database = {
           bio: string | null
           country: string | null
           created_at: string | null
+          discord_url: string | null
           email: string | null
           full_name: string | null
           header_url: string | null
           id: string
+          kick_url: string | null
           last_seen: string | null
           last_seen_visibility: string | null
+          twitch_url: string | null
           updated_at: string | null
           username: string | null
+          youtube_gaming_url: string | null
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
           country?: string | null
           created_at?: string | null
+          discord_url?: string | null
           email?: string | null
           full_name?: string | null
           header_url?: string | null
           id: string
+          kick_url?: string | null
           last_seen?: string | null
           last_seen_visibility?: string | null
+          twitch_url?: string | null
           updated_at?: string | null
           username?: string | null
+          youtube_gaming_url?: string | null
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
           country?: string | null
           created_at?: string | null
+          discord_url?: string | null
           email?: string | null
           full_name?: string | null
           header_url?: string | null
           id?: string
+          kick_url?: string | null
           last_seen?: string | null
           last_seen_visibility?: string | null
+          twitch_url?: string | null
           updated_at?: string | null
           username?: string | null
+          youtube_gaming_url?: string | null
         }
         Relationships: []
       }

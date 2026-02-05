@@ -13,6 +13,7 @@ import { formatDistanceToNow } from "date-fns";
 import { AvatarViewModal } from "@/components/AvatarViewModal";
 import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 import { LastSeenDisplay } from "@/components/LastSeenDisplay";
+import { SocialLinks } from "@/components/SocialLinks";
 
 interface StreamerData {
   id: string;
@@ -21,6 +22,10 @@ interface StreamerData {
   avatar_url: string | null;
   bio: string | null;
   country: string | null;
+  twitch_url: string | null;
+  discord_url: string | null;
+  kick_url: string | null;
+  youtube_gaming_url: string | null;
 }
 
 interface Review {
@@ -80,7 +85,7 @@ const StreamerProfile = () => {
     // Fetch streamer profile
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
-      .select("id, full_name, username, avatar_url, bio, country")
+      .select("id, full_name, username, avatar_url, bio, country, twitch_url, discord_url, kick_url, youtube_gaming_url")
       .eq("id", id)
       .maybeSingle();
 
@@ -90,7 +95,18 @@ const StreamerProfile = () => {
       return;
     }
 
-    setStreamer(profileData);
+    setStreamer({
+      id: profileData.id,
+      full_name: profileData.full_name,
+      username: profileData.username,
+      avatar_url: profileData.avatar_url,
+      bio: profileData.bio,
+      country: profileData.country,
+      twitch_url: (profileData as any).twitch_url || null,
+      discord_url: (profileData as any).discord_url || null,
+      kick_url: (profileData as any).kick_url || null,
+      youtube_gaming_url: (profileData as any).youtube_gaming_url || null,
+    });
 
     // Fetch reviews
     const { data: ratingsData } = await supabase
@@ -300,6 +316,15 @@ const StreamerProfile = () => {
             
             {/* Last Seen */}
             <LastSeenDisplay userId={id!} className="mt-1" />
+            
+            {/* Social Links */}
+            <SocialLinks
+              twitchUrl={streamer.twitch_url}
+              discordUrl={streamer.discord_url}
+              kickUrl={streamer.kick_url}
+              youtubeGamingUrl={streamer.youtube_gaming_url}
+              className="mt-3"
+            />
           </motion.div>
 
           <motion.div
