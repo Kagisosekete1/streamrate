@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, LogOut, Edit2, Users, Star, MessageCircle, Camera, X, ImageIcon, Eye, MapPin } from "lucide-react";
+import { Settings, LogOut, Edit2, Users, Star, MessageCircle, Camera, X, ImageIcon, Eye, MapPin, ToggleLeft, ToggleRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,12 +56,20 @@ const Profile = () => {
     discord_url: "",
     kick_url: "",
     youtube_gaming_url: "",
+    show_twitch: true,
+    show_discord: true,
+    show_kick: true,
+    show_youtube_gaming: true,
   });
   const [socialLinks, setSocialLinks] = useState({
     twitch_url: null as string | null,
     discord_url: null as string | null,
     kick_url: null as string | null,
     youtube_gaming_url: null as string | null,
+    show_twitch: true,
+    show_discord: true,
+    show_kick: true,
+    show_youtube_gaming: true,
   });
   const [isUploading, setIsUploading] = useState(false);
   const [showImagePreview, setShowImagePreview] = useState(false);
@@ -163,6 +171,10 @@ const Profile = () => {
         discord_url: socialLinks.discord_url || "",
         kick_url: socialLinks.kick_url || "",
         youtube_gaming_url: socialLinks.youtube_gaming_url || "",
+        show_twitch: socialLinks.show_twitch,
+        show_discord: socialLinks.show_discord,
+        show_kick: socialLinks.show_kick,
+        show_youtube_gaming: socialLinks.show_youtube_gaming,
       });
     }
   }, [showEditModal]);
@@ -171,7 +183,7 @@ const Profile = () => {
     if (!user) return;
     const { data } = await supabase
       .from("profiles")
-      .select("header_url, twitch_url, discord_url, kick_url, youtube_gaming_url")
+      .select("header_url, twitch_url, discord_url, kick_url, youtube_gaming_url, show_twitch, show_discord, show_kick, show_youtube_gaming")
       .eq("id", user.id)
       .single();
     
@@ -184,6 +196,10 @@ const Profile = () => {
         discord_url: (data as any).discord_url || null,
         kick_url: (data as any).kick_url || null,
         youtube_gaming_url: (data as any).youtube_gaming_url || null,
+        show_twitch: (data as any).show_twitch ?? true,
+        show_discord: (data as any).show_discord ?? true,
+        show_kick: (data as any).show_kick ?? true,
+        show_youtube_gaming: (data as any).show_youtube_gaming ?? true,
       });
     }
   };
@@ -575,6 +591,10 @@ const Profile = () => {
         discord_url: editForm.discord_url || null,
         kick_url: editForm.kick_url || null,
         youtube_gaming_url: editForm.youtube_gaming_url || null,
+        show_twitch: editForm.show_twitch,
+        show_discord: editForm.show_discord,
+        show_kick: editForm.show_kick,
+        show_youtube_gaming: editForm.show_youtube_gaming,
       })
       .eq("id", user.id);
 
@@ -593,6 +613,10 @@ const Profile = () => {
       discord_url: editForm.discord_url || null,
       kick_url: editForm.kick_url || null,
       youtube_gaming_url: editForm.youtube_gaming_url || null,
+      show_twitch: editForm.show_twitch,
+      show_discord: editForm.show_discord,
+      show_kick: editForm.show_kick,
+      show_youtube_gaming: editForm.show_youtube_gaming,
     });
 
     // Refresh profile in auth context
@@ -753,6 +777,10 @@ const Profile = () => {
               discordUrl={socialLinks.discord_url}
               kickUrl={socialLinks.kick_url}
               youtubeGamingUrl={socialLinks.youtube_gaming_url}
+              showTwitch={socialLinks.show_twitch}
+              showDiscord={socialLinks.show_discord}
+              showKick={socialLinks.show_kick}
+              showYoutubeGaming={socialLinks.show_youtube_gaming}
               className="mt-3"
             />
           </motion.div>
@@ -927,53 +955,94 @@ const Profile = () => {
                 {/* Social Links Section */}
                 <div className="pt-4 border-t border-border">
                   <p className="text-sm font-semibold text-foreground mb-3">Social Links</p>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                        Twitch
-                      </label>
+                  <p className="text-xs text-muted-foreground mb-3">Toggle visibility for each link</p>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-medium text-muted-foreground">Twitch</label>
+                        <button
+                          type="button"
+                          onClick={() => setEditForm({ ...editForm, show_twitch: !editForm.show_twitch })}
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {editForm.show_twitch ? (
+                            <ToggleRight className="w-6 h-6 text-primary" />
+                          ) : (
+                            <ToggleLeft className="w-6 h-6" />
+                          )}
+                        </button>
+                      </div>
                       <Input
                         value={editForm.twitch_url}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, twitch_url: e.target.value })
-                        }
+                        onChange={(e) => setEditForm({ ...editForm, twitch_url: e.target.value })}
                         placeholder="twitch.tv/yourusername"
+                        className={!editForm.show_twitch ? "opacity-50" : ""}
                       />
                     </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                        Discord
-                      </label>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-medium text-muted-foreground">Discord</label>
+                        <button
+                          type="button"
+                          onClick={() => setEditForm({ ...editForm, show_discord: !editForm.show_discord })}
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {editForm.show_discord ? (
+                            <ToggleRight className="w-6 h-6 text-primary" />
+                          ) : (
+                            <ToggleLeft className="w-6 h-6" />
+                          )}
+                        </button>
+                      </div>
                       <Input
                         value={editForm.discord_url}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, discord_url: e.target.value })
-                        }
+                        onChange={(e) => setEditForm({ ...editForm, discord_url: e.target.value })}
                         placeholder="discord.gg/invite"
+                        className={!editForm.show_discord ? "opacity-50" : ""}
                       />
                     </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                        Kick
-                      </label>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-medium text-muted-foreground">Kick</label>
+                        <button
+                          type="button"
+                          onClick={() => setEditForm({ ...editForm, show_kick: !editForm.show_kick })}
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {editForm.show_kick ? (
+                            <ToggleRight className="w-6 h-6 text-primary" />
+                          ) : (
+                            <ToggleLeft className="w-6 h-6" />
+                          )}
+                        </button>
+                      </div>
                       <Input
                         value={editForm.kick_url}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, kick_url: e.target.value })
-                        }
+                        onChange={(e) => setEditForm({ ...editForm, kick_url: e.target.value })}
                         placeholder="kick.com/yourusername"
+                        className={!editForm.show_kick ? "opacity-50" : ""}
                       />
                     </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                        YouTube Gaming
-                      </label>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-medium text-muted-foreground">YouTube Gaming</label>
+                        <button
+                          type="button"
+                          onClick={() => setEditForm({ ...editForm, show_youtube_gaming: !editForm.show_youtube_gaming })}
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {editForm.show_youtube_gaming ? (
+                            <ToggleRight className="w-6 h-6 text-primary" />
+                          ) : (
+                            <ToggleLeft className="w-6 h-6" />
+                          )}
+                        </button>
+                      </div>
                       <Input
                         value={editForm.youtube_gaming_url}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, youtube_gaming_url: e.target.value })
-                        }
+                        onChange={(e) => setEditForm({ ...editForm, youtube_gaming_url: e.target.value })}
                         placeholder="youtube.com/@yourchannel"
+                        className={!editForm.show_youtube_gaming ? "opacity-50" : ""}
                       />
                     </div>
                   </div>
