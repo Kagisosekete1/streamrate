@@ -5,6 +5,10 @@ interface SocialLinksProps {
   discordUrl?: string | null;
   kickUrl?: string | null;
   youtubeGamingUrl?: string | null;
+  showTwitch?: boolean;
+  showDiscord?: boolean;
+  showKick?: boolean;
+  showYoutubeGaming?: boolean;
   className?: string;
 }
 
@@ -54,9 +58,19 @@ export const SocialLinks = ({
   discordUrl,
   kickUrl,
   youtubeGamingUrl,
+  showTwitch = true,
+  showDiscord = true,
+  showKick = true,
+  showYoutubeGaming = true,
   className = "",
 }: SocialLinksProps) => {
-  const hasLinks = twitchUrl || discordUrl || kickUrl || youtubeGamingUrl;
+  // Only show links that have a URL AND are enabled
+  const visibleTwitch = twitchUrl && showTwitch;
+  const visibleDiscord = discordUrl && showDiscord;
+  const visibleKick = kickUrl && showKick;
+  const visibleYoutubeGaming = youtubeGamingUrl && showYoutubeGaming;
+
+  const hasLinks = visibleTwitch || visibleDiscord || visibleKick || visibleYoutubeGaming;
 
   if (!hasLinks) {
     return null;
@@ -70,36 +84,36 @@ export const SocialLinks = ({
 
   return (
     <div className={`flex items-center justify-center gap-3 ${className}`}>
-      {twitchUrl && (
+      {visibleTwitch && (
         <button
-          onClick={() => handleLinkClick(twitchUrl)}
+          onClick={() => handleLinkClick(twitchUrl!)}
           className="w-8 h-8 rounded-full bg-[#9146FF]/20 flex items-center justify-center hover:bg-[#9146FF]/40 transition-colors group"
           title="Twitch"
         >
           <TwitchIcon className="w-4 h-4 text-[#9146FF]" />
         </button>
       )}
-      {discordUrl && (
+      {visibleDiscord && (
         <button
-          onClick={() => handleLinkClick(discordUrl)}
+          onClick={() => handleLinkClick(discordUrl!)}
           className="w-8 h-8 rounded-full bg-[#5865F2]/20 flex items-center justify-center hover:bg-[#5865F2]/40 transition-colors group"
           title="Discord"
         >
           <DiscordIcon className="w-4 h-4 text-[#5865F2]" />
         </button>
       )}
-      {kickUrl && (
+      {visibleKick && (
         <button
-          onClick={() => handleLinkClick(kickUrl)}
+          onClick={() => handleLinkClick(kickUrl!)}
           className="w-8 h-8 rounded-full bg-[#53FC18]/20 flex items-center justify-center hover:bg-[#53FC18]/40 transition-colors group"
           title="Kick"
         >
           <KickIcon className="w-4 h-4 text-[#53FC18]" />
         </button>
       )}
-      {youtubeGamingUrl && (
+      {visibleYoutubeGaming && (
         <button
-          onClick={() => handleLinkClick(youtubeGamingUrl)}
+          onClick={() => handleLinkClick(youtubeGamingUrl!)}
           className="w-8 h-8 rounded-full bg-[#FF0000]/20 flex items-center justify-center hover:bg-[#FF0000]/40 transition-colors group"
           title="YouTube Gaming"
         >

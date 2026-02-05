@@ -334,6 +334,10 @@ export type Database = {
           kick_url: string | null
           last_seen: string | null
           last_seen_visibility: string | null
+          show_discord: boolean | null
+          show_kick: boolean | null
+          show_twitch: boolean | null
+          show_youtube_gaming: boolean | null
           twitch_url: string | null
           updated_at: string | null
           username: string | null
@@ -352,6 +356,10 @@ export type Database = {
           kick_url?: string | null
           last_seen?: string | null
           last_seen_visibility?: string | null
+          show_discord?: boolean | null
+          show_kick?: boolean | null
+          show_twitch?: boolean | null
+          show_youtube_gaming?: boolean | null
           twitch_url?: string | null
           updated_at?: string | null
           username?: string | null
@@ -370,6 +378,10 @@ export type Database = {
           kick_url?: string | null
           last_seen?: string | null
           last_seen_visibility?: string | null
+          show_discord?: boolean | null
+          show_kick?: boolean | null
+          show_twitch?: boolean | null
+          show_youtube_gaming?: boolean | null
           twitch_url?: string | null
           updated_at?: string | null
           username?: string | null

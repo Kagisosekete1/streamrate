@@ -26,6 +26,10 @@ interface StreamerData {
   discord_url: string | null;
   kick_url: string | null;
   youtube_gaming_url: string | null;
+  show_twitch: boolean;
+  show_discord: boolean;
+  show_kick: boolean;
+  show_youtube_gaming: boolean;
 }
 
 interface Review {
@@ -85,7 +89,7 @@ const StreamerProfile = () => {
     // Fetch streamer profile
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
-      .select("id, full_name, username, avatar_url, bio, country, twitch_url, discord_url, kick_url, youtube_gaming_url")
+      .select("id, full_name, username, avatar_url, bio, country, twitch_url, discord_url, kick_url, youtube_gaming_url, show_twitch, show_discord, show_kick, show_youtube_gaming")
       .eq("id", id)
       .maybeSingle();
 
@@ -106,6 +110,10 @@ const StreamerProfile = () => {
       discord_url: (profileData as any).discord_url || null,
       kick_url: (profileData as any).kick_url || null,
       youtube_gaming_url: (profileData as any).youtube_gaming_url || null,
+      show_twitch: (profileData as any).show_twitch ?? true,
+      show_discord: (profileData as any).show_discord ?? true,
+      show_kick: (profileData as any).show_kick ?? true,
+      show_youtube_gaming: (profileData as any).show_youtube_gaming ?? true,
     });
 
     // Fetch reviews
@@ -323,6 +331,10 @@ const StreamerProfile = () => {
               discordUrl={streamer.discord_url}
               kickUrl={streamer.kick_url}
               youtubeGamingUrl={streamer.youtube_gaming_url}
+              showTwitch={streamer.show_twitch}
+              showDiscord={streamer.show_discord}
+              showKick={streamer.show_kick}
+              showYoutubeGaming={streamer.show_youtube_gaming}
               className="mt-3"
             />
           </motion.div>
