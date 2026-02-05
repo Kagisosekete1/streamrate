@@ -292,12 +292,11 @@ export const PostCard = ({
         </DropdownMenu>
       </div>
 
-      {/* Image - Instagram style (full width, double tap to like) */}
+      {/* Image - Instagram style (full width, double tap to like, no navigation) */}
       {imageUrl && (
         <div 
-          className="relative w-full bg-black cursor-pointer"
+          className="relative w-full bg-black"
           onDoubleClick={handleDoubleClick}
-          onClick={() => navigate(`/post/${id}`)}
         >
           <img
             src={imageUrl}
