@@ -629,7 +629,7 @@ const Profile = () => {
   };
 
   // Show skeleton while loading or no user (will redirect)
-  if (loading || !user) {
+  if (loading || !user || !profile) {
     return (
       <AppLayout showBottomNav={true}>
         <div className="min-h-screen bg-background pb-20 md:pb-8">
