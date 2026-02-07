@@ -8,6 +8,7 @@ import { PostCard } from "@/components/PostCard";
 import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 import { NewPostsBanner } from "@/components/NewPostsBanner";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
+import { InstallAppPrompt } from "@/components/InstallAppPrompt";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
@@ -386,6 +387,7 @@ const Home = () => {
         </main>
 
         <PushNotificationPrompt />
+        <InstallAppPrompt />
       </div>
     </AppLayout>
   );
