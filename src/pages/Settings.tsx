@@ -560,6 +560,12 @@ const Settings = () => {
             subtitle={`Version ${APP_VERSION}`}
             onClick={() => setActiveModal("appUpdate")}
           />
+          <SettingItem
+            icon={Smartphone}
+            title="Install App"
+            subtitle="Add to home screen for the best experience"
+            onClick={() => navigate("/install")}
+          />
         </div>
 
         {/* Support & Legal */}
