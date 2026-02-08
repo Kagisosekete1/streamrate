@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { StreamerCard } from "@/components/StreamerCard";
-import { Search, Filter, Hash, Users, MapPin, TrendingUp, Trophy, Contact, Crown, Sparkles } from "lucide-react";
+import { Search, Filter, Hash, Users, MapPin, TrendingUp, Trophy, Contact, Crown, Sparkles, Tv } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,12 +11,16 @@ import { cn } from "@/lib/utils";
 interface Streamer {
   id: string;
   full_name: string | null;
+  username?: string | null;
   avatar_url: string | null;
   country: string | null;
   bio: string | null;
   average_rating: number;
   total_reviews: number;
   created_at?: string;
+  twitch_url?: string | null;
+  kick_url?: string | null;
+  youtube_gaming_url?: string | null;
 }
 
 interface Hashtag {
@@ -100,7 +104,7 @@ const Streamers = () => {
     // Get streamer profiles
     const { data: profiles, error: profileError } = await supabase
       .from("profiles")
-      .select("id, full_name, avatar_url, country, bio, created_at")
+      .select("id, full_name, username, avatar_url, country, bio, created_at, twitch_url, kick_url, youtube_gaming_url")
       .in("id", streamerIds);
 
     if (profileError) {
@@ -183,6 +187,12 @@ const Streamers = () => {
 
   const suggestedStreamers = useMemo(() => 
     [...streamers].sort(() => Math.random() - 0.5).slice(0, 5),
+    [streamers]
+  );
+
+  // Streamers with streaming platform links
+  const streamingStreamers = useMemo(() => 
+    streamers.filter(s => s.twitch_url || s.kick_url || s.youtube_gaming_url),
     [streamers]
   );
 
@@ -269,6 +279,42 @@ const Streamers = () => {
                     <span className="ml-1 text-xs text-muted-foreground">
                       {tag.use_count}
                     </span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Live Streams Section */}
+          {!searchQuery && streamingStreamers.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <Tv className="w-5 h-5 text-red-500" />
+                <h2 className="font-semibold text-foreground">Watch Streams</h2>
+                <span className="text-xs text-muted-foreground">• Tap to watch</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {streamingStreamers.slice(0, 6).map((streamer) => (
+                  <Link
+                    key={streamer.id}
+                    to={`/streamer/${streamer.id}`}
+                    className="flex items-center gap-2 p-3 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all"
+                  >
+                    <img
+                      src={streamer.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+                      alt={streamer.full_name || "Streamer"}
+                      className="w-9 h-9 rounded-full object-cover"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {streamer.username || streamer.full_name || "Streamer"}
+                      </p>
+                      <div className="flex items-center gap-1">
+                        {streamer.twitch_url && <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400">Twitch</span>}
+                        {streamer.youtube_gaming_url && <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">YT</span>}
+                        {streamer.kick_url && <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">Kick</span>}
+                      </div>
+                    </div>
                   </Link>
                 ))}
               </div>
