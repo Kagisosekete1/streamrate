@@ -14,6 +14,7 @@ import { AvatarViewModal } from "@/components/AvatarViewModal";
 import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 import { LastSeenDisplay } from "@/components/LastSeenDisplay";
 import { SocialLinks } from "@/components/SocialLinks";
+import { StreamEmbed } from "@/components/StreamEmbed";
 
 interface StreamerData {
   id: string;
@@ -375,6 +376,13 @@ const StreamerProfile = () => {
           </motion.div>
         </div>
       </header>
+
+      {/* Stream Embed */}
+      <StreamEmbed
+        twitchUrl={streamer.show_twitch ? streamer.twitch_url : null}
+        youtubeGamingUrl={streamer.show_youtube_gaming ? streamer.youtube_gaming_url : null}
+        kickUrl={streamer.show_kick ? streamer.kick_url : null}
+      />
 
       {/* Bio */}
       {streamer.bio && (
