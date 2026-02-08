@@ -24,6 +24,7 @@ import ReelAnalytics from "./pages/ReelAnalytics";
 import CreateReel from "./pages/CreateReel";
 import Leaderboard from "./pages/Leaderboard";
 import About from "./pages/About";
+import Install from "./pages/Install";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -60,6 +61,7 @@ function AppContent() {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/analytics/reels" element={<ReelAnalytics />} />
           <Route path="/about" element={<About />} />
+          <Route path="/install" element={<Install />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <CookieConsent />
