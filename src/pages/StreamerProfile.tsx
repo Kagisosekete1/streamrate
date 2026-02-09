@@ -382,6 +382,7 @@ const StreamerProfile = () => {
         twitchUrl={streamer.show_twitch ? streamer.twitch_url : null}
         youtubeGamingUrl={streamer.show_youtube_gaming ? streamer.youtube_gaming_url : null}
         kickUrl={streamer.show_kick ? streamer.kick_url : null}
+        streamerId={streamer.id}
       />
 
       {/* Bio */}

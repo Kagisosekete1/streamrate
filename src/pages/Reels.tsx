@@ -331,11 +331,9 @@ const ReelCard = ({
         webkit-playsinline="true"
       />
       
-      {/* Play icon overlay - shown when not hovering */}
-      <div className={`absolute inset-0 flex items-center justify-center transition-opacity ${isHovering ? 'opacity-0' : 'opacity-100'}`}>
-        <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-          <Play className="w-5 h-5 text-white fill-white ml-0.5" />
-        </div>
+      {/* Hover play indicator - desktop only, hidden on mobile */}
+      <div className={`absolute inset-0 items-center justify-center transition-opacity hidden md:flex ${isHovering ? 'opacity-0' : 'opacity-60'}`}>
+        <Play className="w-6 h-6 text-white fill-white drop-shadow-lg" />
       </div>
       
       {/* Bottom gradient info */}

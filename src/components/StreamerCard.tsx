@@ -13,6 +13,7 @@ interface StreamerCardProps {
   totalReviews: number;
   index?: number;
   rank?: number;
+  hasStreamingPlatform?: boolean;
 }
 
 export const StreamerCard = forwardRef<HTMLDivElement, StreamerCardProps>(({
@@ -24,6 +25,7 @@ export const StreamerCard = forwardRef<HTMLDivElement, StreamerCardProps>(({
   totalReviews,
   index = 0,
   rank,
+  hasStreamingPlatform = false,
 }, ref) => {
   const displayRank = rank ?? index + 1;
   
@@ -91,7 +93,12 @@ export const StreamerCard = forwardRef<HTMLDivElement, StreamerCardProps>(({
                 alt={name}
                 className="w-14 h-14 rounded-full object-cover ring-2 ring-primary/30"
               />
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-card" />
+              {hasStreamingPlatform && (
+                <div className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-red-500 rounded-full border-2 border-card flex items-center gap-0.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                  <span className="text-[8px] font-bold text-white uppercase">Live</span>
+                </div>
+              )}
             </div>
             
             <div className="flex-1 min-w-0">
