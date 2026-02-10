@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Home, Compass, Plus, UserCircle2, Radio } from "lucide-react";
+import { Home, Compass, Plus, UserCircle2, Radio, Bell, Clapperboard } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -9,8 +9,10 @@ import { useAuth } from "@/hooks/useAuth";
 const navItems = [
   { icon: Home, label: "Home", path: "/home" },
   { icon: Compass, label: "Discover", path: "/streamers" },
+  { icon: Bell, label: "Notifications", path: "/notifications" },
   { icon: Plus, label: "Create", path: "/create-post" },
   { icon: Radio, label: "Live", path: "/live" },
+  { icon: Clapperboard, label: "Reels", path: "/reels" },
   { icon: UserCircle2, label: "Profile", path: "/profile" },
 ];
 
