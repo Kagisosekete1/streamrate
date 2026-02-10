@@ -712,12 +712,6 @@ const Profile = () => {
             >
               <Eye className="w-5 h-5 text-white" />
             </button>
-            <button
-              onClick={() => navigate("/settings")}
-              className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 transition-colors"
-            >
-              <Settings className="w-5 h-5 text-white" />
-            </button>
           </div>
         </div>
 
@@ -882,6 +876,9 @@ const Profile = () => {
           setReels(reels.filter(r => r.id !== reelId));
         }}
         isOwnProfile={true}
+        authorName={profile.username || "User"}
+        authorAvatar={profile.avatar_url || ""}
+        authorId={user.id}
       />
 
       {/* Edit Profile Modal - Matching Settings style */}

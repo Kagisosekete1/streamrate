@@ -28,8 +28,8 @@ interface NavItem {
 const mainNavItems: NavItem[] = [
   { icon: Home, label: "Home", path: "/home" },
   { icon: Compass, label: "Discover", path: "/streamers" },
-  { icon: Plus, label: "Create", path: "/create-post" },
   { icon: Clapperboard, label: "Reels", path: "/reels" },
+  { icon: Plus, label: "Create", path: "/create-post" },
   { icon: Radio, label: "Live", path: "/live" },
   { icon: Bell, label: "Notifications", path: "/notifications" },
   { icon: UserCircle2, label: "Profile", path: "/profile" },
