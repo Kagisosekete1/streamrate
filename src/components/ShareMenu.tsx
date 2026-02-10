@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Send, Link, Copy, Check, MessageCircle, Instagram, Twitter, Facebook, Download } from "lucide-react";
+import { ExternalLink, Link, Copy, Check, MessageCircle, Instagram, Twitter, Facebook, Download } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,7 +77,7 @@ export const ShareMenu = ({ postId, title = "Check out this post", imageUrl }: S
     <DropdownMenu>
       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
         <button className="flex items-center gap-2 text-foreground hover:opacity-60 transition-opacity">
-          <Send className="w-6 h-6" />
+          <ExternalLink className="w-6 h-6" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 bg-card border-border">
@@ -98,7 +98,7 @@ export const ShareMenu = ({ postId, title = "Check out this post", imageUrl }: S
         </DropdownMenuItem>
         
         <DropdownMenuItem onClick={handleShareTelegram} className="cursor-pointer gap-3">
-          <Send className="w-5 h-5 text-blue-400" />
+          <ExternalLink className="w-5 h-5 text-blue-400" />
           <span>Telegram</span>
         </DropdownMenuItem>
         
@@ -116,7 +116,7 @@ export const ShareMenu = ({ postId, title = "Check out this post", imageUrl }: S
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleNativeShare} className="cursor-pointer gap-3">
-              <Send className="w-5 h-5 text-primary" />
+              <ExternalLink className="w-5 h-5 text-primary" />
               <span>More Options...</span>
             </DropdownMenuItem>
           </>

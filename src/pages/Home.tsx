@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
 interface Streamer {
   id: string;
@@ -28,9 +29,11 @@ interface Post {
   created_at: string;
   updated_at: string | null;
   user_id: string;
+  is_private: boolean;
   profiles: {
     username: string | null;
     avatar_url: string | null;
+    email: string | null;
   } | null;
   likes_count: number;
   comments_count: number;
@@ -208,7 +211,7 @@ const Home = () => {
   ) => {
     let query = supabase
       .from("posts")
-      .select("id, content, image_url, created_at, updated_at, user_id")
+      .select("id, content, image_url, created_at, updated_at, user_id, is_private")
       .order("created_at", { ascending: false })
       .range(offset, offset + POSTS_PER_PAGE - 1);
 
@@ -224,7 +227,7 @@ const Home = () => {
     const userIds = [...new Set(postsData.map((p) => p.user_id))];
     const { data: profilesData } = await supabase
       .from("profiles")
-      .select("id, username, avatar_url")
+      .select("id, username, avatar_url, email")
       .in("id", userIds);
 
     const profilesMap = new Map((profilesData || []).map((p) => [p.id, p]));
@@ -266,7 +269,7 @@ const Home = () => {
         return {
           ...post,
           profiles: profile
-            ? { username: profile.username, avatar_url: profile.avatar_url }
+            ? { username: profile.username, avatar_url: profile.avatar_url, email: profile.email }
             : null,
           likes_count: likesCount || 0,
           comments_count: commentsCount || 0,
@@ -353,7 +356,7 @@ const Home = () => {
                   streamerName={post.profiles?.username || "Anonymous"}
                   streamerPicture={
                     post.profiles?.avatar_url ||
-                    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"
+                    getDefaultAvatar()
                   }
                   content={post.content}
                   imageUrl={post.image_url}
@@ -363,6 +366,8 @@ const Home = () => {
                   updatedAt={post.updated_at ? new Date(post.updated_at) : undefined}
                   isLiked={post.is_liked}
                   isBookmarked={post.is_bookmarked}
+                  isPrivate={post.is_private}
+                  streamerEmail={post.profiles?.email}
                   index={index}
                   onDelete={() => setPosts((prev) => prev.filter((p) => p.id !== post.id))}
                 />

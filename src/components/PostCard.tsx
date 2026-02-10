@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Bookmark, MoreHorizontal, Trash2, Edit2, Flag, BookmarkPlus } from "lucide-react";
+import { Flame, MessageSquareText, Bookmark, MoreHorizontal, Trash2, Edit2, Flag, BookmarkPlus, Send, Zap } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -77,6 +77,8 @@ interface PostCardProps {
   updatedAt?: Date;
   isLiked?: boolean;
   isBookmarked?: boolean;
+  isPrivate?: boolean;
+  streamerEmail?: string | null;
   index?: number;
   onDelete?: () => void;
   onUpdate?: () => void;
@@ -95,6 +97,8 @@ export const PostCard = ({
   updatedAt,
   isLiked: initialIsLiked = false,
   isBookmarked: initialIsBookmarked = false,
+  isPrivate = false,
+  streamerEmail,
   index = 0,
   onDelete,
   onUpdate,
@@ -255,9 +259,15 @@ export const PostCard = ({
             <Link
               to={`/streamer/${streamerId}`}
               onClick={(e) => e.stopPropagation()}
-              className="font-semibold text-sm text-foreground hover:text-muted-foreground"
+              className="font-semibold text-sm text-foreground hover:text-muted-foreground inline-flex items-center gap-1"
             >
               {streamerName}
+              {streamerEmail?.toLowerCase() === "kagisosekete5@gmail.com" && (
+                <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" fill="hsl(var(--primary))" />
+                  <path d="M8 12l3 3 5-5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
             </Link>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span>{formatDistanceToNow(createdAt, { addSuffix: false })}</span>
@@ -349,7 +359,7 @@ export const PostCard = ({
               transition={{ duration: 0.3 }}
               className="absolute inset-0 flex items-center justify-center pointer-events-none"
             >
-              <Heart className="w-24 h-24 text-white fill-white drop-shadow-lg" />
+              <Flame className="w-24 h-24 text-orange-500 fill-orange-500 drop-shadow-lg" />
             </motion.div>
           )}
         </div>
@@ -360,16 +370,18 @@ export const PostCard = ({
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
             <button onClick={handleLike} className="hover:opacity-60 transition-opacity">
-              <Heart
+              <Flame
                 className={cn(
                   "w-6 h-6 transition-all",
-                  isLiked ? "fill-red-500 text-red-500 scale-110" : "text-foreground"
+                  isLiked ? "fill-orange-500 text-orange-500 scale-110" : "text-foreground"
                 )}
               />
             </button>
-            <button onClick={handleCommentClick} className="hover:opacity-60 transition-opacity">
-              <MessageCircle className="w-6 h-6 text-foreground" />
-            </button>
+            {!isPrivate && (
+              <button onClick={handleCommentClick} className="hover:opacity-60 transition-opacity">
+                <MessageSquareText className="w-6 h-6 text-foreground" />
+              </button>
+            )}
             <ShareMenu postId={id} title={content.slice(0, 50)} imageUrl={imageUrl} />
           </div>
         </div>
@@ -390,7 +402,7 @@ export const PostCard = ({
         />
 
         {/* View comments */}
-        {comments > 0 && (
+        {!isPrivate && comments > 0 && (
           <button 
             onClick={handleCommentClick}
             className="text-sm text-muted-foreground mb-2"
