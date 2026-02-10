@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { HashtagText } from "./HashtagText";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { PhotoViewerModal } from "./PhotoViewerModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,6 +65,9 @@ interface ProfileContentGridProps {
   onPostDelete: (postId: string) => void;
   onReelDelete: (reelId: string) => void;
   isOwnProfile: boolean;
+  authorName?: string;
+  authorAvatar?: string;
+  authorId?: string;
 }
 
 export const ProfileContentGrid = ({
@@ -75,10 +80,15 @@ export const ProfileContentGrid = ({
   onPostDelete,
   onReelDelete,
   isOwnProfile,
+  authorName = "User",
+  authorAvatar = "",
+  authorId = "",
 }: ProfileContentGridProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [photoViewerPost, setPhotoViewerPost] = useState<Post | null>(null);
 
   const tabs: { id: TabType; icon: typeof Grid3X3; label: string }[] = [
     { id: "posts", icon: Grid3X3, label: "Posts" },
@@ -194,7 +204,13 @@ export const ProfileContentGrid = ({
                     key={post.id}
                     whileHover={{ scale: 1.02 }}
                     className="aspect-square relative group cursor-pointer rounded-lg sm:rounded-xl overflow-hidden"
-                    onClick={() => navigate(`/post/${post.id}`)}
+                    onClick={() => {
+                      if (isMobile) {
+                        navigate(`/post/${post.id}`);
+                      } else {
+                        setPhotoViewerPost(post);
+                      }
+                    }}
                   >
                     <img
                       src={post.image_url!}
@@ -451,6 +467,22 @@ export const ProfileContentGrid = ({
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* Facebook-style Photo Viewer for desktop/tablet */}
+      {photoViewerPost && (
+        <PhotoViewerModal
+          isOpen={!!photoViewerPost}
+          onClose={() => setPhotoViewerPost(null)}
+          postId={photoViewerPost.id}
+          imageUrl={photoViewerPost.image_url!}
+          postContent={photoViewerPost.content}
+          authorName={authorName}
+          authorAvatar={authorAvatar}
+          authorId={authorId}
+          likesCount={photoViewerPost.likes_count}
+          commentsCount={photoViewerPost.comments_count}
+        />
+      )}
     </div>
   );
 };
