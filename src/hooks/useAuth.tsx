@@ -19,7 +19,7 @@ interface AuthContextType {
   profile: Profile | null;
   userRole: "fan" | "streamer" | "seller" | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string, role: "fan" | "streamer" | "seller") => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, role: "fan" | "streamer" | "seller", gender?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error: Error | null }>;
@@ -93,7 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string, role: "fan" | "streamer" | "seller") => {
+  const signUp = async (email: string, password: string, fullName: string, role: "fan" | "streamer" | "seller", gender?: string) => {
     const redirectUrl = `${window.location.origin}/`;
 
     const { data, error } = await supabase.auth.signUp({
@@ -121,10 +121,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error("Error inserting role:", roleError);
       }
 
-      // Update profile with name
+      const profileUpdates: Record<string, any> = { full_name: fullName };
+      if (gender) profileUpdates.gender = gender;
+      
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({ full_name: fullName })
+        .update(profileUpdates)
         .eq("id", data.user.id);
 
       if (profileError) {

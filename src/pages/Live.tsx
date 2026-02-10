@@ -34,7 +34,6 @@ const Live = () => {
   }, []);
 
   const fetchStreamersWithLinks = async () => {
-    // Get streamers who have at least one platform link
     const { data } = await supabase
       .from("profiles")
       .select("id, username, full_name, avatar_url, twitch_url, kick_url, youtube_gaming_url, discord_url, show_twitch, show_kick, show_youtube_gaming, show_discord");
@@ -52,15 +51,15 @@ const Live = () => {
   const liveStreamers = streamers.filter((s) => isOnline(s.id));
 
   const getPlatformLinks = (streamer: LiveStreamer) => {
-    const links: { name: string; url: string; color: string; bg: string }[] = [];
+    const links: { name: string; url: string; color: string; bg: string; icon: string }[] = [];
     if (streamer.twitch_url && streamer.show_twitch) {
-      links.push({ name: "Twitch", url: streamer.twitch_url, color: "text-purple-400", bg: "bg-purple-500/20" });
+      links.push({ name: "Twitch", url: streamer.twitch_url, color: "text-purple-400", bg: "bg-purple-500/20", icon: "🟣" });
     }
     if (streamer.kick_url && streamer.show_kick) {
-      links.push({ name: "Kick", url: streamer.kick_url, color: "text-green-400", bg: "bg-green-500/20" });
+      links.push({ name: "Kick", url: streamer.kick_url, color: "text-green-400", bg: "bg-green-500/20", icon: "🟢" });
     }
     if (streamer.youtube_gaming_url && streamer.show_youtube_gaming) {
-      links.push({ name: "YouTube", url: streamer.youtube_gaming_url, color: "text-red-400", bg: "bg-red-500/20" });
+      links.push({ name: "YouTube", url: streamer.youtube_gaming_url, color: "text-red-400", bg: "bg-red-500/20", icon: "🔴" });
     }
     return links;
   };
@@ -127,17 +126,18 @@ const Live = () => {
                         <p className="font-semibold text-foreground truncate">
                           {streamer.username || streamer.full_name || "Streamer"}
                         </p>
-                        <div className="flex flex-wrap gap-1.5 mt-1">
+                        {/* Platform links that redirect to the streaming platform */}
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
                           {platformLinks.map((link) => (
                             <a
                               key={link.name}
                               href={link.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className={`flex items-center gap-1 px-2 py-1 rounded-lg ${link.bg} ${link.color} text-xs font-medium hover:opacity-80 transition-opacity`}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${link.bg} ${link.color} text-xs font-medium hover:opacity-80 transition-opacity`}
                             >
                               <ExternalLink className="w-3 h-3" />
-                              {link.name}
+                              Watch on {link.name}
                             </a>
                           ))}
                         </div>

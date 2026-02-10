@@ -23,6 +23,7 @@ const Auth = () => {
     name: "",
     email: "",
     password: "",
+    gender: "" as "male" | "female" | "",
   });
 
   useEffect(() => {
@@ -69,7 +70,8 @@ const Auth = () => {
       formData.email,
       formData.password,
       formData.name,
-      selectedRole
+      selectedRole,
+      formData.gender || undefined
     );
 
     if (error) {
@@ -157,6 +159,35 @@ const Auth = () => {
                       />
                     </div>
                   </motion.div>
+                )}
+
+                {mode === "signup" && (
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, gender: "male" })}
+                      className={cn(
+                        "flex-1 py-2.5 rounded-xl border-2 text-sm font-medium transition-all",
+                        formData.gender === "male"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-secondary text-muted-foreground"
+                      )}
+                    >
+                      Male
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, gender: "female" })}
+                      className={cn(
+                        "flex-1 py-2.5 rounded-xl border-2 text-sm font-medium transition-all",
+                        formData.gender === "female"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-secondary text-muted-foreground"
+                      )}
+                    >
+                      Female
+                    </button>
+                  </div>
                 )}
 
                 <div className="relative">
