@@ -834,6 +834,9 @@ const Profile = () => {
             <Edit2 className="w-4 h-4" />
             Edit Profile
           </Button>
+          <Button variant="outline" onClick={() => navigate("/settings")}>
+            <Settings className="w-4 h-4" />
+          </Button>
           <Button variant="outline" onClick={handleLogout}>
             <LogOut className="w-4 h-4" />
           </Button>

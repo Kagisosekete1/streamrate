@@ -23,6 +23,7 @@ interface StreamerData {
   avatar_url: string | null;
   bio: string | null;
   country: string | null;
+  signup_number: number | null;
   twitch_url: string | null;
   discord_url: string | null;
   kick_url: string | null;
@@ -90,7 +91,7 @@ const StreamerProfile = () => {
     // Fetch streamer profile
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
-      .select("id, full_name, username, avatar_url, bio, country, twitch_url, discord_url, kick_url, youtube_gaming_url, show_twitch, show_discord, show_kick, show_youtube_gaming")
+      .select("id, full_name, username, avatar_url, bio, country, signup_number, twitch_url, discord_url, kick_url, youtube_gaming_url, show_twitch, show_discord, show_kick, show_youtube_gaming")
       .eq("id", id)
       .maybeSingle();
 
@@ -107,6 +108,7 @@ const StreamerProfile = () => {
       avatar_url: profileData.avatar_url,
       bio: profileData.bio,
       country: profileData.country,
+      signup_number: (profileData as any).signup_number || null,
       twitch_url: (profileData as any).twitch_url || null,
       discord_url: (profileData as any).discord_url || null,
       kick_url: (profileData as any).kick_url || null,
@@ -313,9 +315,16 @@ const StreamerProfile = () => {
                 size="lg"
               />
             </div>
-            <h1 className="mt-4 text-2xl font-bold text-foreground">
-              {streamer.username || streamer.full_name || "Anonymous"}
-            </h1>
+            <div className="flex items-center gap-2 mt-4">
+              <h1 className="text-2xl font-bold text-foreground">
+                {streamer.username || streamer.full_name || "Anonymous"}
+              </h1>
+              {streamer.signup_number && (
+                <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-xs font-bold">
+                  #{streamer.signup_number}
+                </span>
+              )}
+            </div>
             {streamer.country && (
               <div className="flex items-center gap-1 text-muted-foreground mt-1">
                 <MapPin className="w-4 h-4" />

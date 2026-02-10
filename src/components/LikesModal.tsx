@@ -86,15 +86,19 @@ export const LikesModal = ({ isOpen, onClose, postId, type }: LikesModalProps) =
         onClick={onClose}
       >
         <motion.div
-          initial={{ y: "100%", opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: "100%", opacity: 0 }}
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="absolute bottom-0 left-0 right-0 md:left-1/2 md:-translate-x-1/2 md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:max-w-sm md:rounded-2xl bg-card border-t md:border border-border max-h-[70vh] overflow-hidden"
+          className="absolute left-4 right-4 top-1/2 -translate-y-1/2 mx-auto max-w-sm rounded-3xl bg-card border border-border shadow-2xl max-h-[70vh] overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Drag handle */}
+          <div className="flex justify-center pt-3 pb-1">
+            <div className="w-10 h-1 rounded-full bg-muted" />
+          </div>
           {/* Header */}
-          <div className="sticky top-0 bg-card border-b border-border p-4 flex items-center justify-between">
+          <div className="sticky top-0 bg-card border-b border-border px-4 pb-3 pt-2 flex items-center justify-between">
             <h3 className="font-semibold text-foreground">Likes</h3>
             <button onClick={onClose} className="p-2 -mr-2 text-muted-foreground hover:text-foreground">
               <X className="w-5 h-5" />
