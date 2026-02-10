@@ -2,13 +2,13 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Home,
-  Search,
-  PlusSquare,
-  Film,
-  User,
-  Settings,
-  Heart,
+  Flame,
+  Compass,
+  Zap,
+  Clapperboard,
+  UserCircle2,
+  SlidersHorizontal,
+  Bell,
   Menu,
   X,
   Trophy,
@@ -26,19 +26,19 @@ interface NavItem {
 }
 
 const mainNavItems: NavItem[] = [
-  { icon: Home, label: "Home", path: "/home" },
-  { icon: Search, label: "Discover", path: "/streamers" },
-  { icon: PlusSquare, label: "Create", path: "/create-post" },
-  { icon: Film, label: "Reels", path: "/reels" },
+  { icon: Flame, label: "Home", path: "/home" },
+  { icon: Compass, label: "Discover", path: "/streamers" },
+  { icon: Zap, label: "Create", path: "/create-post" },
+  { icon: Clapperboard, label: "Reels", path: "/reels" },
   { icon: Radio, label: "Live", path: "/live" },
-  { icon: Heart, label: "Notifications", path: "/notifications" },
-  { icon: User, label: "Profile", path: "/profile" },
+  { icon: Bell, label: "Notifications", path: "/notifications" },
+  { icon: UserCircle2, label: "Profile", path: "/profile" },
 ];
 
 const bottomNavItems: NavItem[] = [
   { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
   { icon: ShoppingBag, label: "Store", path: "/store" },
-  { icon: Settings, label: "Settings", path: "/settings" },
+  { icon: SlidersHorizontal, label: "Settings", path: "/settings" },
 ];
 
 export const AppSidebar = () => {

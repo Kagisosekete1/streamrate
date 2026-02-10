@@ -34,16 +34,16 @@ export const TrendingStreamersSection = ({ trendingStreamers }: TrendingStreamer
               <Link to={`/streamer/${streamer.id}`} className="block">
                 <div className="relative">
                   {/* Rank badge */}
-                  <div className="absolute -top-1 -left-1 z-10 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shadow-lg">
+                  <div className="absolute -top-1 -left-1 z-10 w-6 h-6 rounded-lg bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shadow-lg">
                     #{index + 1}
                   </div>
-                  {/* Instagram-style gradient ring */}
-                  <div className="p-[3px] rounded-full story-ring">
-                    <div className="p-[2px] rounded-full bg-background">
+                  {/* Square rounded avatar */}
+                  <div className="p-[3px] rounded-2xl story-ring">
+                    <div className="p-[2px] rounded-[14px] bg-background">
                       <img
                         src={streamer.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
                         alt={streamer.username || "Streamer"}
-                        className="w-16 h-16 rounded-full object-cover"
+                        className="w-16 h-16 rounded-xl object-cover"
                       />
                     </div>
                   </div>
