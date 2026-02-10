@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Flame, Compass, Zap, UserCircle2, Radio } from "lucide-react";
+import { Home, Compass, Zap, UserCircle2, Radio } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
-  { icon: Flame, label: "Home", path: "/home" },
+  { icon: Home, label: "Home", path: "/home" },
   { icon: Compass, label: "Discover", path: "/streamers" },
   { icon: Zap, label: "Create", path: "/create-post" },
   { icon: Radio, label: "Live", path: "/live" },

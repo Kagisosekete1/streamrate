@@ -9,6 +9,7 @@ import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 import { NewPostsBanner } from "@/components/NewPostsBanner";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import { InstallAppPrompt } from "@/components/InstallAppPrompt";
+import { DadJokeNotification } from "@/components/DadJokeNotification";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
@@ -316,7 +317,8 @@ const Home = () => {
               className="h-8 w-auto cursor-pointer"
               onClick={() => navigate("/home")}
             />
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <DadJokeNotification />
               <button 
                 onClick={() => navigate("/notifications")}
                 className="relative"

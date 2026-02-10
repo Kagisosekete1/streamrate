@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Flame, MessageSquareText, Bookmark, MoreHorizontal, Trash2, Edit2, Flag, BookmarkPlus, Send, Zap } from "lucide-react";
+import { Heart, MessageSquareText, Bookmark, MoreHorizontal, Trash2, Edit2, Flag, BookmarkPlus, Send, Zap } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -359,7 +359,7 @@ export const PostCard = ({
               transition={{ duration: 0.3 }}
               className="absolute inset-0 flex items-center justify-center pointer-events-none"
             >
-              <Flame className="w-24 h-24 text-orange-500 fill-orange-500 drop-shadow-lg" />
+              <Heart className="w-24 h-24 text-red-500 fill-red-500 drop-shadow-lg" />
             </motion.div>
           )}
         </div>
@@ -370,10 +370,10 @@ export const PostCard = ({
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
             <button onClick={handleLike} className="hover:opacity-60 transition-opacity">
-              <Flame
+              <Heart
                 className={cn(
                   "w-6 h-6 transition-all",
-                  isLiked ? "fill-orange-500 text-orange-500 scale-110" : "text-foreground"
+                  isLiked ? "fill-red-500 text-red-500 scale-110" : "text-foreground"
                 )}
               />
             </button>
