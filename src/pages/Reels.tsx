@@ -319,7 +319,7 @@ const ReelCard = ({
       <video
         ref={videoRef}
         src={reel.video_url}
-        className="w-full h-full object-cover [&::-webkit-media-controls]:hidden [&::-webkit-media-controls-enclosure]:hidden [&::-webkit-media-controls-panel]:hidden [&::-webkit-media-controls-play-button]:hidden [&::-webkit-media-controls-start-playback-button]:!hidden [&::-webkit-media-controls-overlay-play-button]:hidden"
+        className="w-full h-full object-cover"
         muted
         loop
         playsInline
@@ -327,11 +327,16 @@ const ReelCard = ({
         controls={false}
         poster=""
         disablePictureInPicture
+        disableRemotePlayback
+        controlsList="nodownload nofullscreen noremoteplayback"
         // @ts-ignore - webkit specific
         webkit-playsinline="true"
+        x-webkit-airplay="deny"
+        style={{ WebkitAppearance: 'none' } as React.CSSProperties}
       />
       
-      {/* No play overlay - clean thumbnail */}
+      {/* Overlay to block native controls */}
+      <div className="absolute inset-0 z-[1]" />
       
       {/* Bottom gradient info */}
       <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-gradient-to-t from-black/70 to-transparent">
