@@ -261,20 +261,20 @@ export const PostCommentsModal = ({
   return (
     <AnimatePresence>
       <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-          onClick={onClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.85, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.85, opacity: 0 }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          className="w-[calc(100%-2rem)] max-w-sm rounded-3xl bg-card border border-border shadow-2xl max-h-[70vh] overflow-hidden flex flex-col"
+          onClick={(e) => e.stopPropagation()}
         >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="absolute left-4 right-4 top-1/2 -translate-y-1/2 mx-auto max-w-sm rounded-3xl bg-card border border-border shadow-2xl max-h-[70vh] overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
             {/* Drag handle */}
             <div className="flex justify-center pt-3 pb-1">
               <div className="w-10 h-1 rounded-full bg-muted" />
@@ -308,7 +308,7 @@ export const PostCommentsModal = ({
           )}
 
           {/* Comments List */}
-          <div className="overflow-y-auto max-h-[40vh] p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
