@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Home, Search, PlusSquare, User, Radio } from "lucide-react";
+import { Flame, Compass, Zap, UserCircle2, Radio } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -8,11 +8,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { useOnlinePresence } from "@/hooks/useOnlinePresence";
 
 const navItems = [
-  { icon: Home, label: "Home", path: "/home" },
-  { icon: Search, label: "Search", path: "/streamers" },
-  { icon: PlusSquare, label: "Create", path: "/create-post" },
+  { icon: Flame, label: "Home", path: "/home" },
+  { icon: Compass, label: "Discover", path: "/streamers" },
+  { icon: Zap, label: "Create", path: "/create-post" },
   { icon: Radio, label: "Live", path: "/live" },
-  { icon: User, label: "Profile", path: "/profile" },
+  { icon: UserCircle2, label: "Profile", path: "/profile" },
 ];
 
 export const BottomNav = () => {

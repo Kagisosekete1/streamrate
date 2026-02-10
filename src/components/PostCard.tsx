@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Bookmark, MoreHorizontal, Trash2, Edit2, Flag } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, MoreHorizontal, Trash2, Edit2, Flag, BookmarkPlus } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -274,6 +274,11 @@ export const PostCard = ({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44 bg-card border-border">
+            {/* Save/Bookmark option for everyone */}
+            <DropdownMenuItem onClick={handleBookmark} className="gap-3">
+              <Bookmark className={cn("w-4 h-4", isBookmarked && "fill-foreground")} />
+              {isBookmarked ? "Unsave" : "Save Post"}
+            </DropdownMenuItem>
             {isOwner && (
               <>
                 <DropdownMenuItem onClick={() => setShowEditModal(true)} className="gap-3">
@@ -366,14 +371,6 @@ export const PostCard = ({
               <MessageCircle className="w-6 h-6 text-foreground" />
             </button>
             <ShareMenu postId={id} title={content.slice(0, 50)} imageUrl={imageUrl} />
-            <button onClick={handleBookmark} className="hover:opacity-60 transition-opacity">
-              <Bookmark
-                className={cn(
-                  "w-6 h-6 transition-all",
-                  isBookmarked ? "fill-foreground text-foreground" : "text-foreground"
-                )}
-              />
-            </button>
           </div>
         </div>
 

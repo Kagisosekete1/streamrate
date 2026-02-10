@@ -332,6 +332,7 @@ export type Database = {
           discord_url: string | null
           email: string | null
           full_name: string | null
+          gender: string | null
           header_url: string | null
           id: string
           kick_url: string | null
@@ -341,6 +342,7 @@ export type Database = {
           show_kick: boolean | null
           show_twitch: boolean | null
           show_youtube_gaming: boolean | null
+          signup_number: number
           twitch_url: string | null
           updated_at: string | null
           username: string | null
@@ -354,6 +356,7 @@ export type Database = {
           discord_url?: string | null
           email?: string | null
           full_name?: string | null
+          gender?: string | null
           header_url?: string | null
           id: string
           kick_url?: string | null
@@ -363,6 +366,7 @@ export type Database = {
           show_kick?: boolean | null
           show_twitch?: boolean | null
           show_youtube_gaming?: boolean | null
+          signup_number?: number
           twitch_url?: string | null
           updated_at?: string | null
           username?: string | null
@@ -376,6 +380,7 @@ export type Database = {
           discord_url?: string | null
           email?: string | null
           full_name?: string | null
+          gender?: string | null
           header_url?: string | null
           id?: string
           kick_url?: string | null
@@ -385,6 +390,7 @@ export type Database = {
           show_kick?: boolean | null
           show_twitch?: boolean | null
           show_youtube_gaming?: boolean | null
+          signup_number?: number
           twitch_url?: string | null
           updated_at?: string | null
           username?: string | null

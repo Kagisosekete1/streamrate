@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { StreamerCard } from "@/components/StreamerCard";
-import { Search, Filter, Hash, Users, MapPin, TrendingUp, Trophy, Contact, Crown, Sparkles, Tv } from "lucide-react";
+import { Search, Filter, Hash, Users, MapPin, TrendingUp, Trophy, Contact, Crown, Sparkles, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +38,15 @@ const Streamers = () => {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [trendingHashtags, setTrendingHashtags] = useState<Hashtag[]>([]);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    leaderboard: false,
+    suggested: false,
+    popular: false,
+  });
+
+  const toggleSection = (key: string) => {
+    setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const filters = ["Most Rated", "Trending", "New", "Country"];
 
@@ -306,98 +315,38 @@ const Streamers = () => {
               </section>
             );
           })()}
-          {/* Trending Hashtags Section */}
-          {trendingHashtags.length > 0 && !searchQuery && (
-            <section>
-              <div className="flex items-center gap-2 mb-3">
-                <Hash className="w-5 h-5 text-primary" />
-                <h2 className="font-semibold text-foreground">Trending Hashtags</h2>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {trendingHashtags.map((tag) => (
-                  <Link
-                    key={tag.id}
-                    to={`/hashtags/${tag.name}`}
-                    className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
-                  >
-                    #{tag.name}
-                    <span className="ml-1 text-xs text-muted-foreground">
-                      {tag.use_count}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Live Streams Section */}
-          {!searchQuery && streamingStreamers.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-3">
-                <Tv className="w-5 h-5 text-red-500" />
-                <h2 className="font-semibold text-foreground">Watch Streams</h2>
-                <span className="text-xs text-muted-foreground">• Tap to watch</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {streamingStreamers.slice(0, 6).map((streamer) => (
-                  <Link
-                    key={streamer.id}
-                    to={`/streamer/${streamer.id}`}
-                    className="flex items-center gap-2 p-3 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all"
-                  >
-                    <img
-                      src={streamer.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
-                      alt={streamer.full_name || "Streamer"}
-                      className="w-9 h-9 rounded-full object-cover"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {streamer.username || streamer.full_name || "Streamer"}
-                      </p>
-                      <div className="flex items-center gap-1">
-                        {streamer.twitch_url && <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400">Twitch</span>}
-                        {streamer.youtube_gaming_url && <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">YT</span>}
-                        {streamer.kick_url && <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">Kick</span>}
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Leaderboard Section */}
+          {/* Leaderboard Section - Collapsible */}
           {!searchQuery && topStreamers.length > 0 && (
             <section>
               <button 
-                onClick={() => navigate("/leaderboard")}
-                className="flex items-center gap-2 mb-3 group"
+                onClick={() => toggleSection("leaderboard")}
+                className="w-full flex items-center gap-2 mb-3 group"
               >
                 <Trophy className="w-5 h-5 text-yellow-500" />
                 <h2 className="font-semibold text-foreground group-hover:text-primary transition-colors">
                   Leaderboard
                 </h2>
-                <span className="text-xs text-muted-foreground">• View Full Rankings →</span>
+                <span className="text-xs text-muted-foreground cursor-pointer" onClick={(e) => { e.stopPropagation(); navigate("/leaderboard"); }}>• View Full Rankings →</span>
+                <ChevronDown className={cn("w-4 h-4 ml-auto text-muted-foreground transition-transform", expandedSections.leaderboard && "rotate-180")} />
               </button>
-              <div className="space-y-2">
-                {topStreamers.slice(0, 3).map((streamer, index) => (
-                  <StreamerCard
-                    key={streamer.id}
-                    id={streamer.id}
-                    name={streamer.full_name || "Anonymous"}
-                    profilePicture={
-                      streamer.avatar_url ||
-                      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"
-                    }
-                    country={streamer.country || "Unknown"}
-                    averageRating={streamer.average_rating}
-                    totalReviews={streamer.total_reviews}
-                    index={index}
-                    rank={index + 1}
-                    hasStreamingPlatform={!!(streamer.twitch_url || streamer.kick_url || streamer.youtube_gaming_url)}
-                  />
-                ))}
-              </div>
+              {expandedSections.leaderboard && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-2">
+                  {topStreamers.slice(0, 3).map((streamer, index) => (
+                    <StreamerCard
+                      key={streamer.id}
+                      id={streamer.id}
+                      name={streamer.full_name || "Anonymous"}
+                      profilePicture={streamer.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+                      country={streamer.country || "Unknown"}
+                      averageRating={streamer.average_rating}
+                      totalReviews={streamer.total_reviews}
+                      index={index}
+                      rank={index + 1}
+                      hasStreamingPlatform={!!(streamer.twitch_url || streamer.kick_url || streamer.youtube_gaming_url)}
+                    />
+                  ))}
+                </motion.div>
+              )}
             </section>
           )}
 
@@ -423,56 +372,56 @@ const Streamers = () => {
           {/* Suggested Streamers */}
           {!searchQuery && suggestedStreamers.length > 0 && (
             <section>
-              <div className="flex items-center gap-2 mb-3">
+              <button onClick={() => toggleSection("suggested")} className="w-full flex items-center gap-2 mb-3">
                 <Sparkles className="w-5 h-5 text-accent" />
                 <h2 className="font-semibold text-foreground">Suggested for You</h2>
-              </div>
-              <div className="space-y-2">
-                {suggestedStreamers.slice(0, 3).map((streamer, index) => (
-                  <StreamerCard
-                    key={streamer.id}
-                    id={streamer.id}
-                    name={streamer.full_name || "Anonymous"}
-                    profilePicture={
-                      streamer.avatar_url ||
-                      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"
-                    }
-                    country={streamer.country || "Unknown"}
-                    averageRating={streamer.average_rating}
-                    totalReviews={streamer.total_reviews}
-                    index={index}
-                    hasStreamingPlatform={!!(streamer.twitch_url || streamer.kick_url || streamer.youtube_gaming_url)}
-                  />
-                ))}
-              </div>
+                <ChevronDown className={cn("w-4 h-4 ml-auto text-muted-foreground transition-transform", expandedSections.suggested && "rotate-180")} />
+              </button>
+              {expandedSections.suggested && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-2">
+                  {suggestedStreamers.slice(0, 3).map((streamer, index) => (
+                    <StreamerCard
+                      key={streamer.id}
+                      id={streamer.id}
+                      name={streamer.full_name || "Anonymous"}
+                      profilePicture={streamer.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+                      country={streamer.country || "Unknown"}
+                      averageRating={streamer.average_rating}
+                      totalReviews={streamer.total_reviews}
+                      index={index}
+                      hasStreamingPlatform={!!(streamer.twitch_url || streamer.kick_url || streamer.youtube_gaming_url)}
+                    />
+                  ))}
+                </motion.div>
+              )}
             </section>
           )}
 
           {/* Popular This Week */}
           {!searchQuery && popularThisWeek.length > 0 && (
             <section>
-              <div className="flex items-center gap-2 mb-3">
+              <button onClick={() => toggleSection("popular")} className="w-full flex items-center gap-2 mb-3">
                 <TrendingUp className="w-5 h-5 text-green-500" />
                 <h2 className="font-semibold text-foreground">Popular This Week</h2>
-              </div>
-              <div className="space-y-2">
-                {popularThisWeek.map((streamer, index) => (
-                  <StreamerCard
-                    key={streamer.id}
-                    id={streamer.id}
-                    name={streamer.full_name || "Anonymous"}
-                    profilePicture={
-                      streamer.avatar_url ||
-                      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"
-                    }
-                    country={streamer.country || "Unknown"}
-                    averageRating={streamer.average_rating}
-                    totalReviews={streamer.total_reviews}
-                    index={index}
-                    hasStreamingPlatform={!!(streamer.twitch_url || streamer.kick_url || streamer.youtube_gaming_url)}
-                  />
-                ))}
-              </div>
+                <ChevronDown className={cn("w-4 h-4 ml-auto text-muted-foreground transition-transform", expandedSections.popular && "rotate-180")} />
+              </button>
+              {expandedSections.popular && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-2">
+                  {popularThisWeek.map((streamer, index) => (
+                    <StreamerCard
+                      key={streamer.id}
+                      id={streamer.id}
+                      name={streamer.full_name || "Anonymous"}
+                      profilePicture={streamer.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+                      country={streamer.country || "Unknown"}
+                      averageRating={streamer.average_rating}
+                      totalReviews={streamer.total_reviews}
+                      index={index}
+                      hasStreamingPlatform={!!(streamer.twitch_url || streamer.kick_url || streamer.youtube_gaming_url)}
+                    />
+                  ))}
+                </motion.div>
+              )}
             </section>
           )}
 
