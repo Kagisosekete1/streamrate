@@ -35,7 +35,7 @@ const Store = () => {
           <div className="px-4 py-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ShoppingBag className="w-6 h-6 text-primary" />
-              <h1 className="text-2xl font-bold text-foreground">Store</h1>
+              <h1 className="text-2xl font-bold text-foreground">Market</h1>
             </div>
             {isSeller && (
               <Button variant="gaming" size="sm" onClick={handleListProduct}>
@@ -69,11 +69,9 @@ const Store = () => {
               Gaming gear, streaming equipment, and accessories from sellers in the community.
             </p>
             {!isSeller && (
-              <div className="p-4 rounded-xl bg-secondary/50 border border-border/30 max-w-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <Tag className="w-4 h-4 text-primary" />
-                  <span className="font-semibold text-foreground text-sm">Want to sell?</span>
-                </div>
+              <div className="p-5 rounded-2xl bg-secondary/50 border border-border/30 max-w-sm text-center">
+                <Tag className="w-5 h-5 text-primary mx-auto mb-2" />
+                <span className="font-semibold text-foreground text-sm block mb-1">Want to sell?</span>
                 <p className="text-xs text-muted-foreground">
                   Register as a Seller to list your gaming products. Seller subscription: R400/6 months.
                 </p>

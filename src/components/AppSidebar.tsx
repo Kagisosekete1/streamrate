@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Home,
   Compass,
-  Zap,
+  Plus,
   Clapperboard,
   UserCircle2,
   SlidersHorizontal,
@@ -28,7 +28,7 @@ interface NavItem {
 const mainNavItems: NavItem[] = [
   { icon: Home, label: "Home", path: "/home" },
   { icon: Compass, label: "Discover", path: "/streamers" },
-  { icon: Zap, label: "Create", path: "/create-post" },
+  { icon: Plus, label: "Create", path: "/create-post" },
   { icon: Clapperboard, label: "Reels", path: "/reels" },
   { icon: Radio, label: "Live", path: "/live" },
   { icon: Bell, label: "Notifications", path: "/notifications" },
@@ -37,7 +37,7 @@ const mainNavItems: NavItem[] = [
 
 const bottomNavItems: NavItem[] = [
   { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
-  { icon: ShoppingBag, label: "Store", path: "/store" },
+  { icon: ShoppingBag, label: "Market", path: "/store" },
   { icon: SlidersHorizontal, label: "Settings", path: "/settings" },
 ];
 

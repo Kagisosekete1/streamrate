@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { StreamerCard } from "@/components/StreamerCard";
-import { Search, Filter, Hash, Users, MapPin, TrendingUp, Trophy, Contact, Crown, Sparkles, ChevronDown } from "lucide-react";
+import { Search, Filter, Hash, Users, MapPin, TrendingUp, Trophy, Contact, Crown, Sparkles, ChevronDown, ShoppingBag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -350,11 +350,26 @@ const Streamers = () => {
             </section>
           )}
 
+          {/* Market Link - Mobile Only */}
+          <section className="md:hidden">
+            <Link
+              to="/store"
+              className="w-full flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 hover:border-primary/40 transition-all"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <ShoppingBag className="w-5 h-5 text-primary" />
+              </div>
+              <div className="text-left flex-1">
+                <p className="font-medium text-foreground">Market</p>
+                <p className="text-xs text-muted-foreground">Browse gaming gear and accessories</p>
+              </div>
+            </Link>
+          </section>
+
           {/* Add from Contacts - Mobile Only */}
           <section className="md:hidden">
             <button 
               onClick={() => {
-                // This would trigger native contacts API in a mobile app
                 navigator.vibrate?.(50);
               }}
               className="w-full flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 hover:border-primary/40 transition-all"
