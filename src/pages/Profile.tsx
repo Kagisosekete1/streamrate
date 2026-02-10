@@ -750,9 +750,16 @@ const Profile = () => {
               </button>
             </div>
 
-            <h1 className="mt-4 text-xl font-bold text-foreground">
-              {profile.username || "Anonymous"}
-            </h1>
+            <div className="flex items-center gap-2 mt-4">
+              <h1 className="text-xl font-bold text-foreground">
+                {profile.username || "Anonymous"}
+              </h1>
+              {(profile as any).signup_number && (
+                <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-xs font-bold">
+                  #{(profile as any).signup_number}
+                </span>
+              )}
+            </div>
             <span className="px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-medium mt-1 capitalize">
               {userRole || "User"}
             </span>
