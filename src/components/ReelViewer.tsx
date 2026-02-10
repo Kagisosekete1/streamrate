@@ -43,6 +43,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
   const { recordView, updateUserInterest, updateHashtagInterests } = useForYouAlgorithm();
   
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const [slideDirection, setSlideDirection] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [showComments, setShowComments] = useState(false);
@@ -244,14 +245,16 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
 
   // Handle swipe
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    if (showComments) return; // Disable swipe when comments are open
+    if (showComments) return;
     
     const threshold = 50;
     if (info.offset.y < -threshold && currentIndex < reels.length - 1) {
+      setSlideDirection(-1);
       setCurrentIndex(prev => prev + 1);
       setIsPlaying(true);
       setVideoProgress(0);
     } else if (info.offset.y > threshold && currentIndex > 0) {
+      setSlideDirection(1);
       setCurrentIndex(prev => prev - 1);
       setIsPlaying(true);
       setVideoProgress(0);
@@ -411,69 +414,74 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
           <motion.div
             drag={showComments ? false : "y"}
             dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0.2}
             onDragEnd={handleDragEnd}
-            className="relative w-full h-full flex items-center justify-center"
+            className="relative w-full h-full"
           >
-            {/* Video */}
-            <div 
-              className="relative w-full h-full max-w-lg mx-auto flex items-center justify-center"
-              onClick={handleVideoTap}
-            >
-              <video
-                ref={videoRef}
-                src={currentReel.video_url}
-                className="w-full h-full object-contain [&::-webkit-media-controls]:hidden [&::-webkit-media-controls-enclosure]:hidden [&::-webkit-media-controls-panel]:hidden [&::-webkit-media-controls-play-button]:hidden [&::-webkit-media-controls-start-playback-button]:!hidden [&::-webkit-media-controls-overlay-play-button]:hidden"
-                loop
-                playsInline
-                muted={isMuted}
-                autoPlay
-                controls={false}
-                preload="auto"
-                poster=""
-                disablePictureInPicture
-                disableRemotePlayback
-                // @ts-ignore - webkit specific
-                webkit-playsinline="true"
-                x-webkit-airplay="deny"
-                style={{ 
-                  WebkitAppearance: 'none',
-                  // @ts-ignore - vendor prefix
-                  MozAppearance: 'none'
-                }}
-              />
+            <AnimatePresence mode="popLayout" initial={false} custom={slideDirection}>
+              <motion.div
+                key={currentReel.id}
+                custom={slideDirection}
+                initial={{ y: slideDirection === -1 ? "100%" : slideDirection === 1 ? "-100%" : 0, opacity: 0.5 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: slideDirection === -1 ? "-100%" : "100%", opacity: 0.5 }}
+                transition={{ type: "tween", duration: 0.3, ease: "easeInOut" }}
+                className="absolute inset-0 flex items-center justify-center"
+                onClick={handleVideoTap}
+              >
+                <video
+                  ref={videoRef}
+                  src={currentReel.video_url}
+                  className="w-full h-full object-contain max-w-lg mx-auto"
+                  loop
+                  playsInline
+                  muted={isMuted}
+                  autoPlay
+                  controls={false}
+                  preload="auto"
+                  poster=""
+                  disablePictureInPicture
+                  disableRemotePlayback
+                  controlsList="nodownload nofullscreen noremoteplayback"
+                  // @ts-ignore - webkit specific
+                  webkit-playsinline="true"
+                  x-webkit-airplay="deny"
+                  style={{ WebkitAppearance: 'none' } as React.CSSProperties}
+                />
 
-              {/* Double tap heart animation */}
-              <AnimatePresence>
-                {showDoubleTapHeart && (
-                  <motion.div
-                    initial={{ scale: 0, opacity: 1 }}
-                    animate={{ scale: 1.5, opacity: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.8 }}
-                    className="absolute pointer-events-none z-50"
-                    style={{ left: doubleTapPosition.x - 40, top: doubleTapPosition.y - 40 }}
-                  >
-                    <Heart className="w-20 h-20 text-red-500 fill-red-500 drop-shadow-lg" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                {/* Double tap heart animation */}
+                <AnimatePresence>
+                  {showDoubleTapHeart && (
+                    <motion.div
+                      initial={{ scale: 0, opacity: 1 }}
+                      animate={{ scale: 1.5, opacity: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.8 }}
+                      className="absolute pointer-events-none z-50"
+                      style={{ left: doubleTapPosition.x - 40, top: doubleTapPosition.y - 40 }}
+                    >
+                      <Heart className="w-20 h-20 text-red-500 fill-red-500 drop-shadow-lg" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-              {/* Play/Pause overlay */}
-              <AnimatePresence>
-                {!isPlaying && !showComments && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.5 }}
-                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                  >
-                    <div className="w-16 h-16 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                      <Play className="w-8 h-8 text-white fill-white ml-1" />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                {/* Play/Pause overlay */}
+                <AnimatePresence>
+                  {!isPlaying && !showComments && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.5 }}
+                      className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                    >
+                      <div className="w-16 h-16 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                        <Play className="w-8 h-8 text-white fill-white ml-1" />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            </AnimatePresence>
 
             {/* Right side actions - Facebook Reels style */}
             <div className="absolute right-2 bottom-24 flex flex-col items-center gap-4 z-30">
