@@ -156,37 +156,7 @@ const About = () => {
           </div>
         </section>
 
-        {/* Team Section */}
-        <section className="px-6 py-12 bg-secondary/30">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold text-foreground text-center mb-8">Our Team</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {teamMembers.map((member, index) => (
-                <motion.div
-                  key={member.name}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  className="bg-card rounded-2xl border border-border overflow-hidden"
-                >
-                  <div className="aspect-square overflow-hidden">
-                    <img
-                      src={member.image}
-                      alt={member.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="p-4 text-center">
-                    <h3 className="font-semibold text-foreground">{member.name}</h3>
-                    <p className="text-sm text-primary mb-2">{member.role}</p>
-                    <p className="text-sm text-muted-foreground">{member.description}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
+        {/* Team Section - Hidden */}
 
         {/* Features Section */}
         <section className="px-6 py-12">

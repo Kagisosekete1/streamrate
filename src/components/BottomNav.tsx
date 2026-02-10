@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useOnlinePresence } from "@/hooks/useOnlinePresence";
 
 const navItems = [
   { icon: Flame, label: "Home", path: "/home" },
@@ -70,8 +69,6 @@ export const BottomNav = () => {
     setUnreadCount(count || 0);
   };
 
-  const { onlineUsers } = useOnlinePresence();
-  const hasLiveUsers = onlineUsers.size > 1; // more than just yourself
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border safe-area-bottom md:hidden">
@@ -79,7 +76,6 @@ export const BottomNav = () => {
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
-          const isLiveTab = item.path === "/live";
 
           return (
             <Link
@@ -95,16 +91,11 @@ export const BottomNav = () => {
                   className={cn(
                     "w-6 h-6 transition-all",
                     isActive ? "text-foreground" : "text-muted-foreground",
-                    item.path === "/create-post" && "w-7 h-7",
-                    isLiveTab && hasLiveUsers && "text-red-500"
+                    item.path === "/create-post" && "w-7 h-7"
                   )}
                   strokeWidth={isActive ? 2.5 : 1.5}
                   fill={isActive && item.path !== "/create-post" ? "currentColor" : "none"}
                 />
-                {/* Live indicator dot */}
-                {isLiveTab && hasLiveUsers && (
-                  <div className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                )}
                 {/* Active indicator dot */}
                 {isActive && (
                   <motion.div

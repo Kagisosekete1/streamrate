@@ -514,202 +514,194 @@ const CreateReel = () => {
           </motion.div>
         )}
 
-        {/* Video Upload Area */}
-        <div className="relative">
-          {!videoPreview ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="aspect-[9/16] max-h-[60vh] rounded-3xl border-2 border-dashed border-border bg-secondary/30 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mb-4">
-                <Upload className="w-10 h-10 text-primary" />
-              </div>
-              <p className="text-foreground font-semibold mb-1">Upload Video</p>
-              <p className="text-sm text-muted-foreground text-center px-4">
-                Portrait mode recommended
-                <br />
-                Max 60 seconds · Max 100MB
-              </p>
-            </motion.div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="aspect-[9/16] max-h-[60vh] rounded-3xl overflow-hidden bg-black relative"
-            >
-              <video
-                ref={videoRef}
-                src={videoPreview}
-                className="w-full h-full object-cover"
-                loop
-                playsInline
-                muted={isMuted}
-                onLoadedMetadata={handleVideoLoad}
-                onClick={togglePlay}
-              />
-
-              {/* Play/Pause overlay */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <AnimatePresence>
-                  {!isPlaying && (
-                    <motion.button
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center pointer-events-auto"
-                      onClick={togglePlay}
-                    >
-                      <Play className="w-8 h-8 text-white ml-1" />
-                    </motion.button>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Bottom Controls */}
-              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-                <button
-                  onClick={toggleMute}
-                  className="w-10 h-10 rounded-full bg-black/50 flex items-center justify-center"
-                >
-                  {isMuted ? (
-                    <VolumeX className="w-5 h-5 text-white" />
-                  ) : (
-                    <Volume2 className="w-5 h-5 text-white" />
-                  )}
-                </button>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowTrimmer(true)}
-                    className="px-4 py-2 rounded-full bg-black/50 flex items-center gap-2"
-                  >
-                    <Scissors className="w-4 h-4 text-white" />
-                    <span className="text-white text-sm">Trim</span>
-                  </button>
-                  <button
-                    onClick={clearVideo}
-                    className="w-10 h-10 rounded-full bg-destructive/80 flex items-center justify-center"
-                  >
-                    <X className="w-5 h-5 text-white" />
-                  </button>
+        {/* Video + Thumbnails Side by Side */}
+        <div className={`${videoPreview ? 'flex gap-4' : ''}`}>
+          {/* Video Upload Area (Left) */}
+          <div className={`relative ${videoPreview ? 'flex-1' : ''}`}>
+            {!videoPreview ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="aspect-[9/16] max-h-[60vh] rounded-3xl border-2 border-dashed border-border bg-secondary/30 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mb-4">
+                  <Upload className="w-10 h-10 text-primary" />
                 </div>
-              </div>
-
-              {/* Duration badge */}
-              <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-black/60 text-white text-sm">
-                {Math.round(trimEnd - trimStart)}s / 60s
-              </div>
-            </motion.div>
-          )}
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="video/*"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-        </div>
-
-        {/* Thumbnail Selector */}
-        {videoPreview && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Image className="w-5 h-5 text-primary" />
-              <label className="font-medium text-foreground">Choose Cover</label>
-            </div>
-
-            {isGeneratingThumbnails ? (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
-                <span className="text-sm text-muted-foreground">Generating thumbnails...</span>
-              </div>
+                <p className="text-foreground font-semibold mb-1">Upload Video</p>
+                <p className="text-sm text-muted-foreground text-center px-4">
+                  Portrait mode recommended
+                  <br />
+                  Max 60 seconds · Max 100MB
+                </p>
+              </motion.div>
             ) : (
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {/* Custom upload button */}
-                <button
-                  onClick={() => thumbnailInputRef.current?.click()}
-                  className={`relative flex-shrink-0 w-20 h-36 rounded-xl overflow-hidden border-2 border-dashed transition-all flex flex-col items-center justify-center gap-1 ${
-                    useCustomThumbnail && customThumbnail
-                      ? "border-primary ring-2 ring-primary/30 bg-primary/10"
-                      : "border-border hover:border-primary/50 bg-secondary/50"
-                  }`}
-                >
-                  {customThumbnail ? (
-                    <>
-                      <img
-                        src={customThumbnail}
-                        alt="Custom thumbnail"
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-                      {useCustomThumbnail && (
-                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                          <Check className="w-6 h-6 text-white drop-shadow-lg" />
-                        </div>
-                      )}
-                      <div className="absolute bottom-1 left-1 right-1 text-[10px] text-white bg-black/60 rounded px-1 py-0.5 text-center">
-                        Custom
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-5 h-5 text-muted-foreground" />
-                      <span className="text-[10px] text-muted-foreground text-center px-1">
-                        Upload
-                      </span>
-                    </>
-                  )}
-                </button>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="aspect-[9/16] max-h-[60vh] rounded-3xl overflow-hidden bg-black relative"
+              >
+                <video
+                  ref={videoRef}
+                  src={videoPreview}
+                  className="w-full h-full object-cover"
+                  loop
+                  playsInline
+                  muted={isMuted}
+                  onLoadedMetadata={handleVideoLoad}
+                  onClick={togglePlay}
+                />
 
-                {/* Video frame thumbnails */}
-                {thumbnails.map((thumb, index) => (
-                  <motion.button
-                    key={index}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handleThumbnailSelect(index)}
-                    className={`relative flex-shrink-0 w-20 h-36 rounded-xl overflow-hidden border-2 transition-all ${
-                      !useCustomThumbnail && selectedThumbnail === index
-                        ? "border-primary ring-2 ring-primary/30"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <img
-                      src={thumb}
-                      alt={`Frame ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                    {!useCustomThumbnail && selectedThumbnail === index && (
-                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                        <Check className="w-6 h-6 text-white drop-shadow-lg" />
-                      </div>
+                {/* Play/Pause overlay */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <AnimatePresence>
+                    {!isPlaying && (
+                      <motion.button
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center pointer-events-auto"
+                        onClick={togglePlay}
+                      >
+                        <Play className="w-8 h-8 text-white ml-1" />
+                      </motion.button>
                     )}
-                    <div className="absolute bottom-1 left-1 right-1 text-[10px] text-white bg-black/60 rounded px-1 py-0.5 text-center">
-                      {index === 0 ? "Start" : index === 1 ? "25%" : index === 2 ? "50%" : "75%"}
-                    </div>
-                  </motion.button>
-                ))}
-              </div>
+                  </AnimatePresence>
+                </div>
+
+                {/* Bottom Controls */}
+                <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
+                  <button
+                    onClick={toggleMute}
+                    className="w-10 h-10 rounded-full bg-black/50 flex items-center justify-center"
+                  >
+                    {isMuted ? (
+                      <VolumeX className="w-5 h-5 text-white" />
+                    ) : (
+                      <Volume2 className="w-5 h-5 text-white" />
+                    )}
+                  </button>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowTrimmer(true)}
+                      className="px-4 py-2 rounded-full bg-black/50 flex items-center gap-2"
+                    >
+                      <Scissors className="w-4 h-4 text-white" />
+                      <span className="text-white text-sm">Trim</span>
+                    </button>
+                    <button
+                      onClick={clearVideo}
+                      className="w-10 h-10 rounded-full bg-destructive/80 flex items-center justify-center"
+                    >
+                      <X className="w-5 h-5 text-white" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Duration badge */}
+                <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-black/60 text-white text-sm">
+                  {Math.round(trimEnd - trimStart)}s / 60s
+                </div>
+              </motion.div>
             )}
 
             <input
-              ref={thumbnailInputRef}
+              ref={fileInputRef}
               type="file"
-              accept="image/*"
-              onChange={handleCustomThumbnailSelect}
+              accept="video/*"
+              onChange={handleFileSelect}
               className="hidden"
             />
           </div>
-        )}
 
-        {/* Music Upload */}
-        {videoPreview && (
-          <MusicUploader
-            onMusicSelect={handleMusicSelect}
-            maxDuration={Math.round(trimEnd - trimStart)}
-          />
-        )}
+          {/* Thumbnail Selector (Right Side) */}
+          {videoPreview && (
+            <div className="w-28 flex-shrink-0 space-y-2">
+              <div className="flex items-center gap-1">
+                <Image className="w-4 h-4 text-primary" />
+                <label className="font-medium text-foreground text-xs">Cover</label>
+              </div>
+
+              {isGeneratingThumbnails ? (
+                <div className="flex flex-col items-center justify-center py-6">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary mb-2" />
+                  <span className="text-[10px] text-muted-foreground">Generating...</span>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {/* Video frame thumbnails (minimum 3) */}
+                  {thumbnails.slice(0, Math.max(3, thumbnails.length)).map((thumb, index) => (
+                    <motion.button
+                      key={index}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleThumbnailSelect(index)}
+                      className={`relative w-full aspect-[9/16] rounded-xl overflow-hidden border-2 transition-all ${
+                        !useCustomThumbnail && selectedThumbnail === index
+                          ? "border-primary ring-2 ring-primary/30"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <img
+                        src={thumb}
+                        alt={`Frame ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      {!useCustomThumbnail && selectedThumbnail === index && (
+                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                          <Check className="w-5 h-5 text-white drop-shadow-lg" />
+                        </div>
+                      )}
+                      <div className="absolute bottom-0.5 left-0.5 right-0.5 text-[8px] text-white bg-black/60 rounded px-1 py-0.5 text-center">
+                        {index === 0 ? "Start" : index === 1 ? "Mid" : "End"}
+                      </div>
+                    </motion.button>
+                  ))}
+
+                  {/* Custom upload button */}
+                  <button
+                    onClick={() => thumbnailInputRef.current?.click()}
+                    className={`relative w-full aspect-[9/16] rounded-xl overflow-hidden border-2 border-dashed transition-all flex flex-col items-center justify-center gap-1 ${
+                      useCustomThumbnail && customThumbnail
+                        ? "border-primary ring-2 ring-primary/30 bg-primary/10"
+                        : "border-border hover:border-primary/50 bg-secondary/50"
+                    }`}
+                  >
+                    {customThumbnail ? (
+                      <>
+                        <img
+                          src={customThumbnail}
+                          alt="Custom thumbnail"
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                        {useCustomThumbnail && (
+                          <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                            <Check className="w-5 h-5 text-white drop-shadow-lg" />
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-[8px] text-muted-foreground">Custom</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              <input
+                ref={thumbnailInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleCustomThumbnailSelect}
+                className="hidden"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Music Upload removed - replaced by thumbnail picker on the side */}
 
         {/* Caption Input */}
         <div className="space-y-3">
