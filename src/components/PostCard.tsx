@@ -14,6 +14,38 @@ import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 import { ReportBlockModal } from "@/components/ReportBlockModal";
 import { PostCommentsModal } from "@/components/PostCommentsModal";
 import { LikesModal } from "@/components/LikesModal";
+
+// Caption component with "See more" truncation
+const CaptionWithSeeMore = ({ streamerName, streamerId, content }: { streamerName: string; streamerId: string; content: string }) => {
+  const [expanded, setExpanded] = useState(false);
+  const shouldTruncate = content.length > 80;
+
+  return (
+    <div className="mb-2">
+      <span className="text-sm">
+        <Link 
+          to={`/streamer/${streamerId}`} 
+          className="font-semibold text-foreground mr-1"
+        >
+          {streamerName}
+        </Link>
+        {shouldTruncate && !expanded ? (
+          <>
+            <span className="text-foreground">{content.slice(0, 80)}...</span>
+            <button 
+              onClick={(e) => { e.stopPropagation(); setExpanded(true); }}
+              className="text-muted-foreground ml-1 text-sm"
+            >
+              See more
+            </button>
+          </>
+        ) : (
+          <span className="text-foreground">{content}</span>
+        )}
+      </span>
+    </div>
+  );
+};
 import {
   AlertDialog,
   AlertDialogAction,
@@ -353,18 +385,12 @@ export const PostCard = ({
           {likes.toLocaleString()} likes
         </button>
 
-        {/* Caption */}
-        <div className="mb-2">
-          <span className="text-sm">
-            <Link 
-              to={`/streamer/${streamerId}`} 
-              className="font-semibold text-foreground mr-1"
-            >
-              {streamerName}
-            </Link>
-            <span className="text-foreground">{content}</span>
-          </span>
-        </div>
+      {/* Caption with See More */}
+        <CaptionWithSeeMore
+          streamerName={streamerName}
+          streamerId={streamerId}
+          content={content}
+        />
 
         {/* View comments */}
         {comments > 0 && (

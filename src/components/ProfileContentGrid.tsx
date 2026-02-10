@@ -244,14 +244,7 @@ export const ProfileContentGrid = ({
                       onClick={() => onReelClick(index)}
                     />
                     
-                    {/* Play overlay */}
-                    <div 
-                      className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-100 group-hover:opacity-0 transition-opacity pointer-events-none"
-                    >
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                        <Play className="w-5 h-5 sm:w-6 sm:h-6 text-white fill-white ml-0.5" />
-                      </div>
-                    </div>
+                    {/* No play overlay - clean thumbnail */}
 
                     {/* Bottom gradient with info */}
                     <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent">

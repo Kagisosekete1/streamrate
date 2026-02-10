@@ -278,6 +278,7 @@ export type Database = {
           created_at: string | null
           id: string
           image_url: string | null
+          is_private: boolean
           updated_at: string | null
           user_id: string
         }
@@ -286,6 +287,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           image_url?: string | null
+          is_private?: boolean
           updated_at?: string | null
           user_id: string
         }
@@ -294,6 +296,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           image_url?: string | null
+          is_private?: boolean
           updated_at?: string | null
           user_id?: string
         }
@@ -695,7 +698,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "fan" | "streamer"
+      app_role: "fan" | "streamer" | "seller"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -823,7 +826,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["fan", "streamer"],
+      app_role: ["fan", "streamer", "seller"],
     },
   },
 } as const
