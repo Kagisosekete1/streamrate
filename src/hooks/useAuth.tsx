@@ -17,9 +17,9 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
-  userRole: "fan" | "streamer" | null;
+  userRole: "fan" | "streamer" | "seller" | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string, role: "fan" | "streamer") => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, role: "fan" | "streamer" | "seller") => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error: Error | null }>;
@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [userRole, setUserRole] = useState<"fan" | "streamer" | null>(null);
+  const [userRole, setUserRole] = useState<"fan" | "streamer" | "seller" | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .maybeSingle();
 
     if (roleData) {
-      setUserRole(roleData.role as "fan" | "streamer");
+      setUserRole(roleData.role as "fan" | "streamer" | "seller");
     }
   };
 
@@ -93,7 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string, role: "fan" | "streamer") => {
+  const signUp = async (email: string, password: string, fullName: string, role: "fan" | "streamer" | "seller") => {
     const redirectUrl = `${window.location.origin}/`;
 
     const { data, error } = await supabase.auth.signUp({

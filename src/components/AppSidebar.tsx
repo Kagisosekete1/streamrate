@@ -13,6 +13,8 @@ import {
   X,
   Trophy,
   LogOut,
+  Radio,
+  ShoppingBag,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -28,12 +30,14 @@ const mainNavItems: NavItem[] = [
   { icon: Search, label: "Discover", path: "/streamers" },
   { icon: PlusSquare, label: "Create", path: "/create-post" },
   { icon: Film, label: "Reels", path: "/reels" },
+  { icon: Radio, label: "Live", path: "/live" },
   { icon: Heart, label: "Notifications", path: "/notifications" },
   { icon: User, label: "Profile", path: "/profile" },
 ];
 
 const bottomNavItems: NavItem[] = [
   { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
+  { icon: ShoppingBag, label: "Store", path: "/store" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
 

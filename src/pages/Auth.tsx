@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Gamepad2, Mail, Lock, User, ChevronRight, Tv, Users } from "lucide-react";
+import { Gamepad2, Mail, Lock, User, ChevronRight, Tv, Users, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
 type AuthMode = "login" | "signup";
-type UserRole = "fan" | "streamer";
+type UserRole = "fan" | "streamer" | "seller";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -295,6 +295,30 @@ const Auth = () => {
                       <h3 className="text-lg font-semibold text-foreground">I'm a Streamer</h3>
                       <p className="text-sm text-muted-foreground mt-1">
                         Create your profile, share updates, and connect with your fans.
+                      </p>
+                    </div>
+                  </div>
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleRoleSelect("seller")}
+                  disabled={isSubmitting}
+                  className={cn(
+                    "w-full p-6 rounded-xl border-2 text-left transition-all",
+                    "bg-card hover:bg-card/80 border-border hover:border-green-500/50",
+                    isSubmitting && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-green-500/20 flex items-center justify-center">
+                      <ShoppingBag className="w-6 h-6 text-green-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-foreground">I'm a Seller</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        List and sell gaming gear, streaming equipment, and accessories.
                       </p>
                     </div>
                   </div>

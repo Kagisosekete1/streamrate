@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Image, Send, X, FileText, Trash2, Film } from "lucide-react";
+import { ArrowLeft, Image, Send, X, FileText, Trash2, Film, Globe, Lock } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { AppLayout } from "@/components/AppLayout";
@@ -24,6 +24,7 @@ const CreatePost = () => {
   const [showDrafts, setShowDrafts] = useState(false);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [showReelModal, setShowReelModal] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load draft from URL param
@@ -160,6 +161,7 @@ const CreatePost = () => {
       user_id: user.id,
       content: content.trim(),
       image_url: imageUrl,
+      is_private: isPrivate,
     });
 
     if (error) {
@@ -342,6 +344,14 @@ const CreatePost = () => {
               >
                 <Film className="w-5 h-5" />
                 <span className="text-sm hidden sm:inline">Reel</span>
+              </button>
+              <button
+                onClick={() => setIsPrivate(!isPrivate)}
+                className={`flex items-center gap-1 sm:gap-2 transition-colors ${isPrivate ? 'text-amber-500' : 'text-muted-foreground hover:text-foreground'}`}
+                title={isPrivate ? "Private post (no comments)" : "Public post"}
+              >
+                {isPrivate ? <Lock className="w-5 h-5" /> : <Globe className="w-5 h-5" />}
+                <span className="text-sm hidden sm:inline">{isPrivate ? "Private" : "Public"}</span>
               </button>
             </div>
             <div className="flex items-center gap-2">
