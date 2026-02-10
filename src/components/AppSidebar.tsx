@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Flame,
+  Home,
   Compass,
   Zap,
   Clapperboard,
@@ -26,7 +26,7 @@ interface NavItem {
 }
 
 const mainNavItems: NavItem[] = [
-  { icon: Flame, label: "Home", path: "/home" },
+  { icon: Home, label: "Home", path: "/home" },
   { icon: Compass, label: "Discover", path: "/streamers" },
   { icon: Zap, label: "Create", path: "/create-post" },
   { icon: Clapperboard, label: "Reels", path: "/reels" },
