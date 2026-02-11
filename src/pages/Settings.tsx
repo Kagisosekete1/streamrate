@@ -131,18 +131,23 @@ const Settings = () => {
     lastSeenVisibility: "everyone",
   });
 
-  // Fetch last seen visibility from profile
+  // Fetch all persisted settings from profile
   useEffect(() => {
     const fetchSettings = async () => {
       if (!user) return;
       const { data } = await supabase
         .from("profiles")
-        .select("last_seen_visibility")
+        .select("last_seen_visibility, profile_visibility, who_can_comment")
         .eq("id", user.id)
         .maybeSingle();
       
-      if (data && (data as any).last_seen_visibility) {
-        setSettings(prev => ({ ...prev, lastSeenVisibility: (data as any).last_seen_visibility }));
+      if (data) {
+        setSettings(prev => ({
+          ...prev,
+          lastSeenVisibility: (data as any).last_seen_visibility || "everyone",
+          profileVisibility: (data as any).profile_visibility || "public",
+          whoCanComment: (data as any).who_can_comment || "everyone",
+        }));
       }
     };
     fetchSettings();
@@ -203,6 +208,21 @@ const Settings = () => {
     }
     if (passwordForm.newPassword.length < 8) {
       toast({ title: "Password must be at least 8 characters", variant: "destructive" });
+      return;
+    }
+    if (!passwordForm.currentPassword) {
+      toast({ title: "Please enter your current password", variant: "destructive" });
+      return;
+    }
+
+    // Verify current password by re-authenticating
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: profile?.email || "",
+      password: passwordForm.currentPassword,
+    });
+
+    if (signInError) {
+      toast({ title: "Current password is incorrect", variant: "destructive" });
       return;
     }
     
@@ -736,7 +756,19 @@ const Settings = () => {
         )}
 
         {activeModal === "profileVisibility" && (
-          <Modal title="Profile Visibility" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
+          <Modal title="Profile Visibility" showSave onSave={async () => {
+            if (!user) return;
+            const { error } = await supabase
+              .from("profiles")
+              .update({ profile_visibility: settings.profileVisibility } as any)
+              .eq("id", user.id);
+            if (error) {
+              toast({ title: "Failed to update", variant: "destructive" });
+              return;
+            }
+            toast({ title: "Settings saved!" });
+            setActiveModal(null);
+          }}>
             <div className="space-y-3">
               {["public", "private"].map((option) => (
                 <button
@@ -761,7 +793,19 @@ const Settings = () => {
         )}
 
         {activeModal === "whoCanComment" && (
-          <Modal title="Who Can Comment" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
+          <Modal title="Who Can Comment" showSave onSave={async () => {
+            if (!user) return;
+            const { error } = await supabase
+              .from("profiles")
+              .update({ who_can_comment: settings.whoCanComment } as any)
+              .eq("id", user.id);
+            if (error) {
+              toast({ title: "Failed to update", variant: "destructive" });
+              return;
+            }
+            toast({ title: "Settings saved!" });
+            setActiveModal(null);
+          }}>
             <div className="space-y-3">
               {[
                 { value: "everyone", label: "Everyone" },

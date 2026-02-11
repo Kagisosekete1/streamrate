@@ -220,7 +220,7 @@ const PostDetail = () => {
         {/* Comments section */}
         <div className="mt-6">
           <h2 className="text-lg font-semibold text-foreground mb-4">Comments</h2>
-          <CommentSection postId={post.id} />
+          <CommentSection postId={post.id} postOwnerId={post.user_id} />
         </div>
       </main>
 

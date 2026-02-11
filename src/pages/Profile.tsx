@@ -828,10 +828,10 @@ const Profile = () => {
             <Edit2 className="w-4 h-4" />
             Edit Profile
           </Button>
-          <Button variant="outline" onClick={() => navigate("/settings")}>
+          <Button variant="outline" className="md:hidden" onClick={() => navigate("/settings")}>
             <Settings className="w-4 h-4" />
           </Button>
-          <Button variant="outline" onClick={handleLogout}>
+          <Button variant="outline" className="md:hidden" onClick={handleLogout}>
             <LogOut className="w-4 h-4" />
           </Button>
         </div>

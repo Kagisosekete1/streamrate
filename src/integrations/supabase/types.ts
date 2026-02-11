@@ -338,6 +338,7 @@ export type Database = {
           kick_url: string | null
           last_seen: string | null
           last_seen_visibility: string | null
+          profile_visibility: string
           show_discord: boolean | null
           show_kick: boolean | null
           show_twitch: boolean | null
@@ -346,6 +347,7 @@ export type Database = {
           twitch_url: string | null
           updated_at: string | null
           username: string | null
+          who_can_comment: string
           youtube_gaming_url: string | null
         }
         Insert: {
@@ -362,6 +364,7 @@ export type Database = {
           kick_url?: string | null
           last_seen?: string | null
           last_seen_visibility?: string | null
+          profile_visibility?: string
           show_discord?: boolean | null
           show_kick?: boolean | null
           show_twitch?: boolean | null
@@ -370,6 +373,7 @@ export type Database = {
           twitch_url?: string | null
           updated_at?: string | null
           username?: string | null
+          who_can_comment?: string
           youtube_gaming_url?: string | null
         }
         Update: {
@@ -386,6 +390,7 @@ export type Database = {
           kick_url?: string | null
           last_seen?: string | null
           last_seen_visibility?: string | null
+          profile_visibility?: string
           show_discord?: boolean | null
           show_kick?: boolean | null
           show_twitch?: boolean | null
@@ -394,6 +399,7 @@ export type Database = {
           twitch_url?: string | null
           updated_at?: string | null
           username?: string | null
+          who_can_comment?: string
           youtube_gaming_url?: string | null
         }
         Relationships: []
