@@ -34,9 +34,10 @@ interface ReelViewerProps {
   initialIndex?: number;
   isOpen: boolean;
   onClose: () => void;
+  onLoadMore?: () => void;
 }
 
-export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelViewerProps) => {
+export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMore }: ReelViewerProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -217,7 +218,13 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
   useEffect(() => {
     if (videoRef.current && isOpen && currentReel) {
       if (isPlaying && !showComments) {
-        videoRef.current.play();
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            // Auto-play was prevented, user needs to interact
+            setIsPlaying(false);
+          });
+        }
       } else {
         videoRef.current.pause();
       }
@@ -259,6 +266,10 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
       setIsPlaying(true);
       setVideoProgress(0);
       triggerHaptic();
+      // Trigger load more when 3 reels from end
+      if (currentIndex >= reels.length - 4 && onLoadMore) {
+        onLoadMore();
+      }
     } else if (direction === 1 && currentIndex > 0) {
       setSlideDirection(1);
       setCurrentIndex(prev => prev - 1);
@@ -266,7 +277,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
       setVideoProgress(0);
       triggerHaptic();
     }
-  }, [showComments, currentIndex, reels.length]);
+  }, [showComments, currentIndex, reels.length, onLoadMore]);
 
   // Handle swipe
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {

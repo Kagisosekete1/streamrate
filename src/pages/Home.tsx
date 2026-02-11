@@ -9,6 +9,7 @@ import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 import { NewPostsBanner } from "@/components/NewPostsBanner";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import { InstallAppPrompt } from "@/components/InstallAppPrompt";
+import { StreamiiAi } from "@/components/StreamiiAi";
 import { DadJokeNotification } from "@/components/DadJokeNotification";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -395,6 +396,7 @@ const Home = () => {
 
         <PushNotificationPrompt />
         <InstallAppPrompt />
+        <StreamiiAi />
       </div>
     </AppLayout>
   );
