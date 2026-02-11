@@ -35,6 +35,9 @@ const Reels = () => {
   const [showViewer, setShowViewer] = useState(false);
   const [viewerIndex, setViewerIndex] = useState(0);
   const [activeTab, setActiveTab] = useState("foryou");
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const REELS_PER_PAGE = 20;
   const { getForYouFeed } = useForYouAlgorithm();
 
   const fetchReels = useCallback(async () => {
@@ -42,7 +45,8 @@ const Reels = () => {
       const { data: reelsData, error } = await supabase
         .from("reels")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .range(0, REELS_PER_PAGE - 1);
 
       if (error) {
         console.error("Error fetching reels:", error);
@@ -51,12 +55,12 @@ const Reels = () => {
       }
 
       if (reelsData && reelsData.length > 0) {
-        // Set reels immediately with placeholder user data
         const initialReels = reelsData.map(reel => ({
           ...reel,
           user: { username: null, avatar_url: null }
         }));
         setReels(initialReels);
+        setHasMore(reelsData.length >= REELS_PER_PAGE);
         setLoading(false);
 
         if (id) {
@@ -97,6 +101,48 @@ const Reels = () => {
     const fyReels = await getForYouFeed();
     setForYouReels(fyReels);
   }, [getForYouFeed]);
+
+  const loadMoreReels = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const offset = reels.length;
+      const { data: moreData } = await supabase
+        .from("reels")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .range(offset, offset + REELS_PER_PAGE - 1);
+
+      if (!moreData || moreData.length === 0) {
+        setHasMore(false);
+        setLoadingMore(false);
+        return;
+      }
+
+      setHasMore(moreData.length >= REELS_PER_PAGE);
+
+      // Enrich with profiles
+      const userIds = [...new Set(moreData.map(r => r.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, username, avatar_url")
+        .in("id", userIds);
+      const profileMap = profiles ? Object.fromEntries(profiles.map(p => [p.id, p])) : {};
+
+      const enriched = moreData.map(reel => ({
+        ...reel,
+        user: profileMap[reel.user_id]
+          ? { username: profileMap[reel.user_id].username, avatar_url: profileMap[reel.user_id].avatar_url }
+          : { username: null, avatar_url: null }
+      }));
+
+      setReels(prev => [...prev, ...enriched]);
+    } catch (err) {
+      console.error("Error loading more reels:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMore, reels.length]);
 
   useEffect(() => {
     fetchReels();
@@ -256,13 +302,12 @@ const Reels = () => {
           isOpen={showViewer}
           onClose={() => {
             setShowViewer(false);
-            // Update URL when closing viewer
             if (id) {
               navigate("/reels", { replace: true });
             }
-            // Refresh For You feed after watching
             fetchForYouReels();
           }}
+          onLoadMore={activeTab === "latest" ? loadMoreReels : undefined}
         />
       )}
 
