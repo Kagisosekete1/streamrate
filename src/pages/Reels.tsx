@@ -39,7 +39,6 @@ const Reels = () => {
 
   const fetchReels = useCallback(async () => {
     try {
-      // Fetch reels without blocking
       const { data: reelsData, error } = await supabase
         .from("reels")
         .select("*")
@@ -52,7 +51,7 @@ const Reels = () => {
       }
 
       if (reelsData && reelsData.length > 0) {
-        // Set reels immediately without waiting for profile enrichment
+        // Set reels immediately with placeholder user data
         const initialReels = reelsData.map(reel => ({
           ...reel,
           user: { username: null, avatar_url: null }
@@ -60,7 +59,6 @@ const Reels = () => {
         setReels(initialReels);
         setLoading(false);
 
-        // If specific reel ID is provided, open viewer at that index
         if (id) {
           const index = reelsData.findIndex(r => r.id === id);
           if (index !== -1) {
@@ -69,23 +67,22 @@ const Reels = () => {
           }
         }
 
-        // Enrich with user data in background (non-blocking)
-        Promise.all(
-          reelsData.map(async (reel) => {
-            const { data: profileData } = await supabase
-              .from("profiles")
-              .select("username, avatar_url")
-              .eq("id", reel.user_id)
-              .maybeSingle();
+        // Enrich with user data in background
+        const userIds = [...new Set(reelsData.map(r => r.user_id))];
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, username, avatar_url")
+          .in("id", userIds);
 
-            return {
-              ...reel,
-              user: profileData || { username: null, avatar_url: null }
-            };
-          })
-        ).then(enrichedReels => {
-          setReels(enrichedReels);
-        });
+        if (profiles) {
+          const profileMap = Object.fromEntries(profiles.map(p => [p.id, p]));
+          setReels(reelsData.map(reel => ({
+            ...reel,
+            user: profileMap[reel.user_id]
+              ? { username: profileMap[reel.user_id].username, avatar_url: profileMap[reel.user_id].avatar_url }
+              : { username: null, avatar_url: null }
+          })));
+        }
       } else {
         setReels([]);
         setLoading(false);

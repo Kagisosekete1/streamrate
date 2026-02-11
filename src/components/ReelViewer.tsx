@@ -243,23 +243,68 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
     return null;
   }
 
-  // Handle swipe
-  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+  // Haptic feedback helper
+  const triggerHaptic = () => {
+    if (navigator.vibrate) {
+      navigator.vibrate(10);
+    }
+  };
+
+  // Navigate to next/prev reel
+  const goToReel = useCallback((direction: -1 | 1) => {
     if (showComments) return;
-    
-    const threshold = 50;
-    if (info.offset.y < -threshold && currentIndex < reels.length - 1) {
+    if (direction === -1 && currentIndex < reels.length - 1) {
       setSlideDirection(-1);
       setCurrentIndex(prev => prev + 1);
       setIsPlaying(true);
       setVideoProgress(0);
-    } else if (info.offset.y > threshold && currentIndex > 0) {
+      triggerHaptic();
+    } else if (direction === 1 && currentIndex > 0) {
       setSlideDirection(1);
       setCurrentIndex(prev => prev - 1);
       setIsPlaying(true);
       setVideoProgress(0);
+      triggerHaptic();
+    }
+  }, [showComments, currentIndex, reels.length]);
+
+  // Handle swipe
+  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const threshold = 50;
+    if (info.offset.y < -threshold) {
+      goToReel(-1);
+    } else if (info.offset.y > threshold) {
+      goToReel(1);
     }
   };
+
+  // Scroll wheel support for desktop
+  useEffect(() => {
+    if (!isOpen || showComments) return;
+    let scrollTimeout: ReturnType<typeof setTimeout> | null = null;
+    let canScroll = true;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      if (!canScroll) return;
+      canScroll = false;
+      
+      if (e.deltaY > 30) {
+        goToReel(-1); // scroll down = next
+      } else if (e.deltaY < -30) {
+        goToReel(1); // scroll up = prev
+      }
+
+      scrollTimeout = setTimeout(() => { canScroll = true; }, 500);
+    };
+
+    const container = containerRef.current;
+    container?.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      container?.removeEventListener("wheel", handleWheel);
+      if (scrollTimeout) clearTimeout(scrollTimeout);
+    };
+  }, [isOpen, showComments, goToReel]);
 
   // Handle like with animation
   const handleLike = async () => {
@@ -647,6 +692,29 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose }: ReelVie
                 <span>•</span>
                 <span>{formatDistanceToNow(new Date(currentReel.created_at), { addSuffix: true })}</span>
               </div>
+
+              {/* Dot indicator */}
+              {reels.length > 1 && reels.length <= 20 && (
+                <div className="flex items-center gap-1 mt-1">
+                  {reels.map((_, i) => {
+                    const distance = Math.abs(i - currentIndex);
+                    if (distance > 3) return null;
+                    return (
+                      <div
+                        key={i}
+                        className={cn(
+                          "rounded-full transition-all duration-200",
+                          i === currentIndex
+                            ? "w-4 h-1.5 bg-white"
+                            : distance === 1
+                            ? "w-1.5 h-1.5 bg-white/50"
+                            : "w-1 h-1 bg-white/30"
+                        )}
+                      />
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </motion.div>
 
