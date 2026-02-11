@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, MapPin, Star, Users, MessageCircle } from "lucide-react";
+import { ArrowLeft, MapPin, Star, Users, MessageCircle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "@/components/StarRating";
 import { BottomNav } from "@/components/BottomNav";
@@ -64,6 +64,8 @@ const StreamerProfile = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAvatarZoom, setShowAvatarZoom] = useState(false);
   const [reviewAvatarZoom, setReviewAvatarZoom] = useState<{ url: string; name: string } | null>(null);
+  const [isPrivateProfile, setIsPrivateProfile] = useState(false);
+  const [canViewProfile, setCanViewProfile] = useState(true);
 
   useEffect(() => {
     if (id) {
@@ -91,7 +93,7 @@ const StreamerProfile = () => {
     // Fetch streamer profile
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
-      .select("id, full_name, username, avatar_url, bio, country, signup_number, twitch_url, discord_url, kick_url, youtube_gaming_url, show_twitch, show_discord, show_kick, show_youtube_gaming")
+      .select("id, full_name, username, avatar_url, bio, country, signup_number, twitch_url, discord_url, kick_url, youtube_gaming_url, show_twitch, show_discord, show_kick, show_youtube_gaming, profile_visibility")
       .eq("id", id)
       .maybeSingle();
 
@@ -118,6 +120,24 @@ const StreamerProfile = () => {
       show_kick: (profileData as any).show_kick ?? true,
       show_youtube_gaming: (profileData as any).show_youtube_gaming ?? true,
     });
+
+    // Check profile visibility
+    const visibility = (profileData as any).profile_visibility || "public";
+    if (visibility === "private" && user?.id !== id) {
+      setIsPrivateProfile(true);
+      // Check if current user follows this profile
+      if (user) {
+        const { data: followData } = await supabase
+          .from("follows")
+          .select("id")
+          .eq("follower_id", user.id)
+          .eq("following_id", id)
+          .maybeSingle();
+        setCanViewProfile(!!followData);
+      } else {
+        setCanViewProfile(false);
+      }
+    }
 
     // Fetch reviews
     const { data: ratingsData } = await supabase
@@ -386,48 +406,71 @@ const StreamerProfile = () => {
         </div>
       </header>
 
-      {/* Stream Embed */}
-      <StreamEmbed
-        twitchUrl={streamer.show_twitch ? streamer.twitch_url : null}
-        youtubeGamingUrl={streamer.show_youtube_gaming ? streamer.youtube_gaming_url : null}
-        kickUrl={streamer.show_kick ? streamer.kick_url : null}
-        streamerId={streamer.id}
-      />
-
-      {/* Bio */}
-      {streamer.bio && (
-        <section className="px-4 py-4">
-          <div className="bg-card rounded-xl p-4 border border-border/50">
-            <h2 className="text-sm font-semibold text-muted-foreground mb-2">
-              About
-            </h2>
-            <p className="text-foreground/90">{streamer.bio}</p>
+      {/* Private Profile Gate */}
+      {isPrivateProfile && !canViewProfile ? (
+        <div className="px-4 py-8">
+          <div className="flex flex-col items-center text-center py-12">
+            <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mb-4">
+              <Lock className="w-10 h-10 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-bold text-foreground mb-2">This Account is Private</h3>
+            <p className="text-muted-foreground text-sm mb-6 max-w-xs">
+              Follow this account to see their posts, reels, and more.
+            </p>
+            {user?.id !== id && (
+              <Button
+                variant={isFollowing ? "outline" : "gaming"}
+                onClick={handleFollow}
+              >
+                {isFollowing ? "Requested" : "Follow"}
+              </Button>
+            )}
           </div>
-        </section>
-      )}
-
-      {/* Actions */}
-      <section className="px-4 py-2">
-        <div className="flex gap-3">
-          <Button
-            variant="gaming"
-            className="flex-1"
-            onClick={() => setShowReviewForm(true)}
-          >
-            <Star className="w-4 h-4" />
-            Rate & Review
-          </Button>
-          {user?.id !== id && (
-            <Button
-              variant={isFollowing ? "outline" : "gaming"}
-              className="flex-1"
-              onClick={handleFollow}
-            >
-              {isFollowing ? "Following" : "Follow"}
-            </Button>
-          )}
         </div>
-      </section>
+      ) : (
+        <>
+          {/* Stream Embed */}
+          <StreamEmbed
+            twitchUrl={streamer.show_twitch ? streamer.twitch_url : null}
+            youtubeGamingUrl={streamer.show_youtube_gaming ? streamer.youtube_gaming_url : null}
+            kickUrl={streamer.show_kick ? streamer.kick_url : null}
+            streamerId={streamer.id}
+          />
+
+          {/* Bio */}
+          {streamer.bio && (
+            <section className="px-4 py-4">
+              <div className="bg-card rounded-xl p-4 border border-border/50">
+                <h2 className="text-sm font-semibold text-muted-foreground mb-2">
+                  About
+                </h2>
+                <p className="text-foreground/90">{streamer.bio}</p>
+              </div>
+            </section>
+          )}
+
+          {/* Actions */}
+          <section className="px-4 py-2">
+            <div className="flex gap-3">
+              <Button
+                variant="gaming"
+                className="flex-1"
+                onClick={() => setShowReviewForm(true)}
+              >
+                <Star className="w-4 h-4" />
+                Rate & Review
+              </Button>
+              {user?.id !== id && (
+                <Button
+                  variant={isFollowing ? "outline" : "gaming"}
+                  className="flex-1"
+                  onClick={handleFollow}
+                >
+                  {isFollowing ? "Following" : "Follow"}
+                </Button>
+              )}
+            </div>
+          </section>
 
       {/* Review Form Modal */}
       <AnimatePresence>
@@ -555,6 +598,8 @@ const StreamerProfile = () => {
           </div>
         )}
       </section>
+        </>
+      )}
 
       {/* Avatar View Modals */}
       <AvatarViewModal

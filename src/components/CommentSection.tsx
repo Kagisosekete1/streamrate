@@ -38,9 +38,10 @@ interface Comment {
 
 interface CommentSectionProps {
   postId: string;
+  postOwnerId?: string;
 }
 
-export const CommentSection = ({ postId }: CommentSectionProps) => {
+export const CommentSection = ({ postId, postOwnerId }: CommentSectionProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -54,6 +55,43 @@ export const CommentSection = ({ postId }: CommentSectionProps) => {
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [replyToUsername, setReplyToUsername] = useState<string | null>(null);
+  const [canComment, setCanComment] = useState(true);
+  const [commentRestriction, setCommentRestriction] = useState<string | null>(null);
+
+  // Check who_can_comment setting of the post owner
+  useEffect(() => {
+    const checkCommentPermission = async () => {
+      if (!postOwnerId || !user) {
+        setCanComment(!!user);
+        return;
+      }
+      // Post owner can always comment on their own posts
+      if (user.id === postOwnerId) {
+        setCanComment(true);
+        return;
+      }
+      const { data } = await supabase
+        .from("profiles")
+        .select("who_can_comment")
+        .eq("id", postOwnerId)
+        .maybeSingle();
+      
+      const setting = (data as any)?.who_can_comment || "everyone";
+      if (setting === "followers") {
+        const { data: followData } = await supabase
+          .from("follows")
+          .select("id")
+          .eq("follower_id", user.id)
+          .eq("following_id", postOwnerId)
+          .maybeSingle();
+        if (!followData) {
+          setCanComment(false);
+          setCommentRestriction("Only followers can comment on this post.");
+        }
+      }
+    };
+    checkCommentPermission();
+  }, [postOwnerId, user]);
   const fetchComments = async () => {
     const { data: commentsData, error } = await supabase
       .from("comments")
@@ -552,28 +590,36 @@ export const CommentSection = ({ postId }: CommentSectionProps) => {
   return (
     <div className="space-y-4">
       {/* Add comment input */}
-      <div className="flex items-center gap-2">
-        <Input
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder="Write a comment..."
-          className="flex-1"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleAddComment();
-            }
-          }}
-        />
-        <Button
-          variant="gaming"
-          size="sm"
-          onClick={handleAddComment}
-          disabled={!newComment.trim()}
-        >
-          <Send className="w-4 h-4" />
-        </Button>
-      </div>
+      {canComment ? (
+        <div className="flex items-center gap-2">
+          <Input
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="Write a comment..."
+            className="flex-1"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleAddComment();
+              }
+            }}
+          />
+          <Button
+            variant="gaming"
+            size="sm"
+            onClick={handleAddComment}
+            disabled={!newComment.trim()}
+          >
+            <Send className="w-4 h-4" />
+          </Button>
+        </div>
+      ) : (
+        <div className="text-center py-3 px-4 rounded-lg bg-secondary/50">
+          <p className="text-sm text-muted-foreground">
+            {commentRestriction || "You can't comment on this post."}
+          </p>
+        </div>
+      )}
 
       {/* Comments list */}
       <div className="divide-y divide-border/30">
