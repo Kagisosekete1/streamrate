@@ -174,21 +174,21 @@ export const useForYouAlgorithm = () => {
       hashtagsByReel[rh.reel_id].push(rh.hashtag_id);
     });
 
-    // Enrich with user data
-    const enrichedReels = await Promise.all(
-      reelsData.map(async (reel) => {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("username, avatar_url")
-          .eq("id", reel.user_id)
-          .maybeSingle();
+    // Batch fetch user profiles instead of N+1 queries
+    const userIds = [...new Set(reelsData.map(r => r.user_id))];
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, username, avatar_url")
+      .in("id", userIds);
 
-        return {
-          ...reel,
-          user: profileData || { username: null, avatar_url: null }
-        };
-      })
-    );
+    const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p]));
+
+    const enrichedReels = reelsData.map(reel => ({
+      ...reel,
+      user: profileMap[reel.user_id]
+        ? { username: profileMap[reel.user_id].username, avatar_url: profileMap[reel.user_id].avatar_url }
+        : { username: null, avatar_url: null }
+    }));
 
     // Calculate scores and sort
     const scoredReels = enrichedReels.map(reel => ({
