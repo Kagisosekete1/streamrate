@@ -21,30 +21,49 @@ export const InstallAppPrompt = () => {
 
     if (isStandalone) return;
 
-    // Show again after 7 days
+    // Clear legacy "true" value and show again after 3 days
     if (dismissedAt) {
-      const daysSince = (Date.now() - Number(dismissedAt)) / (1000 * 60 * 60 * 24);
-      if (daysSince < 7) return;
+      const ts = Number(dismissedAt);
+      if (!isNaN(ts)) {
+        const daysSince = (Date.now() - ts) / (1000 * 60 * 60 * 24);
+        if (daysSince < 3) return;
+      }
+      // Legacy "true" or invalid — clear it so prompt shows
+      localStorage.removeItem("install_prompt_dismissed");
     }
 
     // Detect iOS Safari
     const ua = navigator.userAgent;
     const isiOS = /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
+    const isAndroid = /Android/.test(ua);
+    const isMobile = isiOS || isAndroid;
     setIsIOS(isiOS);
 
     if (isiOS) {
-      const timer = setTimeout(() => setShowPrompt(true), 5000);
+      const timer = setTimeout(() => setShowPrompt(true), 2000);
       return () => clearTimeout(timer);
     }
 
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setTimeout(() => setShowPrompt(true), 3000);
+      setTimeout(() => setShowPrompt(true), 2000);
     };
 
     window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+
+    // Fallback: if on mobile and no beforeinstallprompt fires after 3s, show anyway
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+    if (isMobile) {
+      fallbackTimer = setTimeout(() => {
+        setShowPrompt(true);
+      }, 3000);
+    }
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      if (fallbackTimer) clearTimeout(fallbackTimer);
+    };
   }, []);
 
   const handleInstall = async () => {
