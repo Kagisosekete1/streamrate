@@ -15,11 +15,17 @@ export const InstallAppPrompt = () => {
   const [showIOSGuide, setShowIOSGuide] = useState(false);
 
   useEffect(() => {
-    const dismissed = localStorage.getItem("install_prompt_dismissed");
+    const dismissedAt = localStorage.getItem("install_prompt_dismissed");
     const isStandalone = window.matchMedia("(display-mode: standalone)").matches
       || (navigator as any).standalone === true;
 
-    if (dismissed || isStandalone) return;
+    if (isStandalone) return;
+
+    // Show again after 7 days
+    if (dismissedAt) {
+      const daysSince = (Date.now() - Number(dismissedAt)) / (1000 * 60 * 60 * 24);
+      if (daysSince < 7) return;
+    }
 
     // Detect iOS Safari
     const ua = navigator.userAgent;
@@ -58,7 +64,7 @@ export const InstallAppPrompt = () => {
   const handleDismiss = () => {
     setShowPrompt(false);
     setShowIOSGuide(false);
-    localStorage.setItem("install_prompt_dismissed", "true");
+    localStorage.setItem("install_prompt_dismissed", String(Date.now()));
   };
 
   if (!showPrompt) return null;
