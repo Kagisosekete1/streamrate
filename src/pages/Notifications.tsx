@@ -132,8 +132,10 @@ const Notifications = () => {
       markAsRead(notification.id);
     }
 
-    // Navigate to user profile when clicking notification with from_user_id
-    if (notification.from_user_id) {
+    // Comment notifications should go to the post, not the user profile
+    if (notification.post_id && (notification.type === "comment" || notification.type === "comment_reply" || notification.type === "comment_like" || notification.type === "new_post")) {
+      navigate(`/post/${notification.post_id}`);
+    } else if (notification.from_user_id) {
       navigate(`/streamer/${notification.from_user_id}`);
     } else if (notification.post_id) {
       navigate(`/post/${notification.post_id}`);

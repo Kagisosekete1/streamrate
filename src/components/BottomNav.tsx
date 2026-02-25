@@ -1,76 +1,19 @@
 import { useState, useEffect } from "react";
-import { Home, Compass, Plus, UserCircle2, Radio, Bell, Clapperboard } from "lucide-react";
+import { Home, Compass, Plus, UserCircle2, Clapperboard } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
   { icon: Home, label: "Home", path: "/home" },
   { icon: Compass, label: "Discover", path: "/streamers" },
-  { icon: Bell, label: "Notifications", path: "/notifications" },
   { icon: Plus, label: "Create", path: "/create-post" },
-  { icon: Radio, label: "Live", path: "/live" },
   { icon: Clapperboard, label: "Reels", path: "/reels" },
   { icon: UserCircle2, label: "Profile", path: "/profile" },
 ];
 
 export const BottomNav = () => {
   const location = useLocation();
-  const { user } = useAuth();
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    if (!user) return;
-
-    fetchUnreadCount();
-
-    const channel = supabase
-      .channel("user-notifications-nav")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          setUnreadCount((prev) => prev + 1);
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          fetchUnreadCount();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
-
-  const fetchUnreadCount = async () => {
-    if (!user) return;
-
-    const { count } = await supabase
-      .from("notifications")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .eq("is_read", false);
-
-    setUnreadCount(count || 0);
-  };
-
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border safe-area-bottom md:hidden">
@@ -98,7 +41,6 @@ export const BottomNav = () => {
                   strokeWidth={isActive ? 2.5 : 1.5}
                   fill={isActive && item.path !== "/create-post" ? "currentColor" : "none"}
                 />
-                {/* Active indicator dot */}
                 {isActive && (
                   <motion.div
                     layoutId="activeTab"
