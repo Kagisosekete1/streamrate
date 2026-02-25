@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, MessageCircle, Send, ChevronDown, ChevronUp, Trash2, Edit2, X, Check } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -39,9 +39,10 @@ interface Comment {
 interface CommentSectionProps {
   postId: string;
   postOwnerId?: string;
+  highlightCommentId?: string | null;
 }
 
-export const CommentSection = ({ postId, postOwnerId }: CommentSectionProps) => {
+export const CommentSection = ({ postId, postOwnerId, highlightCommentId }: CommentSectionProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -57,15 +58,16 @@ export const CommentSection = ({ postId, postOwnerId }: CommentSectionProps) => 
   const [replyToUsername, setReplyToUsername] = useState<string | null>(null);
   const [canComment, setCanComment] = useState(true);
   const [commentRestriction, setCommentRestriction] = useState<string | null>(null);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const commentRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // Check who_can_comment setting of the post owner
+  // Check who_can_comment setting
   useEffect(() => {
     const checkCommentPermission = async () => {
       if (!postOwnerId || !user) {
         setCanComment(!!user);
         return;
       }
-      // Post owner can always comment on their own posts
       if (user.id === postOwnerId) {
         setCanComment(true);
         return;
@@ -92,7 +94,45 @@ export const CommentSection = ({ postId, postOwnerId }: CommentSectionProps) => 
     };
     checkCommentPermission();
   }, [postOwnerId, user]);
-  const fetchComments = async () => {
+
+  const enrichComment = useCallback(async (comment: any): Promise<Comment> => {
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("username, avatar_url")
+      .eq("id", comment.user_id)
+      .maybeSingle();
+
+    const { count: likesCount } = await supabase
+      .from("comment_likes")
+      .select("*", { count: "exact", head: true })
+      .eq("comment_id", comment.id);
+
+    const { count: repliesCount } = await supabase
+      .from("comments")
+      .select("*", { count: "exact", head: true })
+      .eq("parent_id", comment.id);
+
+    let isLiked = false;
+    if (user) {
+      const { data: likeData } = await supabase
+        .from("comment_likes")
+        .select("id")
+        .eq("comment_id", comment.id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      isLiked = !!likeData;
+    }
+
+    return {
+      ...comment,
+      profiles: profileData,
+      likes_count: likesCount || 0,
+      replies_count: repliesCount || 0,
+      is_liked: isLiked,
+    };
+  }, [user]);
+
+  const fetchComments = useCallback(async () => {
     const { data: commentsData, error } = await supabase
       .from("comments")
       .select("id, content, created_at, user_id, parent_id")
@@ -105,51 +145,15 @@ export const CommentSection = ({ postId, postOwnerId }: CommentSectionProps) => 
       return;
     }
 
-    // Get likes counts and user likes
     const commentsWithCounts = await Promise.all(
-      (commentsData || []).map(async (comment) => {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("username, avatar_url")
-          .eq("id", comment.user_id)
-          .maybeSingle();
-
-        const { count: likesCount } = await supabase
-          .from("comment_likes")
-          .select("*", { count: "exact", head: true })
-          .eq("comment_id", comment.id);
-
-        const { count: repliesCount } = await supabase
-          .from("comments")
-          .select("*", { count: "exact", head: true })
-          .eq("parent_id", comment.id);
-
-        let isLiked = false;
-        if (user) {
-          const { data: likeData } = await supabase
-            .from("comment_likes")
-            .select("id")
-            .eq("comment_id", comment.id)
-            .eq("user_id", user.id)
-            .maybeSingle();
-          isLiked = !!likeData;
-        }
-
-        return {
-          ...comment,
-          profiles: profileData,
-          likes_count: likesCount || 0,
-          replies_count: repliesCount || 0,
-          is_liked: isLiked,
-        };
-      })
+      (commentsData || []).map(enrichComment)
     );
 
     setComments(commentsWithCounts);
     setLoading(false);
-  };
+  }, [postId, enrichComment]);
 
-  const fetchReplies = async (commentId: string) => {
+  const fetchReplies = useCallback(async (commentId: string) => {
     const { data: repliesData, error } = await supabase
       .from("comments")
       .select("id, content, created_at, user_id, parent_id")
@@ -162,46 +166,11 @@ export const CommentSection = ({ postId, postOwnerId }: CommentSectionProps) => 
     }
 
     const repliesWithCounts = await Promise.all(
-      (repliesData || []).map(async (reply) => {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("username, avatar_url")
-          .eq("id", reply.user_id)
-          .maybeSingle();
-
-        const { count: likesCount } = await supabase
-          .from("comment_likes")
-          .select("*", { count: "exact", head: true })
-          .eq("comment_id", reply.id);
-
-        const { count: repliesCount } = await supabase
-          .from("comments")
-          .select("*", { count: "exact", head: true })
-          .eq("parent_id", reply.id);
-
-        let isLiked = false;
-        if (user) {
-          const { data: likeData } = await supabase
-            .from("comment_likes")
-            .select("id")
-            .eq("comment_id", reply.id)
-            .eq("user_id", user.id)
-            .maybeSingle();
-          isLiked = !!likeData;
-        }
-
-        return {
-          ...reply,
-          profiles: profileData,
-          likes_count: likesCount || 0,
-          replies_count: repliesCount || 0,
-          is_liked: isLiked,
-        };
-      })
+      (repliesData || []).map(enrichComment)
     );
 
     setReplies((prev) => ({ ...prev, [commentId]: repliesWithCounts }));
-  };
+  }, [enrichComment]);
 
   useEffect(() => {
     fetchComments();
@@ -210,29 +179,73 @@ export const CommentSection = ({ postId, postOwnerId }: CommentSectionProps) => 
       .channel(`comments-${postId}`)
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "comments",
-          filter: `post_id=eq.${postId}`,
-        },
-        () => {
-          fetchComments();
-        }
+        { event: "*", schema: "public", table: "comments", filter: `post_id=eq.${postId}` },
+        () => { fetchComments(); }
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
+    return () => { supabase.removeChannel(channel); };
+  }, [postId, fetchComments]);
+
+  // Deep-link: find comment and scroll/highlight
+  useEffect(() => {
+    if (!highlightCommentId || loading) return;
+
+    const scrollToComment = async () => {
+      // Check if the comment is a top-level or nested
+      const { data: targetComment } = await supabase
+        .from("comments")
+        .select("id, parent_id")
+        .eq("id", highlightCommentId)
+        .maybeSingle();
+
+      if (!targetComment) return;
+
+      // If nested, find root parent and expand the chain
+      if (targetComment.parent_id) {
+        // Walk up the parent chain
+        let parentId: string | null = targetComment.parent_id;
+        const parentChain: string[] = [];
+        while (parentId) {
+          parentChain.push(parentId);
+          const { data: parent } = await supabase
+            .from("comments")
+            .select("id, parent_id")
+            .eq("id", parentId)
+            .maybeSingle();
+          parentId = parent?.parent_id || null;
+        }
+
+        // Expand all parents
+        const newExpanded = new Set(expandedReplies);
+        for (const pid of parentChain) {
+          newExpanded.add(pid);
+          if (!replies[pid]) {
+            await fetchReplies(pid);
+          }
+        }
+        setExpandedReplies(newExpanded);
+      }
+
+      // Wait for DOM to update then scroll
+      setTimeout(() => {
+        const el = commentRefs.current[highlightCommentId];
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          setHighlightedId(highlightCommentId);
+          setTimeout(() => setHighlightedId(null), 3000);
+        }
+      }, 500);
     };
-  }, [postId, user]);
+
+    scrollToComment();
+  }, [highlightCommentId, loading, comments]);
 
   const handleAddComment = async () => {
     if (!user) {
       toast({ title: "Please sign in to comment", variant: "destructive" });
       return;
     }
-
     if (!newComment.trim()) return;
 
     const { error } = await supabase.from("comments").insert({
@@ -255,7 +268,6 @@ export const CommentSection = ({ postId, postOwnerId }: CommentSectionProps) => 
       toast({ title: "Please sign in to reply", variant: "destructive" });
       return;
     }
-
     if (!replyText.trim()) return;
 
     const { error } = await supabase.from("comments").insert({
@@ -283,20 +295,12 @@ export const CommentSection = ({ postId, postOwnerId }: CommentSectionProps) => 
     }
 
     if (isLiked) {
-      await supabase
-        .from("comment_likes")
-        .delete()
-        .eq("comment_id", commentId)
-        .eq("user_id", user.id);
+      await supabase.from("comment_likes").delete().eq("comment_id", commentId).eq("user_id", user.id);
     } else {
-      await supabase.from("comment_likes").insert({
-        comment_id: commentId,
-        user_id: user.id,
-      });
+      await supabase.from("comment_likes").insert({ comment_id: commentId, user_id: user.id });
     }
 
     fetchComments();
-    // Refresh replies if they're visible
     expandedReplies.forEach((id) => fetchReplies(id));
   };
 
@@ -315,45 +319,27 @@ export const CommentSection = ({ postId, postOwnerId }: CommentSectionProps) => 
 
   const handleDeleteComment = async (commentId: string, parentId: string | null) => {
     if (!user) return;
-
-    const { error } = await supabase
-      .from("comments")
-      .delete()
-      .eq("id", commentId)
-      .eq("user_id", user.id);
-
+    const { error } = await supabase.from("comments").delete().eq("id", commentId).eq("user_id", user.id);
     if (error) {
       toast({ title: "Failed to delete comment", variant: "destructive" });
       return;
     }
-
     toast({ title: "Comment deleted" });
-    if (parentId) {
-      fetchReplies(parentId);
-    }
+    if (parentId) fetchReplies(parentId);
     fetchComments();
   };
 
   const handleEditComment = async (commentId: string, parentId: string | null) => {
     if (!user || !editText.trim()) return;
-
-    const { error } = await supabase
-      .from("comments")
-      .update({ content: editText.trim() })
-      .eq("id", commentId)
-      .eq("user_id", user.id);
-
+    const { error } = await supabase.from("comments").update({ content: editText.trim() }).eq("id", commentId).eq("user_id", user.id);
     if (error) {
       toast({ title: "Failed to edit comment", variant: "destructive" });
       return;
     }
-
     toast({ title: "Comment updated" });
     setEditingCommentId(null);
     setEditText("");
-    if (parentId) {
-      fetchReplies(parentId);
-    }
+    if (parentId) fetchReplies(parentId);
     fetchComments();
   };
 
@@ -366,9 +352,7 @@ export const CommentSection = ({ postId, postOwnerId }: CommentSectionProps) => 
   const renderContentWithMentions = (content: string) => {
     const mentionRegex = /@(\w+)/g;
     const parts = content.split(mentionRegex);
-    
     return parts.map((part, index) => {
-      // Every odd index is a username (captured group)
       if (index % 2 === 1) {
         return (
           <span
@@ -376,17 +360,9 @@ export const CommentSection = ({ postId, postOwnerId }: CommentSectionProps) => 
             className="text-primary cursor-pointer hover:underline font-medium"
             onClick={(e) => {
               e.stopPropagation();
-              // Find user by username and navigate
-              supabase
-                .from("profiles")
-                .select("id")
-                .eq("username", part)
-                .maybeSingle()
-                .then(({ data }) => {
-                  if (data) {
-                    navigate(`/streamer/${data.id}`);
-                  }
-                });
+              supabase.from("profiles").select("id").eq("username", part).maybeSingle().then(({ data }) => {
+                if (data) navigate(`/streamer/${data.id}`);
+              });
             }}
           >
             @{part}
@@ -397,199 +373,152 @@ export const CommentSection = ({ postId, postOwnerId }: CommentSectionProps) => 
     });
   };
 
-  const renderComment = (comment: Comment, isReply = false, parentId: string | null = null) => {
+  const renderComment = (comment: Comment, depth = 0, rootParentId: string | null = null) => {
     const isOwner = user?.id === comment.user_id;
     const isEditing = editingCommentId === comment.id;
+    const isReply = depth > 0;
+    const isHighlighted = highlightedId === comment.id;
+    // The actual parent for replies — for top-level it's the comment itself, for nested it passes through
+    const effectiveParentId = rootParentId || (isReply ? comment.parent_id : null);
+    const maxIndent = 4; // Max nesting visual depth
 
     return (
-      <motion.div
-        key={comment.id}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={cn("py-3", isReply && "ml-8 border-l-2 border-border/50 pl-4")}
-      >
-        <div className="flex items-start gap-3">
-          <img
-            src={comment.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
-            alt={comment.profiles?.username || "User"}
-            className="w-8 h-8 rounded-full object-cover cursor-pointer"
-            onClick={() => navigate(`/streamer/${comment.user_id}`)}
-          />
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <span 
-                className="font-medium text-foreground text-sm cursor-pointer hover:text-primary"
-                onClick={() => navigate(`/streamer/${comment.user_id}`)}
-              >
-                {comment.profiles?.username || "Anonymous"}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-              </span>
-            </div>
-            
-            {isEditing ? (
-              <div className="flex items-center gap-2 mt-1">
-                <Input
-                  value={editText}
-                  onChange={(e) => setEditText(e.target.value)}
-                  className="flex-1 h-8 text-sm"
-                  autoFocus
-                />
-                <button
-                  onClick={() => handleEditComment(comment.id, parentId)}
-                  className="text-primary hover:text-primary/80"
+      <div key={comment.id}>
+        <motion.div
+          ref={(el) => { commentRefs.current[comment.id] = el; }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={cn(
+            "py-3 transition-colors duration-500",
+            depth > 0 && depth <= maxIndent && "ml-8 border-l-2 border-border/50 pl-4",
+            depth > maxIndent && "ml-4 border-l-2 border-border/30 pl-3",
+            isHighlighted && "bg-primary/10 rounded-lg ring-2 ring-primary/30"
+          )}
+        >
+          <div className="flex items-start gap-3">
+            <img
+              src={comment.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+              alt={comment.profiles?.username || "User"}
+              className="w-8 h-8 rounded-full object-cover cursor-pointer flex-shrink-0"
+              onClick={() => navigate(`/streamer/${comment.user_id}`)}
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span
+                  className="font-medium text-foreground text-sm cursor-pointer hover:text-primary"
+                  onClick={() => navigate(`/streamer/${comment.user_id}`)}
                 >
-                  <Check className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => {
-                    setEditingCommentId(null);
-                    setEditText("");
-                  }}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <p className="text-foreground/80 text-sm mt-1">
-                {renderContentWithMentions(comment.content)}
-              </p>
-            )}
-
-            <div className="flex items-center gap-4 mt-2">
-              <button
-                onClick={() => handleLikeComment(comment.id, comment.is_liked)}
-                className="flex items-center gap-1 text-xs"
-              >
-                <Heart
-                  className={cn(
-                    "w-4 h-4",
-                    comment.is_liked ? "fill-accent text-accent" : "text-muted-foreground"
-                  )}
-                />
-                <span className={comment.is_liked ? "text-accent" : "text-muted-foreground"}>
-                  {comment.likes_count}
+                  {comment.profiles?.username || "Anonymous"}
                 </span>
-              </button>
+                <span className="text-xs text-muted-foreground">
+                  {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                </span>
+              </div>
 
-              <button
-                onClick={() => startReplyWithMention(comment.id, comment.profiles?.username)}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
-              >
-                <MessageCircle className="w-4 h-4" />
-                Reply
-              </button>
-
-              {comment.replies_count > 0 && (
-                <button
-                  onClick={() => toggleReplies(comment.id)}
-                  className="flex items-center gap-1 text-xs text-primary"
-                >
-                  {expandedReplies.has(comment.id) ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                  {comment.replies_count} {comment.replies_count === 1 ? "reply" : "replies"}
-                </button>
-              )}
-
-              {isOwner && !isEditing && (
-                <>
-                  <button
-                    onClick={() => {
-                      setEditingCommentId(comment.id);
-                      setEditText(comment.content);
-                    }}
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
-                  >
-                    <Edit2 className="w-3 h-3" />
+              {isEditing ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <Input
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    className="flex-1 h-8 text-sm"
+                    autoFocus
+                  />
+                  <button onClick={() => handleEditComment(comment.id, effectiveParentId)} className="text-primary hover:text-primary/80">
+                    <Check className="w-4 h-4" />
                   </button>
-
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive">
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Comment</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete this comment? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDeleteComment(comment.id, parentId)}
-                          className="bg-destructive hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </>
+                  <button onClick={() => { setEditingCommentId(null); setEditText(""); }} className="text-muted-foreground hover:text-foreground">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <p className="text-foreground/80 text-sm mt-1">
+                  {renderContentWithMentions(comment.content)}
+                </p>
               )}
-            </div>
 
-          {/* Reply input */}
-          <AnimatePresence>
-            {replyingTo === comment.id && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="flex items-center gap-2 mt-3"
-              >
-                <Input
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  placeholder="Write a reply..."
-                  className="flex-1 h-9 text-sm"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleAddReply(comment.id);
-                    }
-                  }}
-                />
-                <Button
-                  size="sm"
-                  variant="gaming"
-                  onClick={() => handleAddReply(comment.id)}
-                  disabled={!replyText.trim()}
+              <div className="flex items-center gap-4 mt-2">
+                <button onClick={() => handleLikeComment(comment.id, comment.is_liked)} className="flex items-center gap-1 text-xs">
+                  <Heart className={cn("w-4 h-4", comment.is_liked ? "fill-accent text-accent" : "text-muted-foreground")} />
+                  <span className={comment.is_liked ? "text-accent" : "text-muted-foreground"}>{comment.likes_count}</span>
+                </button>
+
+                <button
+                  onClick={() => startReplyWithMention(comment.id, comment.profiles?.username)}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
                 >
-                  <Send className="w-3 h-3" />
-                </Button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  <MessageCircle className="w-4 h-4" />
+                  Reply
+                </button>
 
-          {/* Nested replies */}
-          <AnimatePresence>
-            {expandedReplies.has(comment.id) && replies[comment.id] && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-              >
-                {replies[comment.id].map((reply) => renderComment(reply, true, comment.id))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                {comment.replies_count > 0 && (
+                  <button onClick={() => toggleReplies(comment.id)} className="flex items-center gap-1 text-xs text-primary">
+                    {expandedReplies.has(comment.id) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    {comment.replies_count} {comment.replies_count === 1 ? "reply" : "replies"}
+                  </button>
+                )}
+
+                {isOwner && !isEditing && (
+                  <>
+                    <button onClick={() => { setEditingCommentId(comment.id); setEditText(comment.content); }} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
+                      <Edit2 className="w-3 h-3" />
+                    </button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Comment</AlertDialogTitle>
+                          <AlertDialogDescription>Are you sure? This action cannot be undone.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteComment(comment.id, effectiveParentId)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
+                )}
+              </div>
+
+              {/* Reply input */}
+              <AnimatePresence>
+                {replyingTo === comment.id && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="flex items-center gap-2 mt-3">
+                    <Input
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      placeholder="Write a reply..."
+                      className="flex-1 h-9 text-sm"
+                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddReply(comment.id); } }}
+                      autoFocus
+                    />
+                    <Button size="sm" variant="gaming" onClick={() => handleAddReply(comment.id)} disabled={!replyText.trim()}>
+                      <Send className="w-3 h-3" />
+                    </Button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Nested replies — recursive */}
+              <AnimatePresence>
+                {expandedReplies.has(comment.id) && replies[comment.id] && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
+                    {replies[comment.id].map((reply) => renderComment(reply, depth + 1, comment.id))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </motion.div>
       </div>
-    </motion.div>
-  );
+    );
   };
 
   return (
     <div className="space-y-4">
-      {/* Add comment input */}
       {canComment ? (
         <div className="flex items-center gap-2">
           <Input
@@ -597,31 +526,18 @@ export const CommentSection = ({ postId, postOwnerId }: CommentSectionProps) => 
             onChange={(e) => setNewComment(e.target.value)}
             placeholder="Write a comment..."
             className="flex-1"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleAddComment();
-              }
-            }}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddComment(); } }}
           />
-          <Button
-            variant="gaming"
-            size="sm"
-            onClick={handleAddComment}
-            disabled={!newComment.trim()}
-          >
+          <Button variant="gaming" size="sm" onClick={handleAddComment} disabled={!newComment.trim()}>
             <Send className="w-4 h-4" />
           </Button>
         </div>
       ) : (
         <div className="text-center py-3 px-4 rounded-lg bg-secondary/50">
-          <p className="text-sm text-muted-foreground">
-            {commentRestriction || "You can't comment on this post."}
-          </p>
+          <p className="text-sm text-muted-foreground">{commentRestriction || "You can't comment on this post."}</p>
         </div>
       )}
 
-      {/* Comments list */}
       <div className="divide-y divide-border/30">
         {loading ? (
           <div className="py-4 text-center text-muted-foreground">Loading comments...</div>

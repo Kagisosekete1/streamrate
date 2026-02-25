@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Gamepad2, Mail, Lock, User, ChevronRight, Tv, Users, ShoppingBag } from "lucide-react";
+import { Gamepad2, Mail, Lock, User, ChevronRight, Tv, Users, ShoppingBag, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,7 @@ const Auth = () => {
   const [role, setRole] = useState<UserRole | null>(null);
   const [showRoleSelect, setShowRoleSelect] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showVerifyEmail, setShowVerifyEmail] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -45,11 +46,20 @@ const Auth = () => {
     if (mode === "login") {
       const { error } = await signIn(formData.email, formData.password);
       if (error) {
-        toast({
-          title: "Login failed",
-          description: error.message,
-          variant: "destructive",
-        });
+        // Check if email not confirmed
+        if (error.message?.toLowerCase().includes("email not confirmed")) {
+          toast({
+            title: "Email not verified",
+            description: "Please check your inbox and verify your email before signing in.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Login failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
       } else {
         toast({
           title: "Welcome back!",
@@ -84,11 +94,8 @@ const Auth = () => {
       return;
     }
 
-    toast({
-      title: "Account created!",
-      description: `Welcome as a ${selectedRole}!`,
-    });
-    navigate("/home");
+    // Show email verification screen instead of navigating
+    setShowVerifyEmail(true);
     setIsSubmitting(false);
   };
 
@@ -96,6 +103,44 @@ const Auth = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse text-primary">Loading...</div>
+      </div>
+    );
+  }
+
+  // Email verification pending screen
+  if (showVerifyEmail) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
+        <div className="absolute inset-0 gradient-gaming opacity-20" />
+        <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 relative z-10">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", damping: 15 }}
+            className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mb-6"
+          >
+            <CheckCircle className="w-10 h-10 text-primary" />
+          </motion.div>
+          <h1 className="text-2xl font-bold text-foreground mb-2 text-center">Check your email</h1>
+          <p className="text-muted-foreground text-center max-w-xs mb-2">
+            We've sent a verification link to
+          </p>
+          <p className="text-primary font-semibold text-center mb-6">{formData.email}</p>
+          <p className="text-sm text-muted-foreground text-center max-w-xs mb-8">
+            Click the link in your email to activate your account. You won't be able to sign in until your email is verified.
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowVerifyEmail(false);
+              setMode("login");
+              setShowRoleSelect(false);
+              setRole(null);
+            }}
+          >
+            Go to Sign In
+          </Button>
+        </div>
       </div>
     );
   }

@@ -127,13 +127,16 @@ const Notifications = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
   };
 
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = (notification: any) => {
     if (!notification.is_read) {
       markAsRead(notification.id);
     }
 
-    // Comment notifications should go to the post, not the user profile
-    if (notification.post_id && (notification.type === "comment" || notification.type === "comment_reply" || notification.type === "comment_like" || notification.type === "new_post")) {
+    // Comment notifications deep-link to the specific comment
+    if (notification.post_id && (notification.type === "comment" || notification.type === "comment_reply" || notification.type === "comment_like")) {
+      const commentParam = notification.comment_id ? `?commentId=${notification.comment_id}` : "";
+      navigate(`/post/${notification.post_id}${commentParam}`);
+    } else if (notification.post_id && notification.type === "new_post") {
       navigate(`/post/${notification.post_id}`);
     } else if (notification.from_user_id) {
       navigate(`/streamer/${notification.from_user_id}`);

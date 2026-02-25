@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Heart, MessageCircle, Send, ChevronDown, ChevronUp, Smile } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -56,9 +56,46 @@ export const PostCommentsModal = ({
   const [loading, setLoading] = useState(true);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
-  const fetchComments = async () => {
+  const enrichComment = useCallback(async (comment: any): Promise<Comment> => {
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("username, avatar_url")
+      .eq("id", comment.user_id)
+      .maybeSingle();
+
+    const { count: likesCount } = await supabase
+      .from("comment_likes")
+      .select("*", { count: "exact", head: true })
+      .eq("comment_id", comment.id);
+
+    const { count: repliesCount } = await supabase
+      .from("comments")
+      .select("*", { count: "exact", head: true })
+      .eq("parent_id", comment.id);
+
+    let isLiked = false;
+    if (user) {
+      const { data: likeData } = await supabase
+        .from("comment_likes")
+        .select("id")
+        .eq("comment_id", comment.id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      isLiked = !!likeData;
+    }
+
+    return {
+      ...comment,
+      profiles: profileData,
+      likes_count: likesCount || 0,
+      replies_count: repliesCount || 0,
+      is_liked: isLiked,
+    };
+  }, [user]);
+
+  const fetchComments = useCallback(async () => {
     if (!postId) return;
-    
+
     const { data: commentsData, error } = await supabase
       .from("comments")
       .select("id, content, created_at, user_id, parent_id")
@@ -72,49 +109,14 @@ export const PostCommentsModal = ({
     }
 
     const commentsWithCounts = await Promise.all(
-      (commentsData || []).map(async (comment) => {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("username, avatar_url")
-          .eq("id", comment.user_id)
-          .maybeSingle();
-
-        const { count: likesCount } = await supabase
-          .from("comment_likes")
-          .select("*", { count: "exact", head: true })
-          .eq("comment_id", comment.id);
-
-        const { count: repliesCount } = await supabase
-          .from("comments")
-          .select("*", { count: "exact", head: true })
-          .eq("parent_id", comment.id);
-
-        let isLiked = false;
-        if (user) {
-          const { data: likeData } = await supabase
-            .from("comment_likes")
-            .select("id")
-            .eq("comment_id", comment.id)
-            .eq("user_id", user.id)
-            .maybeSingle();
-          isLiked = !!likeData;
-        }
-
-        return {
-          ...comment,
-          profiles: profileData,
-          likes_count: likesCount || 0,
-          replies_count: repliesCount || 0,
-          is_liked: isLiked,
-        };
-      })
+      (commentsData || []).map(enrichComment)
     );
 
     setComments(commentsWithCounts);
     setLoading(false);
-  };
+  }, [postId, enrichComment]);
 
-  const fetchReplies = async (commentId: string) => {
+  const fetchReplies = useCallback(async (commentId: string) => {
     const { data: repliesData, error } = await supabase
       .from("comments")
       .select("id, content, created_at, user_id, parent_id")
@@ -124,54 +126,23 @@ export const PostCommentsModal = ({
     if (error) return;
 
     const repliesWithCounts = await Promise.all(
-      (repliesData || []).map(async (reply) => {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("username, avatar_url")
-          .eq("id", reply.user_id)
-          .maybeSingle();
-
-        const { count: likesCount } = await supabase
-          .from("comment_likes")
-          .select("*", { count: "exact", head: true })
-          .eq("comment_id", reply.id);
-
-        let isLiked = false;
-        if (user) {
-          const { data: likeData } = await supabase
-            .from("comment_likes")
-            .select("id")
-            .eq("comment_id", reply.id)
-            .eq("user_id", user.id)
-            .maybeSingle();
-          isLiked = !!likeData;
-        }
-
-        return {
-          ...reply,
-          profiles: profileData,
-          likes_count: likesCount || 0,
-          replies_count: 0,
-          is_liked: isLiked,
-        };
-      })
+      (repliesData || []).map(enrichComment)
     );
 
     setReplies((prev) => ({ ...prev, [commentId]: repliesWithCounts }));
-  };
+  }, [enrichComment]);
 
   useEffect(() => {
     if (isOpen && postId) {
       fetchComments();
     }
-  }, [isOpen, postId, user]);
+  }, [isOpen, postId, fetchComments]);
 
   const handleAddComment = async () => {
     if (!user) {
       toast({ title: "Please sign in to comment", variant: "destructive" });
       return;
     }
-
     if (!newComment.trim()) return;
 
     const { error } = await supabase.from("comments").insert({
@@ -194,7 +165,6 @@ export const PostCommentsModal = ({
       toast({ title: "Please sign in to reply", variant: "destructive" });
       return;
     }
-
     if (!replyText.trim()) return;
 
     const { error } = await supabase.from("comments").insert({
@@ -222,16 +192,9 @@ export const PostCommentsModal = ({
     }
 
     if (isLiked) {
-      await supabase
-        .from("comment_likes")
-        .delete()
-        .eq("comment_id", commentId)
-        .eq("user_id", user.id);
+      await supabase.from("comment_likes").delete().eq("comment_id", commentId).eq("user_id", user.id);
     } else {
-      await supabase.from("comment_likes").insert({
-        comment_id: commentId,
-        user_id: user.id,
-      });
+      await supabase.from("comment_likes").insert({ comment_id: commentId, user_id: user.id });
     }
 
     fetchComments();
@@ -256,6 +219,85 @@ export const PostCommentsModal = ({
     setShowEmojiPicker(false);
   };
 
+  // Recursive comment renderer for full nested threading
+  const renderComment = (comment: Comment, depth = 0) => {
+    const maxIndent = 4;
+
+    return (
+      <div key={comment.id}>
+        <div
+          className={cn(
+            "flex items-start gap-3",
+            depth > 0 && depth <= maxIndent && "ml-6 border-l-2 border-border/50 pl-3 mt-3",
+            depth > maxIndent && "ml-3 border-l-2 border-border/30 pl-2 mt-2"
+          )}
+        >
+          <img
+            src={comment.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+            alt={comment.profiles?.username || "User"}
+            className={cn("rounded-full object-cover cursor-pointer flex-shrink-0", depth > 0 ? "w-6 h-6" : "w-8 h-8")}
+            onClick={() => { onClose(); navigate(`/streamer/${comment.user_id}`); }}
+          />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span
+                className="font-medium text-sm text-foreground cursor-pointer hover:text-primary"
+                onClick={() => { onClose(); navigate(`/streamer/${comment.user_id}`); }}
+              >
+                {comment.profiles?.username || "Anonymous"}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {formatDistanceToNow(new Date(comment.created_at), { addSuffix: false })}
+              </span>
+            </div>
+            <p className="text-sm text-foreground mt-0.5">{comment.content}</p>
+            <div className="flex items-center gap-4 mt-2">
+              <button
+                onClick={() => handleLikeComment(comment.id, comment.is_liked)}
+                className="flex items-center gap-1 text-xs"
+              >
+                <Heart className={cn("w-3.5 h-3.5", comment.is_liked ? "fill-red-500 text-red-500" : "text-muted-foreground")} />
+                <span className={comment.is_liked ? "text-red-500" : "text-muted-foreground"}>{comment.likes_count}</span>
+              </button>
+              <button
+                onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                className="text-xs text-muted-foreground hover:text-primary"
+              >
+                Reply
+              </button>
+              {comment.replies_count > 0 && (
+                <button onClick={() => toggleReplies(comment.id)} className="flex items-center gap-1 text-xs text-primary">
+                  {expandedReplies.has(comment.id) ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  {comment.replies_count} {comment.replies_count === 1 ? "reply" : "replies"}
+                </button>
+              )}
+            </div>
+
+            {/* Reply Input */}
+            {replyingTo === comment.id && (
+              <div className="flex items-center gap-2 mt-2">
+                <Input
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder={`Reply to ${comment.profiles?.username || "user"}...`}
+                  className="flex-1 h-8 text-sm"
+                  onKeyDown={(e) => { if (e.key === "Enter") handleAddReply(comment.id); }}
+                  autoFocus
+                />
+                <button onClick={() => handleAddReply(comment.id)} disabled={!replyText.trim()} className="text-primary disabled:opacity-50">
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Nested replies — recursive */}
+            {expandedReplies.has(comment.id) && replies[comment.id]?.map((reply) => renderComment(reply, depth + 1))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -264,21 +306,21 @@ export const PostCommentsModal = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-8 md:items-center md:pt-0"
+        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-4 md:items-center md:pt-0"
         onClick={onClose}
       >
         <motion.div
-          initial={{ scale: 0.85, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.85, opacity: 0 }}
+          initial={{ scale: 0.85, opacity: 0, y: 30 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.85, opacity: 0, y: 30 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="w-[calc(100%-2rem)] max-w-sm rounded-3xl bg-card border border-border shadow-2xl max-h-[80vh] overflow-hidden flex flex-col mt-4 md:mt-0"
+          className="w-[calc(100%-2rem)] max-w-sm rounded-3xl bg-card border border-border shadow-2xl max-h-[85vh] overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
-            {/* Drag handle */}
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 rounded-full bg-muted" />
-            </div>
+          {/* Drag handle */}
+          <div className="flex justify-center pt-3 pb-1">
+            <div className="w-10 h-1 rounded-full bg-muted" />
+          </div>
           {/* Header */}
           <div className="sticky top-0 bg-card border-b border-border p-4 flex items-center justify-between">
             <h3 className="font-semibold text-foreground">Comments</h3>
@@ -287,23 +329,15 @@ export const PostCommentsModal = ({
             </button>
           </div>
 
-          {/* Post Preview (optional) */}
+          {/* Post Preview */}
           {postImage && (
             <div className="flex items-start gap-3 p-4 border-b border-border bg-secondary/30">
-              <img
-                src={authorAvatar}
-                alt={authorName}
-                className="w-8 h-8 rounded-full object-cover"
-              />
+              <img src={authorAvatar} alt={authorName} className="w-8 h-8 rounded-full object-cover" />
               <div className="flex-1 min-w-0">
                 <span className="font-semibold text-sm text-foreground">{authorName}</span>
                 <p className="text-sm text-muted-foreground line-clamp-2">{postContent}</p>
               </div>
-              <img
-                src={postImage}
-                alt="Post"
-                className="w-12 h-12 rounded-lg object-cover"
-              />
+              <img src={postImage} alt="Post" className="w-12 h-12 rounded-lg object-cover" />
             </div>
           )}
 
@@ -320,159 +354,7 @@ export const PostCommentsModal = ({
                 <p className="text-sm text-muted-foreground">Be the first to comment!</p>
               </div>
             ) : (
-              comments.map((comment) => (
-                <div key={comment.id}>
-                  <div className="flex items-start gap-3">
-                    <img
-                      src={comment.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
-                      alt={comment.profiles?.username || "User"}
-                      className="w-8 h-8 rounded-full object-cover cursor-pointer"
-                      onClick={() => {
-                        onClose();
-                        navigate(`/streamer/${comment.user_id}`);
-                      }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm text-foreground">
-                          {comment.profiles?.username || "Anonymous"}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(comment.created_at), { addSuffix: false })}
-                        </span>
-                      </div>
-                      <p className="text-sm text-foreground mt-0.5">{comment.content}</p>
-                      <div className="flex items-center gap-4 mt-2">
-                        <button
-                          onClick={() => handleLikeComment(comment.id, comment.is_liked)}
-                          className="flex items-center gap-1 text-xs"
-                        >
-                          <Heart
-                            className={cn(
-                              "w-3.5 h-3.5",
-                              comment.is_liked ? "fill-red-500 text-red-500" : "text-muted-foreground"
-                            )}
-                          />
-                          <span className={comment.is_liked ? "text-red-500" : "text-muted-foreground"}>
-                            {comment.likes_count}
-                          </span>
-                        </button>
-                        <button
-                          onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                          className="text-xs text-muted-foreground hover:text-primary"
-                        >
-                          Reply
-                        </button>
-                        {comment.replies_count > 0 && (
-                          <button
-                            onClick={() => toggleReplies(comment.id)}
-                            className="flex items-center gap-1 text-xs text-primary"
-                          >
-                            {expandedReplies.has(comment.id) ? (
-                              <ChevronUp className="w-3.5 h-3.5" />
-                            ) : (
-                              <ChevronDown className="w-3.5 h-3.5" />
-                            )}
-                            {comment.replies_count} replies
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Reply Input */}
-                      {replyingTo === comment.id && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <Input
-                            value={replyText}
-                            onChange={(e) => setReplyText(e.target.value)}
-                            placeholder={`Reply to ${comment.profiles?.username || "user"}...`}
-                            className="flex-1 h-8 text-sm"
-                            onKeyDown={(e) => e.key === "Enter" && handleAddReply(comment.id)}
-                          />
-                          <button
-                            onClick={() => handleAddReply(comment.id)}
-                            disabled={!replyText.trim()}
-                            className="text-primary disabled:opacity-50"
-                          >
-                            <Send className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Replies */}
-                      {expandedReplies.has(comment.id) && replies[comment.id]?.map((reply) => (
-                      <div key={reply.id} className="flex items-start gap-2 mt-3 ml-4 border-l-2 border-border pl-3">
-                          <img
-                            src={reply.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
-                            alt={reply.profiles?.username || "User"}
-                            className="w-6 h-6 rounded-full object-cover cursor-pointer"
-                            onClick={() => {
-                              onClose();
-                              navigate(`/streamer/${reply.user_id}`);
-                            }}
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-xs text-foreground cursor-pointer hover:text-primary"
-                                onClick={() => {
-                                  onClose();
-                                  navigate(`/streamer/${reply.user_id}`);
-                                }}
-                              >
-                                {reply.profiles?.username || "Anonymous"}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground">
-                                {formatDistanceToNow(new Date(reply.created_at), { addSuffix: false })}
-                              </span>
-                            </div>
-                            <p className="text-xs text-foreground">{reply.content}</p>
-                            <div className="flex items-center gap-3 mt-1">
-                              <button
-                                onClick={() => handleLikeComment(reply.id, reply.is_liked)}
-                                className="flex items-center gap-1 text-xs"
-                              >
-                                <Heart
-                                  className={cn(
-                                    "w-3 h-3",
-                                    reply.is_liked ? "fill-red-500 text-red-500" : "text-muted-foreground"
-                                  )}
-                                />
-                                <span className={reply.is_liked ? "text-red-500" : "text-muted-foreground"}>
-                                  {reply.likes_count}
-                                </span>
-                              </button>
-                              <button
-                                onClick={() => setReplyingTo(replyingTo === reply.id ? null : reply.id)}
-                                className="text-xs text-muted-foreground hover:text-primary"
-                              >
-                                Reply
-                              </button>
-                            </div>
-                            {/* Reply to reply input */}
-                            {replyingTo === reply.id && (
-                              <div className="flex items-center gap-2 mt-2">
-                                <Input
-                                  value={replyText}
-                                  onChange={(e) => setReplyText(e.target.value)}
-                                  placeholder={`Reply to ${reply.profiles?.username || "user"}...`}
-                                  className="flex-1 h-7 text-xs"
-                                  onKeyDown={(e) => e.key === "Enter" && handleAddReply(comment.id)}
-                                />
-                                <button
-                                  onClick={() => handleAddReply(comment.id)}
-                                  disabled={!replyText.trim()}
-                                  className="text-primary disabled:opacity-50"
-                                >
-                                  <Send className="w-3 h-3" />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))
+              comments.map((comment) => renderComment(comment))
             )}
           </div>
 
