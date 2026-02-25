@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { StreamerCard } from "@/components/StreamerCard";
-import { Search, Filter, Hash, Users, MapPin, TrendingUp, Trophy, Contact, Crown, Sparkles, ChevronDown, ShoppingBag } from "lucide-react";
+import { Search, Filter, Hash, Users, MapPin, TrendingUp, Trophy, Contact, Crown, Sparkles, ChevronDown, ShoppingBag, Tv, Radio } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +42,7 @@ const Streamers = () => {
     leaderboard: false,
     suggested: false,
     popular: false,
+    watchlive: false,
   });
 
   const toggleSection = (key: string) => {
@@ -448,6 +449,37 @@ const Streamers = () => {
                       hasStreamingPlatform={!!(streamer.twitch_url || streamer.kick_url || streamer.youtube_gaming_url)}
                     />
                   ))}
+                </motion.div>
+              )}
+            </section>
+          )}
+
+          {/* Watch Live - Streamers with streaming platforms */}
+          {!searchQuery && streamers.filter(s => s.twitch_url || s.kick_url || s.youtube_gaming_url).length > 0 && (
+            <section>
+              <button onClick={() => toggleSection("watchlive")} className="w-full flex items-center gap-2 mb-3">
+                <Tv className="w-5 h-5 text-red-500" />
+                <h2 className="font-semibold text-foreground">Watch Live</h2>
+                <Radio className="w-3 h-3 text-red-500 animate-pulse" />
+                <ChevronDown className={cn("w-4 h-4 ml-auto text-muted-foreground transition-transform", expandedSections.watchlive && "rotate-180")} />
+              </button>
+              {expandedSections.watchlive && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-2">
+                  {streamers
+                    .filter(s => s.twitch_url || s.kick_url || s.youtube_gaming_url)
+                    .map((streamer, index) => (
+                      <StreamerCard
+                        key={streamer.id}
+                        id={streamer.id}
+                        name={streamer.full_name || "Anonymous"}
+                        profilePicture={streamer.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+                        country={streamer.country || "Unknown"}
+                        averageRating={streamer.average_rating}
+                        totalReviews={streamer.total_reviews}
+                        index={index}
+                        hasStreamingPlatform={true}
+                      />
+                    ))}
                 </motion.div>
               )}
             </section>

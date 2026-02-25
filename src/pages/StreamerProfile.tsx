@@ -14,11 +14,11 @@ import { AvatarViewModal } from "@/components/AvatarViewModal";
 import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 import { LastSeenDisplay } from "@/components/LastSeenDisplay";
 import { SocialLinks } from "@/components/SocialLinks";
-import { StreamEmbed } from "@/components/StreamEmbed";
 import { VerificationBadge } from "@/utils/verificationBadge";
 import { FollowersModal } from "@/components/FollowersModal";
 import { ProfileContentGrid } from "@/components/ProfileContentGrid";
 import { ReelViewer } from "@/components/ReelViewer";
+import { ReviewsModal } from "@/components/ReviewsModal";
 
 interface StreamerData {
   id: string;
@@ -79,6 +79,7 @@ const StreamerProfile = () => {
   const [profileActiveTab, setProfileActiveTab] = useState<"posts" | "photos" | "reels" | "saved">("posts");
   const [showReelViewer, setShowReelViewer] = useState(false);
   const [reelViewerIndex, setReelViewerIndex] = useState(0);
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -442,10 +443,7 @@ const StreamerProfile = () => {
                 </div>
                 <p className="text-xs text-muted-foreground">Rating</p>
               </div>
-              <button className="text-center hover:opacity-80 transition-opacity" onClick={() => {
-                const el = document.getElementById("reviews-section");
-                if (el) el.scrollIntoView({ behavior: "smooth" });
-              }}>
+              <button className="text-center hover:opacity-80 transition-opacity" onClick={() => setShowReviewsModal(true)}>
                 <span className="text-lg font-bold text-foreground">
                   {reviews.length}
                 </span>
@@ -490,15 +488,6 @@ const StreamerProfile = () => {
         </div>
       ) : (
         <>
-          {/* Stream Embed */}
-          <StreamEmbed
-            twitchUrl={streamer.show_twitch ? streamer.twitch_url : null}
-            youtubeGamingUrl={streamer.show_youtube_gaming ? streamer.youtube_gaming_url : null}
-            kickUrl={streamer.show_kick ? streamer.kick_url : null}
-            streamerId={streamer.id}
-          />
-
-
           {/* Actions */}
           <section className="px-4 py-2">
             <div className="flex gap-3">
@@ -587,71 +576,6 @@ const StreamerProfile = () => {
         )}
       </AnimatePresence>
 
-      {/* Reviews */}
-      <section id="reviews-section" className="px-4 py-4">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Reviews</h2>
-        {reviews.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No reviews yet. Be the first!
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {reviews.map((review, index) => (
-              <motion.div
-                key={review.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-card rounded-xl p-4 border border-border/50"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="relative">
-                    <img
-                      src={
-                        review.profiles?.avatar_url ||
-                        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"
-                      }
-                      alt={review.profiles?.full_name || "User"}
-                      className="w-10 h-10 rounded-full object-cover cursor-pointer"
-                      onClick={() => setReviewAvatarZoom({
-                        url: review.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop&crop=face",
-                        name: review.profiles?.username || review.profiles?.full_name || "User"
-                      })}
-                    />
-                    <OnlineIndicator 
-                      userId={review.fan_id} 
-                      className="absolute -bottom-0.5 -right-0.5"
-                      size="sm"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <h4 
-                        className="font-medium text-foreground cursor-pointer hover:text-primary transition-colors"
-                        onClick={() => navigate(`/streamer/${review.fan_id}`)}
-                      >
-                        {review.profiles?.username || review.profiles?.full_name || "Anonymous"}
-                      </h4>
-                      <StarRating rating={review.stars} size="sm" />
-                    </div>
-                    {review.review_text && (
-                      <p className="text-sm text-foreground/80 mt-2">
-                        {review.review_text}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {formatDistanceToNow(new Date(review.created_at), {
-                        addSuffix: true,
-                      })}
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </section>
-
           {/* Profile Content Grid - Posts/Photos/Reels */}
           <ProfileContentGrid
             posts={profilePosts}
@@ -701,6 +625,14 @@ const StreamerProfile = () => {
         onClose={() => setShowReelViewer(false)}
         reels={profileReels}
         initialIndex={reelViewerIndex}
+      />
+
+      {/* Reviews Modal */}
+      <ReviewsModal
+        isOpen={showReviewsModal}
+        onClose={() => setShowReviewsModal(false)}
+        userId={id!}
+        userName={streamer?.username || streamer?.full_name || undefined}
       />
 
       <BottomNav />
