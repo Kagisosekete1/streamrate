@@ -18,6 +18,7 @@ import { VerificationBadge } from "@/utils/verificationBadge";
 
 // Caption component with "See more" truncation
 import { HashtagText } from "@/components/HashtagText";
+import { LinkPreview } from "@/components/LinkPreview";
 
 const CaptionWithSeeMore = ({ streamerName, streamerId, content }: { streamerName: string; streamerId: string; content: string }) => {
   const [expanded, setExpanded] = useState(false);
@@ -349,7 +350,7 @@ export const PostCard = ({
             alt="Post"
             className="w-full object-contain max-h-[600px]"
           />
-          {/* Heart animation on double tap */}
+      {/* Heart animation on double tap */}
           {showHeartAnimation && (
             <motion.div
               initial={{ scale: 0, opacity: 0 }}
@@ -363,6 +364,12 @@ export const PostCard = ({
           )}
         </div>
       )}
+
+      {/* Link preview when no image */}
+      {!imageUrl && (() => {
+        const urlMatch = content.match(/https?:\/\/[^\s]+/);
+        return urlMatch ? <LinkPreview url={urlMatch[0]} /> : null;
+      })()}
 
       {/* Actions - Instagram style with save next to share */}
       <div className="px-4 pt-3">
