@@ -278,6 +278,29 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     }
   }, [showComments, currentIndex, reels.length, onLoadMore, triggerHaptic]);
 
+  // Keyboard support (Arrow keys)
+  useEffect(() => {
+    if (!isOpen || showComments) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowDown" || e.key === "j") {
+        e.preventDefault();
+        goToReel(-1); // next
+      } else if (e.key === "ArrowUp" || e.key === "k") {
+        e.preventDefault();
+        goToReel(1); // prev
+      } else if (e.key === " ") {
+        e.preventDefault();
+        setIsPlaying(prev => !prev);
+      } else if (e.key === "m") {
+        setIsMuted(prev => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, showComments, goToReel]);
+
   // Scroll wheel support for desktop
   useEffect(() => {
     if (!isOpen || showComments) return;

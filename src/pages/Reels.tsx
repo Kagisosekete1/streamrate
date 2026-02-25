@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ReelViewer } from "@/components/ReelViewer";
 import { useForYouAlgorithm } from "@/hooks/useForYouAlgorithm";
@@ -21,6 +21,9 @@ interface Reel {
 
 const Reels = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const reelIdFromQuery = searchParams.get("reelId");
+  const targetReelId = id || reelIdFromQuery;
   const { user } = useAuth();
   const [reels, setReels] = useState<Reel[]>([]);
   const [forYouReels, setForYouReels] = useState<Reel[]>([]);
@@ -134,7 +137,7 @@ const Reels = () => {
   const currentReelsList = activeTab === "foryou" ? forYouReels : reels;
 
   // Find initial index if deep-linked
-  const initialIndex = id ? Math.max(0, currentReelsList.findIndex(r => r.id === id)) : 0;
+  const initialIndex = targetReelId ? Math.max(0, currentReelsList.findIndex(r => r.id === targetReelId)) : 0;
 
   if (loading) {
     return (
