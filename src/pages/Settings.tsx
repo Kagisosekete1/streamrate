@@ -65,36 +65,83 @@ const NotificationsModal = ({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Check push status
-    if (isMedianApp()) {
-      try {
-        (window as any).median?.onesignal?.info?.()?.then?.((info: any) => {
-          setPushEnabled(!!info?.subscribed);
-        });
-      } catch {
-        // Fallback: check localStorage
-        setPushEnabled(localStorage.getItem("median_push_enabled") === "true");
+    const checkPushStatus = async () => {
+      if (isMedianApp()) {
+        try {
+          const median = (window as any).median || (window as any).gonative;
+          // Use correct Median.co bridge method name
+          const info = await median?.onesignal?.onesignalInfo?.();
+          if (info) {
+            setPushEnabled(!!info.subscribed);
+          } else {
+            // Try legacy method name
+            const legacyInfo = await median?.onesignal?.info?.();
+            setPushEnabled(!!legacyInfo?.subscribed);
+          }
+        } catch {
+          setPushEnabled(localStorage.getItem("median_push_enabled") === "true");
+        }
+      } else if ("Notification" in window) {
+        setPushEnabled(Notification.permission === "granted");
       }
-    } else if ("Notification" in window) {
-      setPushEnabled(Notification.permission === "granted");
-    }
+    };
+    checkPushStatus();
   }, []);
 
   const handleTogglePush = async (checked: boolean) => {
     setLoading(true);
     try {
       if (isMedianApp()) {
-        // Use Median.co's OneSignal bridge
         const median = (window as any).median || (window as any).gonative;
         if (checked) {
-          await median?.onesignal?.promptForPermission?.();
-          // Also try the permission request via native
-          await median?.onesignal?.setSubscription?.(true);
+          // Step 1: Request Android system-level notification permission (Android 13+)
+          // This triggers the native OS permission dialog
+          try {
+            await median?.run?.deviceInfo?.();
+          } catch {}
+          
+          // Step 2: Prompt OneSignal permission (triggers native permission dialog if not granted)
+          try {
+            await median?.onesignal?.promptForPermission?.();
+          } catch (e) {
+            console.log("promptForPermission:", e);
+          }
+
+          // Step 3: Enable OneSignal subscription
+          try {
+            await median?.onesignal?.setSubscription?.(true);
+          } catch (e) {
+            console.log("setSubscription:", e);
+          }
+
+          // Step 4: Also try registering via the run command (some Median versions)
+          try {
+            await median?.run?.onesignalInfo?.();
+          } catch {}
+
           setPushEnabled(true);
           localStorage.setItem("median_push_enabled", "true");
           toast({ title: "Push notifications enabled!" });
+
+          // If system notifications are still blocked, guide user
+          setTimeout(async () => {
+            try {
+              const info = await median?.onesignal?.onesignalInfo?.();
+              if (info && !info.subscribed) {
+                toast({
+                  title: "System notifications blocked",
+                  description: "Go to your phone's Settings → Apps → StreamRate → Notifications and enable them.",
+                  variant: "destructive",
+                });
+              }
+            } catch {}
+          }, 2000);
         } else {
-          await median?.onesignal?.setSubscription?.(false);
+          try {
+            await median?.onesignal?.setSubscription?.(false);
+          } catch (e) {
+            console.log("setSubscription off:", e);
+          }
           setPushEnabled(false);
           localStorage.setItem("median_push_enabled", "false");
           toast({ title: "Push notifications disabled" });
