@@ -37,11 +37,14 @@ export const setOneSignalExternalUserId = async (userId: string) => {
       }
       return;
     }
-    // For web/PWA, use the OneSignal Web SDK
-    await OneSignal.login(userId);
-    console.log("OneSignal external user ID set:", userId);
+    // For web/PWA, try OneSignal Web SDK but don't crash if it fails
+    if (initialized) {
+      await OneSignal.login(userId);
+      console.log("OneSignal external user ID set:", userId);
+    }
   } catch (error) {
-    console.error("Error setting OneSignal user ID:", error);
+    // Silently fail - OneSignal web SDK may not be fully initialized
+    console.log("OneSignal login skipped:", error);
   }
 };
 
