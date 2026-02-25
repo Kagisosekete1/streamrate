@@ -386,78 +386,98 @@ export const ProfileContentGrid = ({
                 ))}
               </div>
             ) : (
-              /* Posts - Modern card layout */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              /* Posts - Facebook-style card layout */
+              <div className="space-y-4">
                 {(content as Post[]).map((post) => (
                   <motion.div
                     key={post.id}
-                    whileHover={{ y: -2 }}
-                    className="bg-card rounded-2xl overflow-hidden border border-border/50 shadow-sm hover:shadow-md transition-shadow"
+                    whileHover={{ y: -1 }}
+                    className="bg-card rounded-2xl overflow-hidden border border-border/50 shadow-sm"
                   >
+                    {/* Author header */}
+                    <div className="flex items-center gap-3 p-3 pb-2">
+                      <img
+                        src={authorAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"}
+                        alt=""
+                        className="w-9 h-9 rounded-full object-cover cursor-pointer"
+                        onClick={() => authorId && navigate(`/streamer/${authorId}`)}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className="text-sm font-semibold text-foreground cursor-pointer hover:text-primary transition-colors"
+                          onClick={() => authorId && navigate(`/streamer/${authorId}`)}
+                        >
+                          {authorName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                        </p>
+                      </div>
+                      {isOwnProfile && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <button
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1.5 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Post</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => onPostDelete(post.id)}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+
+                    {/* Post image - full width */}
                     {post.image_url && (
                       <div
-                        className="aspect-video w-full overflow-hidden cursor-pointer"
+                        className="w-full cursor-pointer"
                         onClick={() => navigate(`/post/${post.id}`)}
                       >
                         <img
                           src={post.image_url}
                           alt=""
-                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                          className="w-full object-contain max-h-[500px] bg-black"
                         />
                       </div>
                     )}
-                    <div className="p-3 sm:p-4">
+
+                    {/* Content & engagement */}
+                    <div className="p-3">
                       <p
-                        className="text-sm text-foreground line-clamp-3 cursor-pointer hover:text-primary/80 transition-colors"
+                        className="text-sm text-foreground line-clamp-3 cursor-pointer hover:text-primary/80 transition-colors mb-2"
                         onClick={() => navigate(`/post/${post.id}`)}
                       >
                         <HashtagText text={post.content} />
                       </p>
-                      <div className="flex items-center justify-between mt-3">
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Heart className="w-3 h-3" />
-                            {formatCount(post.likes_count)}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <MessageCircle className="w-3 h-3" />
-                            {formatCount(post.comments_count)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                          </span>
-                          {isOwnProfile && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <button
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="p-1.5 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Post</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete this post? This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => onPostDelete(post.id)}
-                                    className="bg-destructive hover:bg-destructive/90"
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-                        </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Heart className="w-3.5 h-3.5" />
+                          {formatCount(post.likes_count)}
+                        </span>
+                        <span
+                          className="flex items-center gap-1 cursor-pointer hover:text-foreground transition-colors"
+                          onClick={() => navigate(`/post/${post.id}`)}
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          {formatCount(post.comments_count)} comments
+                        </span>
                       </div>
                     </div>
                   </motion.div>

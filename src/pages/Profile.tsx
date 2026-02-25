@@ -17,6 +17,7 @@ import { ProfileContentGrid } from "@/components/ProfileContentGrid";
 import { FollowersModal } from "@/components/FollowersModal";
 import { LastSeenDisplay } from "@/components/LastSeenDisplay";
 import { SocialLinks } from "@/components/SocialLinks";
+import { ReviewsModal } from "@/components/ReviewsModal";
 
 interface Post {
   id: string;
@@ -96,6 +97,7 @@ const Profile = () => {
   const [showUpdatePostsDialog, setShowUpdatePostsDialog] = useState(false);
   const [newAvatarUrl, setNewAvatarUrl] = useState<string | null>(null);
   const [isUpdatingPosts, setIsUpdatingPosts] = useState(false);
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
 
 
   useEffect(() => {
@@ -802,10 +804,10 @@ const Profile = () => {
               </div>
               <p className="text-xs text-muted-foreground">Rating</p>
             </div>
-            <div className="text-center">
+            <button className="text-center hover:opacity-80 transition-opacity" onClick={() => setShowReviewsModal(true)}>
               <span className="text-lg font-bold text-foreground">{reviewsCount}</span>
               <p className="text-xs text-muted-foreground">Reviews</p>
-            </div>
+            </button>
             <button 
               className="text-center hover:opacity-80 transition-opacity"
               onClick={() => {
@@ -1159,6 +1161,14 @@ const Profile = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Reviews Modal */}
+      <ReviewsModal
+        isOpen={showReviewsModal}
+        onClose={() => setShowReviewsModal(false)}
+        userId={user.id}
+        userName={profile.username || undefined}
+      />
 
       </div>
     </AppLayout>
