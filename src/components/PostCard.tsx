@@ -20,9 +20,9 @@ import { VerificationBadge } from "@/utils/verificationBadge";
 import { HashtagText } from "@/components/HashtagText";
 import { LinkPreview } from "@/components/LinkPreview";
 
-const CaptionWithSeeMore = ({ streamerName, streamerId, content }: { streamerName: string; streamerId: string; content: string }) => {
+const CaptionWithSeeMore = ({ streamerName, streamerId, content, hasImage }: { streamerName: string; streamerId: string; content: string; hasImage?: boolean }) => {
   const [expanded, setExpanded] = useState(false);
-  const shouldTruncate = content.length > 80;
+  const shouldTruncate = hasImage ? content.length > 80 : content.length > 250;
 
   return (
     <div className="mb-2">
@@ -35,8 +35,14 @@ const CaptionWithSeeMore = ({ streamerName, streamerId, content }: { streamerNam
         </Link>
         {shouldTruncate && !expanded ? (
           <>
-            <HashtagText text={content.slice(0, 80)} className="text-foreground" />
-            <span className="text-foreground">...</span>
+            {hasImage ? (
+              <HashtagText text={content.slice(0, 80)} className="text-foreground" />
+            ) : (
+              <span className="line-clamp-5">
+                <HashtagText text={content} className="text-foreground" />
+              </span>
+            )}
+            {hasImage && <span className="text-foreground">...</span>}
             <button 
               onClick={(e) => { e.stopPropagation(); setExpanded(true); }}
               className="text-muted-foreground ml-1 text-sm"
@@ -405,6 +411,7 @@ export const PostCard = ({
           streamerName={streamerName}
           streamerId={streamerId}
           content={content}
+          hasImage={!!imageUrl}
         />
 
         {/* View comments */}
