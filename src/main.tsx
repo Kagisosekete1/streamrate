@@ -2,10 +2,6 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import { initOneSignal } from "./utils/onesignal";
-
-// Initialize OneSignal for push notifications
-initOneSignal();
 
 // Register service worker for offline support
 if ("serviceWorker" in navigator) {
