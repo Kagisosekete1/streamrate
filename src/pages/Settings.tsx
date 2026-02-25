@@ -55,11 +55,13 @@ const NotificationsModal = ({
   setNotifications,
   toast,
   setActiveModal,
+  userId,
 }: {
   notifications: Record<string, boolean>;
   setNotifications: (n: any) => void;
   toast: (opts: any) => void;
   setActiveModal: (m: any) => void;
+  userId: string | undefined;
 }) => {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -99,10 +101,22 @@ const NotificationsModal = ({
             console.log("setSubscription:", e);
           }
 
-          // Step 4: Also try registering via the run command (some Median versions)
-          try {
-            await median?.run?.onesignalInfo?.();
-          } catch {}
+          // Step 4: Set external user ID so OneSignal can target this user
+          if (userId) {
+            try {
+              // Median.co bridge method to link OneSignal player to our user
+              await median?.onesignal?.externalUserId?.set?.(userId);
+              console.log("OneSignal externalUserId set:", userId);
+            } catch (e) {
+              console.log("externalUserId set:", e);
+            }
+            // Also try the tags approach as fallback
+            try {
+              await median?.onesignal?.tag?.set?.({ key: "user_id", value: userId });
+            } catch (e) {
+              console.log("tag set:", e);
+            }
+          }
 
           setPushEnabled(true);
           localStorage.setItem("median_push_enabled", "true");
@@ -1094,6 +1108,7 @@ const Settings = () => {
             setNotifications={setNotifications}
             toast={toast}
             setActiveModal={setActiveModal}
+            userId={user?.id}
           />
         )}
 
