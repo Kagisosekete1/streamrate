@@ -47,7 +47,159 @@ import { PrivacyPolicyModal } from "@/components/settings/PrivacyPolicyModal";
 import { TermsOfServiceModal } from "@/components/settings/TermsOfServiceModal";
 import { ReportProblemModal } from "@/components/settings/ReportProblemModal";
 
-// App version info
+// Detect Median.co native webview
+const isMedianApp = () => !!(window as any).median || !!(window as any).gonative;
+
+const NotificationsModal = ({
+  notifications,
+  setNotifications,
+  toast,
+  setActiveModal,
+}: {
+  notifications: Record<string, boolean>;
+  setNotifications: (n: any) => void;
+  toast: (opts: any) => void;
+  setActiveModal: (m: any) => void;
+}) => {
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Check push status
+    if (isMedianApp()) {
+      try {
+        (window as any).median?.onesignal?.info?.()?.then?.((info: any) => {
+          setPushEnabled(!!info?.subscribed);
+        });
+      } catch {
+        // Fallback: check localStorage
+        setPushEnabled(localStorage.getItem("median_push_enabled") === "true");
+      }
+    } else if ("Notification" in window) {
+      setPushEnabled(Notification.permission === "granted");
+    }
+  }, []);
+
+  const handleTogglePush = async (checked: boolean) => {
+    setLoading(true);
+    try {
+      if (isMedianApp()) {
+        // Use Median.co's OneSignal bridge
+        const median = (window as any).median || (window as any).gonative;
+        if (checked) {
+          await median?.onesignal?.promptForPermission?.();
+          // Also try the permission request via native
+          await median?.onesignal?.setSubscription?.(true);
+          setPushEnabled(true);
+          localStorage.setItem("median_push_enabled", "true");
+          toast({ title: "Push notifications enabled!" });
+        } else {
+          await median?.onesignal?.setSubscription?.(false);
+          setPushEnabled(false);
+          localStorage.setItem("median_push_enabled", "false");
+          toast({ title: "Push notifications disabled" });
+        }
+      } else if ("Notification" in window) {
+        if (checked) {
+          const permission = await Notification.requestPermission();
+          if (permission === "granted") {
+            setPushEnabled(true);
+            localStorage.setItem("push_prompt_dismissed", "true");
+            toast({ title: "Push notifications enabled!" });
+          } else {
+            toast({ title: "Permission denied", description: "Enable notifications in your browser settings.", variant: "destructive" });
+          }
+        } else {
+          toast({ title: "To disable", description: "Manage notification permissions in your device settings." });
+        }
+      }
+    } catch (err) {
+      console.error("Push toggle error:", err);
+      toast({ title: "Failed to update push settings", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) setActiveModal(null); }}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="w-full max-w-md bg-card rounded-3xl p-6 border border-border shadow-2xl max-h-[85vh] overflow-y-auto"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <button
+            onClick={() => setActiveModal(null)}
+            className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
+          >
+            <X className="w-5 h-5 text-muted-foreground" />
+          </button>
+          <h2 className="text-lg font-bold text-foreground">Notifications</h2>
+          <button
+            onClick={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}
+            className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg"
+          >
+            Save
+          </button>
+        </div>
+
+        {/* Push Notification Master Toggle */}
+        <div className="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <Bell className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground text-sm">Push Notifications</p>
+                <p className="text-xs text-muted-foreground">
+                  {pushEnabled ? "Enabled — you'll receive push alerts" : "Enable to get notified in real-time"}
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={pushEnabled}
+              disabled={loading}
+              onCheckedChange={handleTogglePush}
+            />
+          </div>
+        </div>
+
+        <p className="text-sm text-muted-foreground mb-4">
+          Choose what notifications you want to receive.
+        </p>
+        <div className="space-y-4">
+          {[
+            { key: "ratings", label: "New ratings" },
+            { key: "reviews", label: "New reviews" },
+            { key: "comments", label: "New comments" },
+            { key: "likes", label: "Likes on posts" },
+            { key: "followers", label: "New followers" },
+          ].map((item) => (
+            <div key={item.key} className="flex items-center justify-between">
+              <span className="text-foreground">{item.label}</span>
+              <Switch
+                checked={notifications[item.key as keyof typeof notifications]}
+                onCheckedChange={(checked) =>
+                  setNotifications({ ...notifications, [item.key]: checked })
+                }
+              />
+            </div>
+          ))}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
 const APP_VERSION = "1.0.0";
 const BUILD_NUMBER = "1";
 const LAST_UPDATE = "2025-01-12";
@@ -919,68 +1071,14 @@ const Settings = () => {
         )}
 
         {activeModal === "notifications" && (
-          <Modal title="Notifications" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
-            {/* Push Notification Master Toggle */}
-            <div className="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/20">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                    <Bell className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-foreground text-sm">Push Notifications</p>
-                    <p className="text-xs text-muted-foreground">
-                      {typeof Notification !== "undefined" && Notification.permission === "granted"
-                        ? "Enabled — you'll receive push alerts"
-                        : "Enable to get notified in real-time"}
-                    </p>
-                  </div>
-                </div>
-                <Switch
-                  checked={typeof Notification !== "undefined" && Notification.permission === "granted"}
-                  onCheckedChange={async (checked) => {
-                    if (checked && "Notification" in window) {
-                      const permission = await Notification.requestPermission();
-                      if (permission === "granted") {
-                        toast({ title: "Push notifications enabled!" });
-                        localStorage.setItem("push_prompt_dismissed", "true");
-                      } else {
-                        toast({ title: "Permission denied", description: "Please enable notifications in your browser settings.", variant: "destructive" });
-                      }
-                    } else if (!checked) {
-                      toast({ title: "To disable", description: "Manage notification permissions in your browser settings." });
-                    }
-                    // Force re-render
-                    setNotifications({ ...notifications });
-                  }}
-                />
-              </div>
-            </div>
-
-            <p className="text-sm text-muted-foreground mb-4">
-              Choose what notifications you want to receive.
-            </p>
-            <div className="space-y-4">
-              {[
-                { key: "ratings", label: "New ratings" },
-                { key: "reviews", label: "New reviews" },
-                { key: "comments", label: "New comments" },
-                { key: "likes", label: "Likes on posts" },
-                { key: "followers", label: "New followers" },
-              ].map((item) => (
-                <div key={item.key} className="flex items-center justify-between">
-                  <span className="text-foreground">{item.label}</span>
-                  <Switch
-                    checked={notifications[item.key as keyof typeof notifications]}
-                    onCheckedChange={(checked) =>
-                      setNotifications({ ...notifications, [item.key]: checked })
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-          </Modal>
+          <NotificationsModal
+            notifications={notifications}
+            setNotifications={setNotifications}
+            toast={toast}
+            setActiveModal={setActiveModal}
+          />
         )}
+
 
         {activeModal === "language" && (
           <Modal title="Preferred Language" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
