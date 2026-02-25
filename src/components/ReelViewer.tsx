@@ -8,6 +8,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { HashtagText } from "@/components/HashtagText";
+import { LinkPreview } from "@/components/LinkPreview";
 import { useForYouAlgorithm } from "@/hooks/useForYouAlgorithm";
 import { DuetStitchModal } from "@/components/DuetStitchModal";
 import { ReelComments } from "@/components/ReelComments";
@@ -708,9 +709,15 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
 
               {/* Caption with hashtags */}
               {currentReel.caption && (
-                <div className="text-white text-xs leading-relaxed line-clamp-2">
-                  <HashtagText text={currentReel.caption} />
-                </div>
+                <>
+                  <div className="text-white text-xs leading-relaxed line-clamp-2">
+                    <HashtagText text={currentReel.caption} />
+                  </div>
+                  {(() => {
+                    const urlMatch = currentReel.caption!.match(/https?:\/\/[^\s]+/);
+                    return urlMatch ? <LinkPreview url={urlMatch[0]} /> : null;
+                  })()}
+                </>
               )}
 
               {/* Music info bar */}

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { LinkPreview } from "@/components/LinkPreview";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -431,9 +432,15 @@ export const CommentSection = ({ postId, postOwnerId, highlightCommentId }: Comm
                   </button>
                 </div>
               ) : (
-                <p className="text-foreground/80 text-sm mt-1">
-                  {renderContentWithMentions(comment.content)}
-                </p>
+                <>
+                  <p className="text-foreground/80 text-sm mt-1">
+                    {renderContentWithMentions(comment.content)}
+                  </p>
+                  {(() => {
+                    const urlMatch = comment.content.match(/https?:\/\/[^\s]+/);
+                    return urlMatch ? <LinkPreview url={urlMatch[0]} /> : null;
+                  })()}
+                </>
               )}
 
               <div className="flex items-center gap-4 mt-2">
