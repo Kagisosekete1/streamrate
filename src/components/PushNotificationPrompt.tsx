@@ -2,32 +2,36 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { promptForPushNotifications, getOneSignalPermission } from "@/utils/onesignal";
 
 export const PushNotificationPrompt = () => {
-  const { isSupported, permissionStatus, requestPermission } = usePushNotifications();
   const [showPrompt, setShowPrompt] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [permissionGranted, setPermissionGranted] = useState(false);
 
   useEffect(() => {
-    // Check if user has dismissed the prompt before
     const hasDismissed = localStorage.getItem("push_prompt_dismissed");
     if (hasDismissed) {
       setDismissed(true);
+      return;
     }
 
-    // Show prompt after a delay if push is supported and permission not granted
-    if (isSupported && permissionStatus === "prompt" && !hasDismissed) {
+    // Check current permission
+    const granted = getOneSignalPermission();
+    setPermissionGranted(!!granted);
+
+    if (!granted) {
       const timer = setTimeout(() => {
         setShowPrompt(true);
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [isSupported, permissionStatus]);
+  }, []);
 
   const handleEnable = async () => {
-    const granted = await requestPermission();
+    const granted = await promptForPushNotifications();
     if (granted) {
+      setPermissionGranted(true);
       setShowPrompt(false);
     }
   };
@@ -38,9 +42,7 @@ export const PushNotificationPrompt = () => {
     localStorage.setItem("push_prompt_dismissed", "true");
   };
 
-  if (!isSupported || permissionStatus === "granted" || dismissed) {
-    return null;
-  }
+  if (permissionGranted || dismissed) return null;
 
   return (
     <AnimatePresence>
