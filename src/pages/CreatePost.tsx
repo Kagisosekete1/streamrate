@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useDraftPosts, DraftPost } from "@/hooks/useDraftPosts";
 import { ReelUploadModal } from "@/components/ReelUploadModal";
 import { AIWritingAssistant } from "@/components/AIWritingAssistant";
+import { MentionInput } from "@/components/MentionInput";
 
 const CreatePost = () => {
   const navigate = useNavigate();
@@ -294,12 +295,13 @@ const CreatePost = () => {
               className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20"
             />
             <div className="flex-1">
-              <textarea
+              <MentionInput
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="What's on your mind? Share with your fans..."
+                onChange={(val) => setContent(val)}
+                placeholder="What's on your mind? Use @ to mention someone..."
                 className="w-full bg-transparent border-none outline-none resize-none text-foreground placeholder:text-muted-foreground min-h-[120px]"
                 autoFocus
+                multiline
               />
             </div>
           </div>

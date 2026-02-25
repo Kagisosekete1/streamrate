@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { LinkPreview } from "@/components/LinkPreview";
+import { MentionInput } from "@/components/MentionInput";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -494,11 +495,11 @@ export const CommentSection = ({ postId, postOwnerId, highlightCommentId }: Comm
               <AnimatePresence>
                 {replyingTo === comment.id && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="flex items-center gap-2 mt-3">
-                    <Input
+                    <MentionInput
                       value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
+                      onChange={(val) => setReplyText(val)}
                       placeholder="Write a reply..."
-                      className="flex-1 h-9 text-sm"
+                      className="flex-1 h-9 px-3 rounded-md border border-input bg-background text-sm"
                       onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddReply(comment.id); } }}
                       autoFocus
                     />
@@ -528,11 +529,11 @@ export const CommentSection = ({ postId, postOwnerId, highlightCommentId }: Comm
     <div className="space-y-4">
       {canComment ? (
         <div className="flex items-center gap-2">
-          <Input
+          <MentionInput
             value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Write a comment..."
-            className="flex-1"
+            onChange={(val) => setNewComment(val)}
+            placeholder="Write a comment... use @ to mention"
+            className="flex-1 h-10 px-3 rounded-md border border-input bg-background text-sm"
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddComment(); } }}
           />
           <Button variant="gaming" size="sm" onClick={handleAddComment} disabled={!newComment.trim()}>

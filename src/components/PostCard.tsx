@@ -377,8 +377,18 @@ export const PostCard = ({
         return urlMatch ? <LinkPreview url={urlMatch[0]} /> : null;
       })()}
 
-      {/* Actions - Instagram style with save next to share */}
+      {/* Caption with See More - ABOVE actions */}
       <div className="px-4 pt-3">
+        <CaptionWithSeeMore
+          streamerName={streamerName}
+          streamerId={streamerId}
+          content={content}
+          hasImage={!!imageUrl}
+        />
+      </div>
+
+      {/* Actions - below content */}
+      <div className="px-4 pt-1">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
             <button onClick={handleLike} className="hover:opacity-60 transition-opacity">
@@ -405,14 +415,6 @@ export const PostCard = ({
         >
           {likes.toLocaleString()} likes
         </button>
-
-      {/* Caption with See More */}
-        <CaptionWithSeeMore
-          streamerName={streamerName}
-          streamerId={streamerId}
-          content={content}
-          hasImage={!!imageUrl}
-        />
 
         {/* View comments */}
         {!isPrivate && comments > 0 && (
