@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface HashtagTextProps {
   text: string;
@@ -10,8 +11,8 @@ export const HashtagText = ({ text, className = "" }: HashtagTextProps) => {
 
   if (!text) return null;
 
-  // Combined regex: match URLs or hashtags
-  const combinedRegex = /(https?:\/\/[^\s]+)|#(\w+)/g;
+  // Combined regex: match URLs, @mentions, or hashtags
+  const combinedRegex = /(https?:\/\/[^\s]+)|@(\w+)|#(\w+)/g;
   const parts: (string | JSX.Element)[] = [];
   let lastIndex = 0;
   let match;
@@ -38,8 +39,30 @@ export const HashtagText = ({ text, className = "" }: HashtagTextProps) => {
         </a>
       );
     } else if (match[2]) {
+      // @mention match
+      const username = match[2];
+      parts.push(
+        <span
+          key={`mention-${match.index}`}
+          className="text-primary hover:underline cursor-pointer font-medium"
+          onClick={(e) => {
+            e.stopPropagation();
+            supabase
+              .from("profiles")
+              .select("id")
+              .eq("username", username)
+              .maybeSingle()
+              .then(({ data }) => {
+                if (data) navigate(`/streamer/${data.id}`);
+              });
+          }}
+        >
+          @{username}
+        </span>
+      );
+    } else if (match[3]) {
       // Hashtag match
-      const hashtag = match[2];
+      const hashtag = match[3];
       parts.push(
         <span
           key={`${match.index}-${hashtag}`}
