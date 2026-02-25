@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, MessageCircle, Send, ChevronDown, ChevronUp, Smile } from "lucide-react";
+import { X, Heart, MessageCircle, Send, ChevronDown, ChevronUp, Smile, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,6 +10,17 @@ import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { EmojiPicker } from "@/components/EmojiPicker";
 import { HashtagText } from "@/components/HashtagText";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Comment {
   id: string;
@@ -136,8 +147,32 @@ export const PostCommentsModal = ({
   useEffect(() => {
     if (isOpen && postId) {
       fetchComments();
+
+      // Realtime subscription
+      const channel = supabase
+        .channel(`modal-comments-${postId}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "comments", filter: `post_id=eq.${postId}` },
+          () => {
+            fetchComments();
+            // Refresh all expanded replies
+            expandedReplies.forEach((id) => fetchReplies(id));
+          }
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "comment_likes" },
+          () => {
+            fetchComments();
+            expandedReplies.forEach((id) => fetchReplies(id));
+          }
+        )
+        .subscribe();
+
+      return () => { supabase.removeChannel(channel); };
     }
-  }, [isOpen, postId, fetchComments]);
+  }, [isOpen, postId]);
 
   const handleAddComment = async () => {
     if (!user) {
@@ -182,7 +217,22 @@ export const PostCommentsModal = ({
 
     setReplyText("");
     setReplyingTo(null);
+    
+    // Auto-expand the parent to show the new reply
+    setExpandedReplies((prev) => new Set(prev).add(parentId));
     fetchReplies(parentId);
+    fetchComments();
+  };
+
+  const handleDeleteComment = async (commentId: string, parentId: string | null) => {
+    if (!user) return;
+    const { error } = await supabase.from("comments").delete().eq("id", commentId).eq("user_id", user.id);
+    if (error) {
+      toast({ title: "Failed to delete", variant: "destructive" });
+      return;
+    }
+    toast({ title: "Deleted" });
+    if (parentId) fetchReplies(parentId);
     fetchComments();
   };
 
@@ -220,16 +270,16 @@ export const PostCommentsModal = ({
     setShowEmojiPicker(false);
   };
 
-  // Recursive comment renderer for full nested threading
   const renderComment = (comment: Comment, depth = 0) => {
     const maxIndent = 4;
+    const isOwner = user?.id === comment.user_id;
 
     return (
       <div key={comment.id}>
         <div
           className={cn(
-            "flex items-start gap-3",
-            depth > 0 && depth <= maxIndent && "ml-6 border-l-2 border-border/50 pl-3 mt-3",
+            "flex items-start gap-3 py-2",
+            depth > 0 && depth <= maxIndent && "ml-6 border-l-2 border-border/50 pl-3 mt-2",
             depth > maxIndent && "ml-3 border-l-2 border-border/30 pl-2 mt-2"
           )}
         >
@@ -263,7 +313,10 @@ export const PostCommentsModal = ({
                 <span className={comment.is_liked ? "text-red-500" : "text-muted-foreground"}>{comment.likes_count}</span>
               </button>
               <button
-                onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                onClick={() => {
+                  setReplyingTo(replyingTo === comment.id ? null : comment.id);
+                  setReplyText(comment.profiles?.username ? `@${comment.profiles.username} ` : "");
+                }}
                 className="text-xs text-muted-foreground hover:text-primary"
               >
                 Reply
@@ -273,6 +326,25 @@ export const PostCommentsModal = ({
                   {expandedReplies.has(comment.id) ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                   {comment.replies_count} {comment.replies_count === 1 ? "reply" : "replies"}
                 </button>
+              )}
+              {isOwner && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive">
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Comment</AlertDialogTitle>
+                      <AlertDialogDescription>Are you sure? This cannot be undone.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDeleteComment(comment.id, comment.parent_id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
             </div>
 
@@ -345,7 +417,7 @@ export const PostCommentsModal = ({
           )}
 
           {/* Comments List */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 space-y-2">
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />

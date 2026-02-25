@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Heart, MessageSquareText, Bookmark, MoreHorizontal, Trash2, Edit2, Flag, BookmarkPlus, Send, Zap } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -119,6 +119,7 @@ export const PostCard = ({
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(initialIsLiked);
   const [likes, setLikes] = useState(initialLikes);
+  const [commentsCount, setCommentsCount] = useState(comments);
   const [isBookmarked, setIsBookmarked] = useState(initialIsBookmarked);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -134,6 +135,47 @@ export const PostCard = ({
   const [showLikesModal, setShowLikesModal] = useState(false);
 
   const isOwner = user?.id === streamerId;
+
+  // Realtime likes & comments count
+  useEffect(() => {
+    const channel = supabase
+      .channel(`post-counts-${id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "post_likes", filter: `post_id=eq.${id}` },
+        async () => {
+          const { count } = await supabase
+            .from("post_likes")
+            .select("*", { count: "exact", head: true })
+            .eq("post_id", id);
+          setLikes(count || 0);
+          // Also re-check if current user liked
+          if (user) {
+            const { data } = await supabase
+              .from("post_likes")
+              .select("id")
+              .eq("post_id", id)
+              .eq("user_id", user.id)
+              .maybeSingle();
+            setIsLiked(!!data);
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "comments", filter: `post_id=eq.${id}` },
+        async () => {
+          const { count } = await supabase
+            .from("comments")
+            .select("*", { count: "exact", head: true })
+            .eq("post_id", id);
+          setCommentsCount(count || 0);
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [id, user]);
 
   const handleBookmark = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -401,8 +443,8 @@ export const PostCard = ({
             {!isPrivate && (
               <button onClick={handleCommentClick} className="hover:opacity-60 transition-opacity flex items-center gap-1">
                 <MessageSquareText className="w-6 h-6 text-foreground" />
-                {comments > 0 && (
-                  <span className="text-sm font-semibold text-foreground">{comments}</span>
+                {commentsCount > 0 && (
+                  <span className="text-sm font-semibold text-foreground">{commentsCount}</span>
                 )}
               </button>
             )}
@@ -419,12 +461,12 @@ export const PostCard = ({
         </button>
 
         {/* View comments */}
-        {!isPrivate && (
+        {!isPrivate && commentsCount > 0 && (
           <button 
             onClick={handleCommentClick}
             className="text-sm text-muted-foreground mt-3 mb-3"
           >
-            {comments > 0 ? `View all ${comments} comments` : "Add a comment..."}
+            View all {commentsCount} comments
           </button>
         )}
       </div>
