@@ -180,6 +180,9 @@ const CreatePost = () => {
       await deleteDraft(currentDraftId);
     }
 
+    // Clear feed cache so the new post appears immediately
+    sessionStorage.removeItem('home-feed-cache');
+
     toast({
       title: "Post created!",
       description: "Your post is now live.",
