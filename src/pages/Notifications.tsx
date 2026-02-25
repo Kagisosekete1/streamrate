@@ -15,7 +15,9 @@ interface Notification {
   title: string;
   message: string;
   post_id: string | null;
+  reel_id: string | null;
   from_user_id: string | null;
+  comment_id: string | null;
   is_read: boolean;
   created_at: string;
   from_user?: {
@@ -85,6 +87,7 @@ const Notifications = () => {
 
     if (data) {
       const fromUserIds = [...new Set(data.filter((n) => n.from_user_id).map((n) => n.from_user_id))];
+      const castData = data as any[] as Notification[];
 
       if (fromUserIds.length > 0) {
         const { data: profiles } = await supabase
@@ -94,14 +97,14 @@ const Notifications = () => {
 
         const profilesMap = new Map((profiles || []).map((p) => [p.id, p]));
 
-        const notificationsWithUsers = data.map((n) => ({
+        const notificationsWithUsers = castData.map((n) => ({
           ...n,
           from_user: n.from_user_id ? profilesMap.get(n.from_user_id) : undefined,
         }));
 
         setNotifications(notificationsWithUsers);
       } else {
-        setNotifications(data);
+        setNotifications(castData);
       }
     }
     setLoading(false);
@@ -127,17 +130,23 @@ const Notifications = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
   };
 
-  const handleNotificationClick = (notification: any) => {
+  const handleNotificationClick = (notification: Notification) => {
     if (!notification.is_read) {
       markAsRead(notification.id);
     }
 
-    // Comment notifications deep-link to the specific comment
+    // Comment/mention notifications deep-link to the specific comment
     if (notification.post_id && (notification.type === "comment" || notification.type === "comment_reply" || notification.type === "comment_like" || notification.type === "mention")) {
       const commentParam = notification.comment_id ? `?commentId=${notification.comment_id}` : "";
       navigate(`/post/${notification.post_id}${commentParam}`);
+    } else if (notification.type === "post_like" && notification.post_id) {
+      navigate(`/post/${notification.post_id}`);
     } else if (notification.post_id && notification.type === "new_post") {
       navigate(`/post/${notification.post_id}`);
+    } else if (notification.reel_id && (notification.type === "reel_like" || notification.type === "reel_comment" || notification.type === "mention")) {
+      navigate(`/reels?reelId=${notification.reel_id}`);
+    } else if (notification.type === "new_follower" && notification.from_user_id) {
+      navigate(`/streamer/${notification.from_user_id}`);
     } else if (notification.from_user_id) {
       navigate(`/streamer/${notification.from_user_id}`);
     } else if (notification.post_id) {
@@ -148,6 +157,7 @@ const Notifications = () => {
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case "follow":
+      case "new_follower":
         return <Users className="w-4 h-4 text-blue-400" />;
       case "new_post":
         return <FileText className="w-4 h-4 text-green-400" />;
@@ -157,6 +167,13 @@ const Notifications = () => {
         return <TrendingUp className="w-4 h-4 text-orange-400" />;
       case "mention":
         return <span className="text-sm font-bold text-purple-400">@</span>;
+      case "post_like":
+      case "reel_like":
+        return <Bell className="w-4 h-4 text-red-400" />;
+      case "comment":
+      case "comment_reply":
+      case "reel_comment":
+        return <Bell className="w-4 h-4 text-blue-400" />;
       default:
         return <Bell className="w-4 h-4 text-primary" />;
     }
