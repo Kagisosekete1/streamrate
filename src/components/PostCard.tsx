@@ -14,6 +14,7 @@ import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 import { ReportBlockModal } from "@/components/ReportBlockModal";
 import { PostCommentsModal } from "@/components/PostCommentsModal";
 import { LikesModal } from "@/components/LikesModal";
+import { VerificationBadge } from "@/utils/verificationBadge";
 
 // Caption component with "See more" truncation
 const CaptionWithSeeMore = ({ streamerName, streamerId, content }: { streamerName: string; streamerId: string; content: string }) => {
@@ -262,12 +263,7 @@ export const PostCard = ({
               className="font-semibold text-sm text-foreground hover:text-muted-foreground inline-flex items-center gap-1"
             >
               {streamerName}
-              {(streamerEmail?.toLowerCase() === "kagisosekete5@gmail.com" || streamerEmail?.toLowerCase() === "kgsinnocent@gmail.com") && (
-                <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" fill="hsl(0, 84%, 60%)" />
-                  <path d="M8 12l3 3 5-5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
+              <VerificationBadge email={streamerEmail} />
             </Link>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span>{formatDistanceToNow(createdAt, { addSuffix: false })}</span>

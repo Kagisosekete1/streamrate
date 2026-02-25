@@ -264,7 +264,7 @@ export const PostCommentsModal = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center"
+        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-8 md:items-center md:pt-0"
         onClick={onClose}
       >
         <motion.div
@@ -272,7 +272,7 @@ export const PostCommentsModal = ({
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.85, opacity: 0 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="w-[calc(100%-2rem)] max-w-sm rounded-3xl bg-card border border-border shadow-2xl max-h-[70vh] overflow-hidden flex flex-col"
+          className="w-[calc(100%-2rem)] max-w-sm rounded-3xl bg-card border border-border shadow-2xl max-h-[80vh] overflow-hidden flex flex-col mt-4 md:mt-0"
           onClick={(e) => e.stopPropagation()}
         >
             {/* Drag handle */}
@@ -400,31 +400,72 @@ export const PostCommentsModal = ({
 
                       {/* Replies */}
                       {expandedReplies.has(comment.id) && replies[comment.id]?.map((reply) => (
-                        <div key={reply.id} className="flex items-start gap-2 mt-3 ml-4 border-l-2 border-border pl-3">
+                      <div key={reply.id} className="flex items-start gap-2 mt-3 ml-4 border-l-2 border-border pl-3">
                           <img
                             src={reply.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
                             alt={reply.profiles?.username || "User"}
-                            className="w-6 h-6 rounded-full object-cover"
+                            className="w-6 h-6 rounded-full object-cover cursor-pointer"
+                            onClick={() => {
+                              onClose();
+                              navigate(`/streamer/${reply.user_id}`);
+                            }}
                           />
                           <div className="flex-1">
-                            <span className="font-medium text-xs text-foreground">
-                              {reply.profiles?.username || "Anonymous"}
-                            </span>
-                            <p className="text-xs text-foreground">{reply.content}</p>
-                            <button
-                              onClick={() => handleLikeComment(reply.id, reply.is_liked)}
-                              className="flex items-center gap-1 mt-1 text-xs"
-                            >
-                              <Heart
-                                className={cn(
-                                  "w-3 h-3",
-                                  reply.is_liked ? "fill-red-500 text-red-500" : "text-muted-foreground"
-                                )}
-                              />
-                              <span className={reply.is_liked ? "text-red-500" : "text-muted-foreground"}>
-                                {reply.likes_count}
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-xs text-foreground cursor-pointer hover:text-primary"
+                                onClick={() => {
+                                  onClose();
+                                  navigate(`/streamer/${reply.user_id}`);
+                                }}
+                              >
+                                {reply.profiles?.username || "Anonymous"}
                               </span>
-                            </button>
+                              <span className="text-[10px] text-muted-foreground">
+                                {formatDistanceToNow(new Date(reply.created_at), { addSuffix: false })}
+                              </span>
+                            </div>
+                            <p className="text-xs text-foreground">{reply.content}</p>
+                            <div className="flex items-center gap-3 mt-1">
+                              <button
+                                onClick={() => handleLikeComment(reply.id, reply.is_liked)}
+                                className="flex items-center gap-1 text-xs"
+                              >
+                                <Heart
+                                  className={cn(
+                                    "w-3 h-3",
+                                    reply.is_liked ? "fill-red-500 text-red-500" : "text-muted-foreground"
+                                  )}
+                                />
+                                <span className={reply.is_liked ? "text-red-500" : "text-muted-foreground"}>
+                                  {reply.likes_count}
+                                </span>
+                              </button>
+                              <button
+                                onClick={() => setReplyingTo(replyingTo === reply.id ? null : reply.id)}
+                                className="text-xs text-muted-foreground hover:text-primary"
+                              >
+                                Reply
+                              </button>
+                            </div>
+                            {/* Reply to reply input */}
+                            {replyingTo === reply.id && (
+                              <div className="flex items-center gap-2 mt-2">
+                                <Input
+                                  value={replyText}
+                                  onChange={(e) => setReplyText(e.target.value)}
+                                  placeholder={`Reply to ${reply.profiles?.username || "user"}...`}
+                                  className="flex-1 h-7 text-xs"
+                                  onKeyDown={(e) => e.key === "Enter" && handleAddReply(comment.id)}
+                                />
+                                <button
+                                  onClick={() => handleAddReply(comment.id)}
+                                  disabled={!replyText.trim()}
+                                  className="text-primary disabled:opacity-50"
+                                >
+                                  <Send className="w-3 h-3" />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}

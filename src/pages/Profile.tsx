@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings, LogOut, Edit2, Users, Star, MessageCircle, Camera, X, ImageIcon, Eye, MapPin, ToggleLeft, ToggleRight } from "lucide-react";
+import { VerificationBadge } from "@/utils/verificationBadge";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -745,8 +746,9 @@ const Profile = () => {
             </div>
 
             <div className="flex items-center gap-2 mt-4">
-              <h1 className="text-xl font-bold text-foreground">
+              <h1 className="text-xl font-bold text-foreground inline-flex items-center gap-1">
                 {profile.username || "Anonymous"}
+                <VerificationBadge email={profile.email} className="w-5 h-5" />
               </h1>
               {(profile as any).signup_number && (
                 <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-xs font-bold">
@@ -791,18 +793,23 @@ const Profile = () => {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="flex justify-center gap-8 mt-6"
+            className="flex justify-center gap-6 mt-6"
           >
-            <button 
-              className="text-center hover:opacity-80 transition-opacity"
-              onClick={() => {
-                setFollowersModalType("followers");
-                setShowFollowersModal(true);
-              }}
-            >
-              <span className="text-lg font-bold text-foreground">{followersCount}</span>
-              <p className="text-xs text-muted-foreground">Followers</p>
-            </button>
+            {userRole === "streamer" && (
+              <>
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    <Star className="w-4 h-4 fill-primary text-primary" />
+                    <span className="text-lg font-bold text-foreground">{averageRating || "N/A"}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Rating</p>
+                </div>
+                <div className="text-center">
+                  <span className="text-lg font-bold text-foreground">{reviewsCount}</span>
+                  <p className="text-xs text-muted-foreground">Reviews</p>
+                </div>
+              </>
+            )}
             <button 
               className="text-center hover:opacity-80 transition-opacity"
               onClick={() => {
@@ -813,10 +820,16 @@ const Profile = () => {
               <span className="text-lg font-bold text-foreground">{followingCount}</span>
               <p className="text-xs text-muted-foreground">Following</p>
             </button>
-            <div className="text-center">
-              <span className="text-lg font-bold text-foreground">{posts.length}</span>
-              <p className="text-xs text-muted-foreground">Posts</p>
-            </div>
+            <button 
+              className="text-center hover:opacity-80 transition-opacity"
+              onClick={() => {
+                setFollowersModalType("followers");
+                setShowFollowersModal(true);
+              }}
+            >
+              <span className="text-lg font-bold text-foreground">{followersCount}</span>
+              <p className="text-xs text-muted-foreground">Followers</p>
+            </button>
           </motion.div>
         </div>
       </header>

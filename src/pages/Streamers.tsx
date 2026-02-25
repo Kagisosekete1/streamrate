@@ -154,6 +154,26 @@ const Streamers = () => {
     setLoading(false);
   };
 
+  // Fetch ALL new members (not just streamers)
+  const [newMembers, setNewMembers] = useState<Array<{id: string; username: string | null; full_name: string | null; avatar_url: string | null; created_at: string | null}>>([]);
+  
+  useEffect(() => {
+    const fetchNewMembers = async () => {
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 7);
+      
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, username, full_name, avatar_url, created_at")
+        .gte("created_at", threeDaysAgo.toISOString())
+        .order("created_at", { ascending: false })
+        .limit(20);
+      
+      if (data) setNewMembers(data);
+    };
+    fetchNewMembers();
+  }, []);
+
   const filterStreamers = () => {
     let filtered = [...streamers];
 
@@ -163,6 +183,7 @@ const Streamers = () => {
       filtered = filtered.filter(
         (s) =>
           s.full_name?.toLowerCase().includes(query) ||
+          s.username?.toLowerCase().includes(query) ||
           s.country?.toLowerCase().includes(query)
       );
     }
@@ -270,51 +291,43 @@ const Streamers = () => {
         </header>
 
         <main className="px-4 py-4 space-y-6">
-          {/* New on App Section - users who joined within last 3 days */}
-          {!searchQuery && (() => {
-            const threeDaysAgo = new Date();
-            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-            const newUsers = streamers.filter(s => 
-              s.created_at && new Date(s.created_at) > threeDaysAgo
-            );
-            if (newUsers.length === 0) return null;
-            return (
-              <section>
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="w-5 h-5 text-green-500" />
-                  <h2 className="font-semibold text-foreground">New on App</h2>
-                  <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-xs font-bold">
-                    {newUsers.length}
-                  </span>
-                </div>
-                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                  {newUsers.slice(0, 10).map((streamer) => (
-                    <Link
-                      key={streamer.id}
-                      to={`/streamer/${streamer.id}`}
-                      className="flex flex-col items-center gap-1.5 min-w-[72px]"
-                    >
-                      <div className="relative">
-                        <div className="p-[2px] rounded-full bg-gradient-to-br from-green-400 to-emerald-500">
-                          <img
-                            src={streamer.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
-                            alt={streamer.full_name || "New user"}
-                            className="w-14 h-14 rounded-full object-cover border-2 border-background"
-                          />
-                        </div>
-                        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-green-500 text-white text-[8px] font-bold rounded-full uppercase">
-                          New
-                        </span>
+          {/* New Members Section - ALL users */}
+          {!searchQuery && newMembers.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="w-5 h-5 text-green-500" />
+                <h2 className="font-semibold text-foreground">New Members</h2>
+                <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-xs font-bold">
+                  {newMembers.length}
+                </span>
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                {newMembers.slice(0, 15).map((member) => (
+                  <Link
+                    key={member.id}
+                    to={`/streamer/${member.id}`}
+                    className="flex flex-col items-center gap-1.5 min-w-[72px]"
+                  >
+                    <div className="relative">
+                      <div className="p-[2px] rounded-full bg-gradient-to-br from-green-400 to-emerald-500">
+                        <img
+                          src={member.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+                          alt={member.username || member.full_name || "New member"}
+                          className="w-14 h-14 rounded-full object-cover border-2 border-background"
+                        />
                       </div>
-                      <span className="text-[11px] text-muted-foreground truncate w-full text-center">
-                        {streamer.username || streamer.full_name || "User"}
+                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-green-500 text-white text-[8px] font-bold rounded-full uppercase">
+                        New
                       </span>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            );
-          })()}
+                    </div>
+                    <span className="text-[11px] text-muted-foreground truncate w-full text-center">
+                      {member.username || member.full_name || "User"}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
           {/* Leaderboard Section - Collapsible */}
           {!searchQuery && topStreamers.length > 0 && (
             <section>

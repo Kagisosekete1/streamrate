@@ -78,6 +78,7 @@ type ModalType =
   | "termsOfService"
   | "logout"
   | "deleteAccount"
+  | "deactivateAccount"
   | "appUpdate"
   | "lastSeenVisibility"
   | null;
@@ -179,15 +180,37 @@ const Settings = () => {
   const handleDeleteAccount = async () => {
     if (!user) return;
     
-    // Delete user data
-    await supabase.from("posts").delete().eq("user_id", user.id);
-    await supabase.from("follows").delete().or(`follower_id.eq.${user.id},following_id.eq.${user.id}`);
-    await supabase.from("ratings").delete().or(`fan_id.eq.${user.id},streamer_id.eq.${user.id}`);
-    await supabase.from("comments").delete().eq("user_id", user.id);
-    await supabase.from("profiles").delete().eq("id", user.id);
+    // Schedule deletion in 10 days instead of immediate
+    const deletionDate = new Date();
+    deletionDate.setDate(deletionDate.getDate() + 10);
+    
+    await supabase
+      .from("profiles")
+      .update({ 
+        scheduled_deletion_at: deletionDate.toISOString(),
+        is_deactivated: true,
+        deactivated_at: new Date().toISOString()
+      } as any)
+      .eq("id", user.id);
     
     await signOut();
-    toast({ title: "Account deleted" });
+    toast({ title: "Account scheduled for deletion", description: "Your account will be permanently deleted in 10 days. Log back in to cancel." });
+    navigate("/auth");
+  };
+
+  const handleDeactivateAccount = async () => {
+    if (!user) return;
+    
+    await supabase
+      .from("profiles")
+      .update({ 
+        is_deactivated: true,
+        deactivated_at: new Date().toISOString()
+      } as any)
+      .eq("id", user.id);
+    
+    await signOut();
+    toast({ title: "Account deactivated", description: "Log back in anytime to reactivate." });
     navigate("/auth");
   };
 
@@ -639,9 +662,16 @@ const Settings = () => {
             destructive
           />
           <SettingItem
+            icon={Ban}
+            title="Deactivate Account"
+            subtitle="Temporarily hide your profile"
+            onClick={() => setActiveModal("deactivateAccount")}
+            destructive
+          />
+          <SettingItem
             icon={UserX}
             title="Delete Account"
-            subtitle="Permanently remove your account"
+            subtitle="10-day recovery window before permanent deletion"
             onClick={() => setActiveModal("deleteAccount")}
             destructive
           />
@@ -1068,9 +1098,9 @@ const Settings = () => {
         {activeModal === "deleteAccount" && (
           <Modal title="Delete Account">
             <div className="p-4 bg-destructive/10 rounded-xl mb-4">
-              <p className="text-destructive font-medium">⚠️ This action is permanent</p>
+              <p className="text-destructive font-medium">⚠️ 10-Day Recovery Window</p>
               <p className="text-sm text-destructive/80 mt-1">
-                All your data will be deleted and cannot be recovered.
+                Your account will be scheduled for deletion. You have 10 days to log back in and cancel. After 10 days, all your data (profile, posts, reviews) will be permanently removed.
               </p>
             </div>
             <div className="flex gap-3">
@@ -1078,7 +1108,26 @@ const Settings = () => {
                 Cancel
               </Button>
               <Button variant="destructive" onClick={handleDeleteAccount} className="flex-1">
-                Delete Account
+                Schedule Deletion
+              </Button>
+            </div>
+          </Modal>
+        )}
+
+        {activeModal === "deactivateAccount" && (
+          <Modal title="Deactivate Account">
+            <div className="p-4 bg-secondary/50 rounded-xl mb-4">
+              <p className="font-medium text-foreground">Temporarily deactivate</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Your profile and content will be hidden from other users. You can reactivate anytime by logging back in.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setActiveModal(null)} className="flex-1">
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleDeactivateAccount} className="flex-1">
+                Deactivate
               </Button>
             </div>
           </Modal>
