@@ -8,6 +8,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
+import { FollowersModal } from "@/components/FollowersModal";
 
 interface Notification {
   id: string;
@@ -42,6 +43,7 @@ const Notifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [loading, setLoading] = useState(true);
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -149,8 +151,8 @@ const Notifications = () => {
       navigate(`/streamer/${notification.from_user_id}`);
     } else if (notification.type === "reel_view" && notification.reel_id) {
       navigate(`/reels?reelId=${notification.reel_id}`);
-    } else if (notification.type === "new_follower" && notification.from_user_id) {
-      navigate(`/streamer/${notification.from_user_id}`);
+    } else if (notification.type === "new_follower") {
+      setShowFollowersModal(true);
     } else if (notification.from_user_id) {
       navigate(`/streamer/${notification.from_user_id}`);
     } else if (notification.post_id) {
@@ -187,14 +189,46 @@ const Notifications = () => {
     }
   };
 
-  const filteredNotifications = notifications.filter((n) => {
-    if (activeFilter === "all") return true;
-    if (activeFilter === "follows") return n.type === "follow";
-    if (activeFilter === "posts") return n.type === "new_post";
-    if (activeFilter === "ratings") return n.type === "rating";
-    if (activeFilter === "trending") return n.type === "trending";
-    return true;
-  });
+  // Group new_follower notifications by day
+  const groupedNotifications = (() => {
+    const filtered = notifications.filter((n) => {
+      if (activeFilter === "all") return true;
+      if (activeFilter === "follows") return n.type === "follow" || n.type === "new_follower";
+      if (activeFilter === "posts") return n.type === "new_post";
+      if (activeFilter === "ratings") return n.type === "rating";
+      if (activeFilter === "trending") return n.type === "trending";
+      return true;
+    });
+
+    // Group follower notifications by day
+    const result: (Notification & { groupedFollowers?: Notification[] })[] = [];
+    const followersByDay = new Map<string, Notification[]>();
+
+    for (const n of filtered) {
+      if (n.type === "new_follower") {
+        const dayKey = new Date(n.created_at).toDateString();
+        if (!followersByDay.has(dayKey)) {
+          followersByDay.set(dayKey, []);
+        }
+        followersByDay.get(dayKey)!.push(n);
+      } else {
+        result.push(n);
+      }
+    }
+
+    // Add grouped follower entries
+    for (const [, followers] of followersByDay) {
+      const sorted = followers.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const primary = sorted[0];
+      result.push({ ...primary, groupedFollowers: sorted });
+    }
+
+    // Sort by date
+    result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return result;
+  })();
+
+  const filteredNotifications = groupedNotifications;
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
@@ -292,7 +326,30 @@ const Notifications = () => {
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex items-start gap-3">
-                    {notification.from_user?.avatar_url ? (
+                    {/* Grouped follower avatars */}
+                    {(notification as any).groupedFollowers ? (() => {
+                      const followers = (notification as any).groupedFollowers as Notification[];
+                      const avatars = followers.slice(0, 3).map(f => f.from_user?.avatar_url).filter(Boolean);
+                      return (
+                        <div className="relative w-12 h-12 flex-shrink-0">
+                          {avatars.length >= 2 ? (
+                            <>
+                              <img src={avatars[0]!} alt="" className="w-8 h-8 rounded-full object-cover absolute top-0 left-0 border-2 border-card z-10" />
+                              <img src={avatars[1]!} alt="" className="w-8 h-8 rounded-full object-cover absolute bottom-0 right-0 border-2 border-card" />
+                            </>
+                          ) : avatars.length === 1 ? (
+                            <img src={avatars[0]!} alt="" className="w-12 h-12 rounded-full object-cover" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                              <Users className="w-5 h-5 text-primary" />
+                            </div>
+                          )}
+                          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-card flex items-center justify-center border border-border">
+                            <Users className="w-3 h-3 text-blue-400" />
+                          </div>
+                        </div>
+                      );
+                    })() : notification.from_user?.avatar_url ? (
                       <div className="relative">
                         <img
                           src={notification.from_user.avatar_url}
@@ -309,6 +366,29 @@ const Notifications = () => {
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
+                      {(notification as any).groupedFollowers ? (() => {
+                        const followers = (notification as any).groupedFollowers as Notification[];
+                        const names = followers.map(f => f.from_user?.username || "Someone");
+                        const count = followers.length;
+                        let message = "";
+                        if (count === 1) {
+                          message = `@${names[0]} followed you`;
+                        } else if (count === 2) {
+                          message = `@${names[0]} and @${names[1]} followed you`;
+                        } else {
+                          message = `@${names[0]}, @${names[1]} and ${count - 2} other${count - 2 > 1 ? "s" : ""} followed you`;
+                        }
+                        return (
+                          <>
+                            <p className="text-sm font-semibold text-foreground">New Followers</p>
+                            <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">{message}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                            </p>
+                          </>
+                        );
+                      })() : (
+                        <>
                       <p className="text-sm font-semibold text-foreground">{notification.title}</p>
                       <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
                         {notification.message}
@@ -318,6 +398,8 @@ const Notifications = () => {
                           addSuffix: true,
                         })}
                       </p>
+                        </>
+                      )}
                     </div>
                     {!notification.is_read && (
                       <span className="w-2.5 h-2.5 bg-primary rounded-full flex-shrink-0 mt-2" />
@@ -329,6 +411,17 @@ const Notifications = () => {
           </div>
         )}
       </ScrollArea>
+
+      {/* Followers Modal */}
+      {user && (
+        <FollowersModal
+          isOpen={showFollowersModal}
+          onClose={() => setShowFollowersModal(false)}
+          userId={user.id}
+          type="followers"
+          title="Your Followers"
+        />
+      )}
 
       </div>
     </AppLayout>
