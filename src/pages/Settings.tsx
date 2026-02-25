@@ -920,6 +920,43 @@ const Settings = () => {
 
         {activeModal === "notifications" && (
           <Modal title="Notifications" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
+            {/* Push Notification Master Toggle */}
+            <div className="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Bell className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground text-sm">Push Notifications</p>
+                    <p className="text-xs text-muted-foreground">
+                      {typeof Notification !== "undefined" && Notification.permission === "granted"
+                        ? "Enabled — you'll receive push alerts"
+                        : "Enable to get notified in real-time"}
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={typeof Notification !== "undefined" && Notification.permission === "granted"}
+                  onCheckedChange={async (checked) => {
+                    if (checked && "Notification" in window) {
+                      const permission = await Notification.requestPermission();
+                      if (permission === "granted") {
+                        toast({ title: "Push notifications enabled!" });
+                        localStorage.setItem("push_prompt_dismissed", "true");
+                      } else {
+                        toast({ title: "Permission denied", description: "Please enable notifications in your browser settings.", variant: "destructive" });
+                      }
+                    } else if (!checked) {
+                      toast({ title: "To disable", description: "Manage notification permissions in your browser settings." });
+                    }
+                    // Force re-render
+                    setNotifications({ ...notifications });
+                  }}
+                />
+              </div>
+            </div>
+
             <p className="text-sm text-muted-foreground mb-4">
               Choose what notifications you want to receive.
             </p>
