@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Bell, Users, FileText, Star, TrendingUp, Check } from "lucide-react";
+import { ChevronLeft, Bell, Users, FileText, Star, TrendingUp, Check, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AppLayout } from "@/components/AppLayout";
@@ -145,6 +145,10 @@ const Notifications = () => {
       navigate(`/post/${notification.post_id}`);
     } else if (notification.reel_id && (notification.type === "reel_like" || notification.type === "reel_comment" || notification.type === "mention")) {
       navigate(`/reels?reelId=${notification.reel_id}`);
+    } else if (notification.type === "profile_view" && notification.from_user_id) {
+      navigate(`/streamer/${notification.from_user_id}`);
+    } else if (notification.type === "reel_view" && notification.reel_id) {
+      navigate(`/reels?reelId=${notification.reel_id}`);
     } else if (notification.type === "new_follower" && notification.from_user_id) {
       navigate(`/streamer/${notification.from_user_id}`);
     } else if (notification.from_user_id) {
@@ -174,6 +178,10 @@ const Notifications = () => {
       case "comment_reply":
       case "reel_comment":
         return <Bell className="w-4 h-4 text-blue-400" />;
+      case "profile_view":
+        return <Eye className="w-4 h-4 text-cyan-400" />;
+      case "reel_view":
+        return <Eye className="w-4 h-4 text-pink-400" />;
       default:
         return <Bell className="w-4 h-4 text-primary" />;
     }
