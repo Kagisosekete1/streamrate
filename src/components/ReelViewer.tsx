@@ -245,17 +245,12 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     return () => video.removeEventListener("timeupdate", handleTimeUpdate);
   }, [currentIndex, isOpen, currentReel]);
 
-  // Early return AFTER all hooks
-  if (!isOpen || !currentReel || reels.length === 0) {
-    return null;
-  }
-
   // Haptic feedback helper
-  const triggerHaptic = () => {
+  const triggerHaptic = useCallback(() => {
     if (navigator.vibrate) {
       navigator.vibrate(10);
     }
-  };
+  }, []);
 
   // Navigate to next/prev reel
   const goToReel = useCallback((direction: -1 | 1) => {
@@ -277,17 +272,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
       setVideoProgress(0);
       triggerHaptic();
     }
-  }, [showComments, currentIndex, reels.length, onLoadMore]);
-
-  // Handle swipe
-  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const threshold = 50;
-    if (info.offset.y < -threshold) {
-      goToReel(-1);
-    } else if (info.offset.y > threshold) {
-      goToReel(1);
-    }
-  };
+  }, [showComments, currentIndex, reels.length, onLoadMore, triggerHaptic]);
 
   // Scroll wheel support for desktop
   useEffect(() => {
@@ -316,6 +301,21 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
       if (scrollTimeout) clearTimeout(scrollTimeout);
     };
   }, [isOpen, showComments, goToReel]);
+
+  // Early return AFTER all hooks
+  if (!isOpen || !currentReel || reels.length === 0) {
+    return null;
+  }
+
+  // Handle swipe
+  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const threshold = 50;
+    if (info.offset.y < -threshold) {
+      goToReel(-1);
+    } else if (info.offset.y > threshold) {
+      goToReel(1);
+    }
+  };
 
   // Handle like with animation
   const handleLike = async () => {
