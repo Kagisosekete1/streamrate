@@ -60,8 +60,11 @@ export const HashtagText = ({ text, className = "" }: HashtagTextProps) => {
         <span
           key={`mention-${match.index}`}
           className="text-primary hover:underline cursor-pointer font-medium"
-          onClick={(e) => {
+          role="button"
+          tabIndex={0}
+          onPointerUp={(e) => {
             e.stopPropagation();
+            e.preventDefault();
             supabase
               .from("profiles")
               .select("id")
@@ -70,6 +73,10 @@ export const HashtagText = ({ text, className = "" }: HashtagTextProps) => {
               .then(({ data }) => {
                 if (data) navigate(`/streamer/${data.id}`);
               });
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
           }}
         >
           @{username}
