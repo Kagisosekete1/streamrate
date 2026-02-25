@@ -345,7 +345,7 @@ export const PostCard = ({
         </DropdownMenu>
       </div>
 
-      {/* Image - Instagram style (full width, double tap to like, no navigation) */}
+      {/* Image FIRST - Instagram style (full width, double tap to like) */}
       {imageUrl && (
         <div 
           className="relative w-full bg-black"
@@ -356,7 +356,6 @@ export const PostCard = ({
             alt="Post"
             className="w-full object-contain max-h-[600px]"
           />
-      {/* Heart animation on double tap */}
           {showHeartAnimation && (
             <motion.div
               initial={{ scale: 0, opacity: 0 }}
@@ -377,7 +376,7 @@ export const PostCard = ({
         return urlMatch ? <LinkPreview url={urlMatch[0]} /> : null;
       })()}
 
-      {/* Caption with See More - ABOVE actions */}
+      {/* Caption AFTER image */}
       <div className="px-4 pt-3">
         <CaptionWithSeeMore
           streamerName={streamerName}
