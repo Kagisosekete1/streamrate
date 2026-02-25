@@ -399,8 +399,11 @@ export const PostCard = ({
               />
             </button>
             {!isPrivate && (
-              <button onClick={handleCommentClick} className="hover:opacity-60 transition-opacity">
+              <button onClick={handleCommentClick} className="hover:opacity-60 transition-opacity flex items-center gap-1">
                 <MessageSquareText className="w-6 h-6 text-foreground" />
+                {comments > 0 && (
+                  <span className="text-sm font-semibold text-foreground">{comments}</span>
+                )}
               </button>
             )}
             <ShareMenu postId={id} title={content.slice(0, 50)} imageUrl={imageUrl} />
@@ -416,12 +419,12 @@ export const PostCard = ({
         </button>
 
         {/* View comments */}
-        {!isPrivate && comments > 0 && (
+        {!isPrivate && (
           <button 
             onClick={handleCommentClick}
             className="text-sm text-muted-foreground mb-2"
           >
-            View all {comments} comments
+            {comments > 0 ? `View all ${comments} comments` : "Add a comment..."}
           </button>
         )}
       </div>

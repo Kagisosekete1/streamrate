@@ -237,6 +237,7 @@ export type Database = {
           is_read: boolean
           message: string
           post_id: string | null
+          reel_id: string | null
           title: string
           type: string
           user_id: string
@@ -249,6 +250,7 @@ export type Database = {
           is_read?: boolean
           message: string
           post_id?: string | null
+          reel_id?: string | null
           title: string
           type?: string
           user_id: string
@@ -261,6 +263,7 @@ export type Database = {
           is_read?: boolean
           message?: string
           post_id?: string | null
+          reel_id?: string | null
           title?: string
           type?: string
           user_id?: string
