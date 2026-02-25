@@ -3,6 +3,7 @@ import { Home, Compass, Plus, UserCircle2, Clapperboard } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 
 const navItems = [
   { icon: Home, label: "Home", path: "/home" },
@@ -14,6 +15,27 @@ const navItems = [
 
 export const BottomNav = () => {
   const location = useLocation();
+  const [hasNewReels, setHasNewReels] = useState(false);
+
+  useEffect(() => {
+    // Check for reels created in last 24 hours
+    const checkNewReels = async () => {
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { count } = await supabase
+        .from("reels")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", oneDayAgo);
+      setHasNewReels((count || 0) > 0);
+    };
+    checkNewReels();
+  }, []);
+
+  // Clear blue dot when visiting reels
+  useEffect(() => {
+    if (location.pathname === "/reels") {
+      setHasNewReels(false);
+    }
+  }, [location.pathname]);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border safe-area-bottom md:hidden">
@@ -46,6 +68,10 @@ export const BottomNav = () => {
                     layoutId="activeTab"
                     className="absolute -bottom-1.5 w-1 h-1 rounded-full bg-primary"
                   />
+                )}
+                {/* New reels blue dot */}
+                {item.path === "/reels" && hasNewReels && !isActive && (
+                  <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-blue-500" />
                 )}
               </motion.div>
             </Link>

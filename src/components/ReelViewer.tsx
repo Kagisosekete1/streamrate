@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Music2, Flag, UserPlus, Eye, Layers } from "lucide-react";
+import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Music2, Flag, UserPlus, Eye, Layers, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -35,9 +35,12 @@ interface ReelViewerProps {
   isOpen: boolean;
   onClose: () => void;
   onLoadMore?: () => void;
+  showTabs?: boolean;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
-export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMore }: ReelViewerProps) => {
+export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMore, showTabs, activeTab, onTabChange }: ReelViewerProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -466,6 +469,24 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
             <X className="w-5 h-5 text-white" />
           </button>
 
+          {/* Tabs overlay */}
+          {showTabs && onTabChange && (
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-50 flex bg-black/40 backdrop-blur-sm rounded-full p-0.5">
+              <button
+                onClick={() => onTabChange("latest")}
+                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${activeTab === "latest" ? "bg-white text-black" : "text-white/70"}`}
+              >
+                Latest
+              </button>
+              <button
+                onClick={() => onTabChange("foryou")}
+                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${activeTab === "foryou" ? "bg-white text-black" : "text-white/70"}`}
+              >
+                For You
+              </button>
+            </div>
+          )}
+
           {/* Video container with swipe */}
           <motion.div
             drag={showComments ? false : "y"}
@@ -616,6 +637,18 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                 >
                   <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
                     <Layers className="w-5 h-5 text-white" />
+                  </div>
+                </button>
+              )}
+
+              {/* Analytics - for own reels */}
+              {user && user.id === currentReel.user_id && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); navigate("/analytics/reels"); }}
+                  className="flex flex-col items-center"
+                >
+                  <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                    <BarChart3 className="w-5 h-5 text-white" />
                   </div>
                 </button>
               )}

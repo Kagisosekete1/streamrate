@@ -306,18 +306,16 @@ const Profile = () => {
 
     setFollowingCount(following || 0);
 
-    // Fetch ratings if streamer
-    if (userRole === "streamer") {
-      const { data: ratings } = await supabase
-        .from("ratings")
-        .select("stars")
-        .eq("streamer_id", user.id);
+    // Fetch ratings for all users
+    const { data: ratings } = await supabase
+      .from("ratings")
+      .select("stars")
+      .eq("streamer_id", user.id);
 
-      if (ratings && ratings.length > 0) {
-        const avg = ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length;
-        setAverageRating(Math.round(avg * 10) / 10);
-        setReviewsCount(ratings.length);
-      }
+    if (ratings && ratings.length > 0) {
+      const avg = ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length;
+      setAverageRating(Math.round(avg * 10) / 10);
+      setReviewsCount(ratings.length);
     }
   };
 
@@ -759,11 +757,6 @@ const Profile = () => {
             <span className="px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-medium mt-1 capitalize">
               {userRole || "User"}
             </span>
-            {profile.bio && (
-              <p className="text-muted-foreground text-sm text-center mt-2 max-w-xs">
-                {profile.bio}
-              </p>
-            )}
             
             {/* Country & Last Seen */}
             {profile.country && (
@@ -773,6 +766,13 @@ const Profile = () => {
               </div>
             )}
             <LastSeenDisplay userId={user.id} className="mt-1" />
+            
+            {/* About/Bio under Last Seen */}
+            {profile.bio && (
+              <p className="text-muted-foreground text-sm text-center mt-1 max-w-xs line-clamp-2">
+                {profile.bio.length > 75 ? profile.bio.substring(0, 75) + "..." : profile.bio}
+              </p>
+            )}
             
             {/* Social Links */}
             <SocialLinks
@@ -795,21 +795,17 @@ const Profile = () => {
             transition={{ delay: 0.1 }}
             className="flex justify-center gap-6 mt-6"
           >
-            {userRole === "streamer" && (
-              <>
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-1">
-                    <Star className="w-4 h-4 fill-primary text-primary" />
-                    <span className="text-lg font-bold text-foreground">{averageRating || "N/A"}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Rating</p>
-                </div>
-                <div className="text-center">
-                  <span className="text-lg font-bold text-foreground">{reviewsCount}</span>
-                  <p className="text-xs text-muted-foreground">Reviews</p>
-                </div>
-              </>
-            )}
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1">
+                <Star className="w-4 h-4 fill-primary text-primary" />
+                <span className="text-lg font-bold text-foreground">{averageRating || "N/A"}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Rating</p>
+            </div>
+            <div className="text-center">
+              <span className="text-lg font-bold text-foreground">{reviewsCount}</span>
+              <p className="text-xs text-muted-foreground">Reviews</p>
+            </div>
             <button 
               className="text-center hover:opacity-80 transition-opacity"
               onClick={() => {
@@ -850,28 +846,6 @@ const Profile = () => {
         </div>
       </section>
 
-      {/* Quick Stats for Streamers */}
-      {userRole === "streamer" && (
-        <section className="px-4 py-4">
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-card rounded-xl p-4 text-center border border-border/50">
-              <Star className="w-5 h-5 text-primary mx-auto mb-2" />
-              <p className="text-lg font-bold text-foreground">{averageRating || "N/A"}</p>
-              <p className="text-xs text-muted-foreground">Avg Rating</p>
-            </div>
-            <div className="bg-card rounded-xl p-4 text-center border border-border/50">
-              <MessageCircle className="w-5 h-5 text-primary mx-auto mb-2" />
-              <p className="text-lg font-bold text-foreground">{reviewsCount}</p>
-              <p className="text-xs text-muted-foreground">Reviews</p>
-            </div>
-            <div className="bg-card rounded-xl p-4 text-center border border-border/50">
-              <Users className="w-5 h-5 text-primary mx-auto mb-2" />
-              <p className="text-lg font-bold text-foreground">{followersCount}</p>
-              <p className="text-xs text-muted-foreground">Fans</p>
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* Profile Content Grid */}
       <ProfileContentGrid
