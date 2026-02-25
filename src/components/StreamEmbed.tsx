@@ -62,17 +62,7 @@ export const StreamEmbed = ({ twitchUrl, youtubeGamingUrl, kickUrl, streamerId }
   ].filter(Boolean) as { id: "twitch" | "youtube" | "kick"; label: string; channel: string }[];
 
   if (available.length === 0) {
-    return (
-      <section className="px-4 py-4">
-        <div className="bg-card rounded-xl border border-border/50 overflow-hidden p-6 text-center">
-          <div className="w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
-            <Tv className="w-7 h-7 text-muted-foreground" />
-          </div>
-          <h3 className="text-sm font-semibold text-foreground mb-1">Streamer Offline</h3>
-          <p className="text-xs text-muted-foreground">Come back later when they're live!</p>
-        </div>
-      </section>
-    );
+    return null;
   }
 
   const selected = activeTab ? available.find((a) => a.id === activeTab) : null;

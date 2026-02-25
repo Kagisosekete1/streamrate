@@ -411,6 +411,13 @@ const StreamerProfile = () => {
             {/* Last Seen */}
             <LastSeenDisplay userId={id!} className="mt-1" />
             
+            {/* About/Bio under Last Seen */}
+            {streamer.bio && (
+              <p className="text-muted-foreground text-sm text-center mt-1 max-w-xs line-clamp-2">
+                {streamer.bio.length > 75 ? streamer.bio.substring(0, 75) + "..." : streamer.bio}
+              </p>
+            )}
+            
             {/* Social Links */}
             <SocialLinks
               twitchUrl={streamer.twitch_url}
@@ -435,12 +442,15 @@ const StreamerProfile = () => {
                 </div>
                 <p className="text-xs text-muted-foreground">Rating</p>
               </div>
-              <div className="text-center">
+              <button className="text-center hover:opacity-80 transition-opacity" onClick={() => {
+                const el = document.getElementById("reviews-section");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+              }}>
                 <span className="text-lg font-bold text-foreground">
                   {reviews.length}
                 </span>
                 <p className="text-xs text-muted-foreground">Reviews</p>
-              </div>
+              </button>
               <button className="text-center hover:opacity-80 transition-opacity" onClick={() => { setFollowersModalType("following"); setShowFollowersModal(true); }}>
                 <span className="text-lg font-bold text-foreground">
                   {followingCount}
@@ -488,17 +498,6 @@ const StreamerProfile = () => {
             streamerId={streamer.id}
           />
 
-          {/* Bio */}
-          {streamer.bio && (
-            <section className="px-4 py-4">
-              <div className="bg-card rounded-xl p-4 border border-border/50">
-                <h2 className="text-sm font-semibold text-muted-foreground mb-2">
-                  About
-                </h2>
-                <p className="text-foreground/90">{streamer.bio}</p>
-              </div>
-            </section>
-          )}
 
           {/* Actions */}
           <section className="px-4 py-2">
@@ -589,7 +588,7 @@ const StreamerProfile = () => {
       </AnimatePresence>
 
       {/* Reviews */}
-      <section className="px-4 py-4">
+      <section id="reviews-section" className="px-4 py-4">
         <h2 className="text-lg font-semibold text-foreground mb-4">Reviews</h2>
         {reviews.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
