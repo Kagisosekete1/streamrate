@@ -413,7 +413,7 @@ export const PostCard = ({
         {/* Likes count - clickable */}
         <button 
           onClick={handleLikesClick}
-          className="font-semibold text-sm text-foreground mb-1 hover:opacity-70 transition-opacity text-left"
+          className="font-semibold text-sm text-foreground hover:opacity-70 transition-opacity text-left"
         >
           {likes.toLocaleString()} likes
         </button>
@@ -422,7 +422,7 @@ export const PostCard = ({
         {!isPrivate && (
           <button 
             onClick={handleCommentClick}
-            className="text-sm text-muted-foreground mb-2"
+            className="text-sm text-muted-foreground mt-2 mb-2"
           >
             {comments > 0 ? `View all ${comments} comments` : "Add a comment..."}
           </button>
