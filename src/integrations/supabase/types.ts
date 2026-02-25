@@ -178,6 +178,35 @@ export type Database = {
         }
         Relationships: []
       }
+      hashtag_daily_usage: {
+        Row: {
+          daily_count: number
+          hashtag_id: string
+          id: string
+          usage_date: string
+        }
+        Insert: {
+          daily_count?: number
+          hashtag_id: string
+          id?: string
+          usage_date?: string
+        }
+        Update: {
+          daily_count?: number
+          hashtag_id?: string
+          id?: string
+          usage_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hashtag_daily_usage_hashtag_id_fkey"
+            columns: ["hashtag_id"]
+            isOneToOne: false
+            referencedRelation: "hashtags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hashtags: {
         Row: {
           created_at: string

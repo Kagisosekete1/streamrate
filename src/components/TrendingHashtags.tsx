@@ -8,7 +8,11 @@ interface TrendingHashtag {
   id: string;
   name: string;
   use_count: number;
+  daily_count?: number;
+  is_trending?: boolean;
 }
+
+const TRENDING_THRESHOLD = 1000;
 
 export const TrendingHashtags = () => {
   const navigate = useNavigate();
@@ -20,6 +24,38 @@ export const TrendingHashtags = () => {
   }, []);
 
   const fetchTrendingHashtags = async () => {
+    const today = new Date().toISOString().split("T")[0];
+
+    // Try to get daily trending first
+    const { data: dailyData } = await supabase
+      .from("hashtag_daily_usage")
+      .select("hashtag_id, daily_count")
+      .eq("usage_date", today)
+      .gte("daily_count", TRENDING_THRESHOLD)
+      .order("daily_count", { ascending: false })
+      .limit(10);
+
+    if (dailyData && dailyData.length > 0) {
+      const hashtagIds = dailyData.map(d => d.hashtag_id);
+      const { data: hashtagsData } = await supabase
+        .from("hashtags")
+        .select("id, name, use_count")
+        .in("id", hashtagIds);
+
+      if (hashtagsData) {
+        const dailyMap = new Map(dailyData.map(d => [d.hashtag_id, d.daily_count]));
+        const trending = hashtagsData.map(h => ({
+          ...h,
+          is_trending: true,
+          daily_count: dailyMap.get(h.id) || 0
+        })).sort((a, b) => (b.daily_count || 0) - (a.daily_count || 0));
+        setHashtags(trending);
+        setLoading(false);
+        return;
+      }
+    }
+
+    // Fallback: show popular hashtags by total use_count
     const { data } = await supabase
       .from("hashtags")
       .select("id, name, use_count")
@@ -52,11 +88,17 @@ export const TrendingHashtags = () => {
     return null;
   }
 
-  const getHashtagStyle = (index: number) => {
-    if (index === 0) {
+  const formatCount = (count: number) => {
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+    return count.toString();
+  };
+
+  const getHashtagStyle = (index: number, isTrending?: boolean) => {
+    if (isTrending && index === 0) {
       return "bg-gradient-to-r from-primary to-accent text-primary-foreground border-0";
     }
-    if (index < 3) {
+    if (isTrending || index < 3) {
       return "bg-primary/20 text-primary border-primary/30 hover:bg-primary/30";
     }
     return "bg-secondary/50 text-foreground border-border hover:bg-secondary";
@@ -95,18 +137,18 @@ export const TrendingHashtags = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate(`/hashtags/${hashtag.name}`)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full border transition-all flex-shrink-0 ${getHashtagStyle(index)}`}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-full border transition-all flex-shrink-0 ${getHashtagStyle(index, hashtag.is_trending)}`}
           >
-            {index === 0 ? (
+            {hashtag.is_trending ? (
+              <Flame className="w-3.5 h-3.5" />
+            ) : index === 0 ? (
               <Flame className="w-3.5 h-3.5" />
             ) : (
               <Hash className="w-3.5 h-3.5" />
             )}
             <span className="text-sm font-medium whitespace-nowrap">{hashtag.name}</span>
-            <span className={`text-xs ${index === 0 ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
-              {hashtag.use_count > 1000 
-                ? `${(hashtag.use_count / 1000).toFixed(1)}k` 
-                : hashtag.use_count}
+            <span className={`text-xs ${(hashtag.is_trending && index === 0) ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+              {formatCount(hashtag.daily_count || hashtag.use_count)}
             </span>
           </motion.button>
         ))}

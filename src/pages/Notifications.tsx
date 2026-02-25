@@ -133,7 +133,7 @@ const Notifications = () => {
     }
 
     // Comment notifications deep-link to the specific comment
-    if (notification.post_id && (notification.type === "comment" || notification.type === "comment_reply" || notification.type === "comment_like")) {
+    if (notification.post_id && (notification.type === "comment" || notification.type === "comment_reply" || notification.type === "comment_like" || notification.type === "mention")) {
       const commentParam = notification.comment_id ? `?commentId=${notification.comment_id}` : "";
       navigate(`/post/${notification.post_id}${commentParam}`);
     } else if (notification.post_id && notification.type === "new_post") {
@@ -155,6 +155,8 @@ const Notifications = () => {
         return <Star className="w-4 h-4 text-yellow-400" />;
       case "trending":
         return <TrendingUp className="w-4 h-4 text-orange-400" />;
+      case "mention":
+        return <span className="text-sm font-bold text-purple-400">@</span>;
       default:
         return <Bell className="w-4 h-4 text-primary" />;
     }
