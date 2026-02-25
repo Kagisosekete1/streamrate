@@ -636,6 +636,48 @@ export type Database = {
         }
         Relationships: []
       }
+      store_products: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          external_url: string | null
+          id: string
+          image_url: string
+          is_active: boolean
+          name: string
+          price: number
+          seller_id: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string
+          external_url?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          name: string
+          price?: number
+          seller_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          external_url?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          seller_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_interests: {
         Row: {
           created_at: string

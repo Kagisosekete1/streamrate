@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import { Loader2, Heart } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { TrendingStreamersSection } from "@/components/TrendingStreamersSection";
@@ -10,7 +10,6 @@ import { NewPostsBanner } from "@/components/NewPostsBanner";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import { InstallAppPrompt } from "@/components/InstallAppPrompt";
 import { StreamiiAi } from "@/components/StreamiiAi";
-import { DadJokeNotification } from "@/components/DadJokeNotification";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
@@ -54,8 +53,29 @@ const Home = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [newPostsCount, setNewPostsCount] = useState(0);
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
   const latestPostId = useRef<string | null>(null);
+
+  // Fetch blocked users
+  const fetchBlockedUsers = useCallback(async () => {
+    if (!user) return;
+    const { data: blockedByMe } = await supabase
+      .from("blocked_users")
+      .select("blocked_id")
+      .eq("blocker_id", user.id);
+    
+    const { data: blockedMe } = await supabase
+      .from("blocked_users")
+      .select("blocker_id")
+      .eq("blocked_id", user.id);
+    
+    const ids = [
+      ...(blockedByMe || []).map(b => b.blocked_id),
+      ...(blockedMe || []).map(b => b.blocker_id),
+    ];
+    setBlockedUserIds(ids);
+    return ids;
+  }, [user]);
 
   const handleRefresh = useCallback(async () => {
     setPosts([]);
@@ -91,7 +111,6 @@ const Home = () => {
 
   useEffect(() => {
     fetchData();
-    fetchUnreadNotifications();
 
     const postsChannel = supabase
       .channel("home-posts-realtime")
@@ -127,7 +146,6 @@ const Home = () => {
       )
       .subscribe();
 
-    // Realtime ratings subscription for live rating updates
     const ratingsChannel = supabase
       .channel("home-ratings-realtime")
       .on(
@@ -150,18 +168,9 @@ const Home = () => {
     };
   }, [user]);
 
-  const fetchUnreadNotifications = async () => {
-    if (!user) return;
-    const { count } = await supabase
-      .from("notifications")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .eq("is_read", false);
-    setUnreadNotifications(count || 0);
-  };
-
   const fetchData = async () => {
     setLoading(true);
+    await fetchBlockedUsers();
     await Promise.all([fetchTrendingStreamers(), fetchPosts()]);
     setLoading(false);
   };
@@ -226,7 +235,10 @@ const Home = () => {
 
     if (!postsData || postsData.length === 0) return [];
 
-    const userIds = [...new Set(postsData.map((p) => p.user_id))];
+    // Filter out blocked users' posts
+    const filteredPosts = postsData.filter(p => !blockedUserIds.includes(p.user_id));
+
+    const userIds = [...new Set(filteredPosts.map((p) => p.user_id))];
     const { data: profilesData } = await supabase
       .from("profiles")
       .select("id, username, avatar_url, email")
@@ -235,7 +247,7 @@ const Home = () => {
     const profilesMap = new Map((profilesData || []).map((p) => [p.id, p]));
 
     const postsWithCounts = await Promise.all(
-      postsData.map(async (post) => {
+      filteredPosts.map(async (post) => {
         const { count: likesCount } = await supabase
           .from("post_likes")
           .select("*", { count: "exact", head: true })
@@ -296,7 +308,6 @@ const Home = () => {
   return (
     <AppLayout>
       <div ref={containerRef} className="min-h-screen bg-background pb-12 md:pb-0">
-        {/* Pull to refresh indicator */}
         {showIndicator && (
           <PullToRefreshIndicator
             pullDistance={pullDistance}
@@ -304,12 +315,11 @@ const Home = () => {
           />
         )}
 
-        {/* New posts banner */}
         {newPostsCount > 0 && (
           <NewPostsBanner count={newPostsCount} onClick={handleRefresh} />
         )}
 
-        {/* Header - Instagram style */}
+        {/* Header - clean, no dad joke */}
         <header className="sticky top-0 z-40 bg-background border-b border-border md:hidden">
           <div className="flex items-center justify-between px-4 h-14">
             <img
@@ -318,27 +328,11 @@ const Home = () => {
               className="h-8 w-auto cursor-pointer"
               onClick={() => navigate("/home")}
             />
-            <div className="flex items-center gap-3">
-              <DadJokeNotification />
-              <button 
-                onClick={() => navigate("/notifications")}
-                className="relative"
-              >
-                <Heart className="w-6 h-6 text-foreground" />
-                {unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent text-accent-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {unreadNotifications > 9 ? "9+" : unreadNotifications}
-                  </span>
-                )}
-              </button>
-            </div>
           </div>
         </header>
 
-        {/* Trending Streamers - Instagram stories style */}
         <TrendingStreamersSection trendingStreamers={trendingStreamers} />
 
-        {/* Feed */}
         <main className="max-w-xl mx-auto">
           {loading ? (
             <div className="flex items-center justify-center py-20">
@@ -376,7 +370,6 @@ const Home = () => {
                 />
               ))}
 
-              {/* Infinite scroll trigger */}
               <div ref={loadMoreAllRef} className="h-1" />
 
               {loadingMore && (

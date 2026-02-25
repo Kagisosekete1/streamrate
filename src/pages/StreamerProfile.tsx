@@ -56,6 +56,7 @@ const StreamerProfile = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [averageRating, setAverageRating] = useState(0);
   const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [rating, setRating] = useState(0);
@@ -187,8 +188,14 @@ const StreamerProfile = () => {
       .from("follows")
       .select("*", { count: "exact", head: true })
       .eq("following_id", id);
-
     setFollowersCount(count || 0);
+
+    // Fetch following count
+    const { count: followingCt } = await supabase
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("follower_id", id);
+    setFollowingCount(followingCt || 0);
 
     // Check if user is following
     if (user) {
@@ -369,40 +376,35 @@ const StreamerProfile = () => {
             />
           </motion.div>
 
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="flex justify-center gap-8 mt-6"
-          >
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-1">
-                <Star className="w-5 h-5 fill-primary text-primary" />
-                <span className="text-xl font-bold text-foreground">
-                  {averageRating || "N/A"}
-                </span>
+            <div className="flex items-center justify-center gap-6 mt-6">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1">
+                  <Star className="w-4 h-4 fill-primary text-primary" />
+                  <span className="text-lg font-bold text-foreground">
+                    {averageRating || "N/A"}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">Rating</p>
               </div>
-              <p className="text-xs text-muted-foreground">Rating</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-1">
-                <MessageCircle className="w-5 h-5 text-primary" />
-                <span className="text-xl font-bold text-foreground">
+              <div className="text-center">
+                <span className="text-lg font-bold text-foreground">
                   {reviews.length}
                 </span>
+                <p className="text-xs text-muted-foreground">Reviews</p>
               </div>
-              <p className="text-xs text-muted-foreground">Reviews</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-1">
-                <Users className="w-5 h-5 text-primary" />
-                <span className="text-xl font-bold text-foreground">
+              <div className="text-center">
+                <span className="text-lg font-bold text-foreground">
+                  {followingCount}
+                </span>
+                <p className="text-xs text-muted-foreground">Following</p>
+              </div>
+              <div className="text-center">
+                <span className="text-lg font-bold text-foreground">
                   {followersCount}
                 </span>
+                <p className="text-xs text-muted-foreground">Followers</p>
               </div>
-              <p className="text-xs text-muted-foreground">Followers</p>
             </div>
-          </motion.div>
         </div>
       </header>
 
@@ -576,7 +578,10 @@ const StreamerProfile = () => {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-foreground">
+                      <h4 
+                        className="font-medium text-foreground cursor-pointer hover:text-primary transition-colors"
+                        onClick={() => navigate(`/streamer/${review.fan_id}`)}
+                      >
                         {review.profiles?.username || review.profiles?.full_name || "Anonymous"}
                       </h4>
                       <StarRating rating={review.stars} size="sm" />
