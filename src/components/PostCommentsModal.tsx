@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { EmojiPicker } from "@/components/EmojiPicker";
+import { HashtagText } from "@/components/HashtagText";
 
 interface Comment {
   id: string;
@@ -250,7 +251,9 @@ export const PostCommentsModal = ({
                 {formatDistanceToNow(new Date(comment.created_at), { addSuffix: false })}
               </span>
             </div>
-            <p className="text-sm text-foreground mt-0.5">{comment.content}</p>
+            <div className="text-sm text-foreground mt-0.5">
+              <HashtagText text={comment.content} />
+            </div>
             <div className="flex items-center gap-4 mt-2">
               <button
                 onClick={() => handleLikeComment(comment.id, comment.is_liked)}
