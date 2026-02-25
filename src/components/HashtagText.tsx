@@ -10,32 +10,49 @@ export const HashtagText = ({ text, className = "" }: HashtagTextProps) => {
 
   if (!text) return null;
 
-  // Regex to find hashtags
-  const hashtagRegex = /#(\w+)/g;
+  // Combined regex: match URLs or hashtags
+  const combinedRegex = /(https?:\/\/[^\s]+)|#(\w+)/g;
   const parts: (string | JSX.Element)[] = [];
   let lastIndex = 0;
   let match;
 
-  while ((match = hashtagRegex.exec(text)) !== null) {
-    // Add text before hashtag
+  while ((match = combinedRegex.exec(text)) !== null) {
+    // Add text before match
     if (match.index > lastIndex) {
       parts.push(text.slice(lastIndex, match.index));
     }
 
-    // Add clickable hashtag
-    const hashtag = match[1];
-    parts.push(
-      <span
-        key={`${match.index}-${hashtag}`}
-        className="text-primary hover:underline cursor-pointer font-medium"
-        onClick={(e) => {
-          e.stopPropagation();
-          navigate(`/hashtags/${hashtag}`);
-        }}
-      >
-        #{hashtag}
-      </span>
-    );
+    if (match[1]) {
+      // URL match
+      const url = match[1];
+      parts.push(
+        <a
+          key={`url-${match.index}`}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary hover:underline cursor-pointer font-medium break-all"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {url}
+        </a>
+      );
+    } else if (match[2]) {
+      // Hashtag match
+      const hashtag = match[2];
+      parts.push(
+        <span
+          key={`${match.index}-${hashtag}`}
+          className="text-primary hover:underline cursor-pointer font-medium"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/hashtags/${hashtag}`);
+          }}
+        >
+          #{hashtag}
+        </span>
+      );
+    }
 
     lastIndex = match.index + match[0].length;
   }

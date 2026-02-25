@@ -17,6 +17,8 @@ import { LikesModal } from "@/components/LikesModal";
 import { VerificationBadge } from "@/utils/verificationBadge";
 
 // Caption component with "See more" truncation
+import { HashtagText } from "@/components/HashtagText";
+
 const CaptionWithSeeMore = ({ streamerName, streamerId, content }: { streamerName: string; streamerId: string; content: string }) => {
   const [expanded, setExpanded] = useState(false);
   const shouldTruncate = content.length > 80;
@@ -32,7 +34,8 @@ const CaptionWithSeeMore = ({ streamerName, streamerId, content }: { streamerNam
         </Link>
         {shouldTruncate && !expanded ? (
           <>
-            <span className="text-foreground">{content.slice(0, 80)}...</span>
+            <HashtagText text={content.slice(0, 80)} className="text-foreground" />
+            <span className="text-foreground">...</span>
             <button 
               onClick={(e) => { e.stopPropagation(); setExpanded(true); }}
               className="text-muted-foreground ml-1 text-sm"
@@ -41,7 +44,7 @@ const CaptionWithSeeMore = ({ streamerName, streamerId, content }: { streamerNam
             </button>
           </>
         ) : (
-          <span className="text-foreground">{content}</span>
+          <HashtagText text={content} className="text-foreground" />
         )}
       </span>
     </div>
