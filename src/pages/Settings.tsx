@@ -65,27 +65,12 @@ const NotificationsModal = ({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const checkPushStatus = async () => {
-      if (isMedianApp()) {
-        try {
-          const median = (window as any).median || (window as any).gonative;
-          // Use correct Median.co bridge method name
-          const info = await median?.onesignal?.onesignalInfo?.();
-          if (info) {
-            setPushEnabled(!!info.subscribed);
-          } else {
-            // Try legacy method name
-            const legacyInfo = await median?.onesignal?.info?.();
-            setPushEnabled(!!legacyInfo?.subscribed);
-          }
-        } catch {
-          setPushEnabled(localStorage.getItem("median_push_enabled") === "true");
-        }
-      } else if ("Notification" in window) {
-        setPushEnabled(Notification.permission === "granted");
-      }
-    };
-    checkPushStatus();
+    if (isMedianApp()) {
+      // For Median.co APK, always use localStorage as source of truth
+      setPushEnabled(localStorage.getItem("median_push_enabled") === "true");
+    } else if ("Notification" in window) {
+      setPushEnabled(Notification.permission === "granted");
+    }
   }, []);
 
   const handleTogglePush = async (checked: boolean) => {
