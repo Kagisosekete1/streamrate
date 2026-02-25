@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Bell, Users, FileText, Star, TrendingUp, Check, Eye } from "lucide-react";
+import { ChevronLeft, Bell, Users, FileText, Star, TrendingUp, Check, Eye, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
-import { FollowersModal } from "@/components/FollowersModal";
+import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
 interface Notification {
   id: string;
@@ -412,16 +412,91 @@ const Notifications = () => {
         )}
       </ScrollArea>
 
-      {/* Followers Modal */}
-      {user && (
-        <FollowersModal
-          isOpen={showFollowersModal}
-          onClose={() => setShowFollowersModal(false)}
-          userId={user.id}
-          type="followers"
-          title="Your Followers"
-        />
-      )}
+      {/* New Followers Modal */}
+      <AnimatePresence>
+        {showFollowersModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowFollowersModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm bg-card rounded-3xl overflow-hidden border border-border shadow-2xl max-h-[70vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  <h2 className="text-lg font-bold text-foreground">New Followers</h2>
+                  <span className="text-xs text-muted-foreground">Last 24h</span>
+                </div>
+                <button
+                  onClick={() => setShowFollowersModal(false)}
+                  className="w-8 h-8 rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4">
+                {(() => {
+                  // Get all new_follower notifications from last 24h
+                  const recentFollowers = notifications
+                    .filter(n => n.type === "new_follower" && n.from_user_id)
+                    .filter(n => new Date(n.created_at).getTime() > Date.now() - 24 * 60 * 60 * 1000);
+                  
+                  const allFollowers = recentFollowers.length > 0 ? recentFollowers : notifications.filter(n => n.type === "new_follower" && n.from_user_id);
+
+                  if (allFollowers.length === 0) {
+                    return (
+                      <div className="text-center py-8">
+                        <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                        <p className="text-muted-foreground">No new followers yet</p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-3">
+                      {allFollowers.map((f) => (
+                        <motion.button
+                          key={f.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          onClick={() => {
+                            setShowFollowersModal(false);
+                            navigate(`/streamer/${f.from_user_id}`);
+                          }}
+                          className="w-full flex items-center gap-3 p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors text-left"
+                        >
+                          <img
+                            src={f.from_user?.avatar_url || getDefaultAvatar(f.from_user?.username || "User")}
+                            alt={f.from_user?.username || "User"}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-foreground truncate">
+                              @{f.from_user?.username || "Someone"}
+                            </h3>
+                            <p className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(new Date(f.created_at), { addSuffix: true })}
+                            </p>
+                          </div>
+                        </motion.button>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       </div>
     </AppLayout>
