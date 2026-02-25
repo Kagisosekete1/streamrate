@@ -1,7 +1,22 @@
 import React from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const REFRESH_THRESHOLD = 20 * 60 * 1000;
+const REFRESH_THRESHOLD = 30 * 60 * 1000; // 30 minutes
+
+// Global event for components to listen to
+const REFRESH_EVENT = "app-should-refresh";
+
+export function dispatchRefreshEvent() {
+  window.dispatchEvent(new CustomEvent(REFRESH_EVENT));
+}
+
+export function useOnAppRefresh(callback: () => void) {
+  React.useEffect(() => {
+    const handler = () => callback();
+    window.addEventListener(REFRESH_EVENT, handler);
+    return () => window.removeEventListener(REFRESH_EVENT, handler);
+  }, [callback]);
+}
 
 export function useAppVisibility() {
   const hiddenTimeRef = React.useRef<number | null>(null);
@@ -50,7 +65,15 @@ export function useAppVisibility() {
       if (wasHiddenRef.current && hiddenTimeRef.current) {
         const hiddenDuration = Date.now() - hiddenTimeRef.current;
         
-        if (hiddenDuration < REFRESH_THRESHOLD) {
+        if (hiddenDuration >= REFRESH_THRESHOLD) {
+          // Been away 30+ min — tell all pages to refresh
+          sessionStorage.removeItem('app-scroll-positions');
+          sessionStorage.removeItem('app-last-route');
+          sessionStorage.removeItem('app-hidden-time');
+          sessionStorage.removeItem('home-feed-cache');
+          dispatchRefreshEvent();
+        } else {
+          // Short absence — restore scroll positions, don't refresh
           try {
             const savedPositions = sessionStorage.getItem('app-scroll-positions');
             if (savedPositions) {
@@ -74,10 +97,6 @@ export function useAppVisibility() {
           } catch (e) {
             console.error('Error restoring scroll positions:', e);
           }
-        } else {
-          sessionStorage.removeItem('app-scroll-positions');
-          sessionStorage.removeItem('app-last-route');
-          sessionStorage.removeItem('app-hidden-time');
         }
       }
       
@@ -103,6 +122,8 @@ export function useAppVisibility() {
         sessionStorage.removeItem('app-scroll-positions');
         sessionStorage.removeItem('app-last-route');
         sessionStorage.removeItem('app-hidden-time');
+        sessionStorage.removeItem('home-feed-cache');
+        dispatchRefreshEvent();
       }
     }
   }, [updateLastSeen]);
