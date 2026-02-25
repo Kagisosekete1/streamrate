@@ -15,6 +15,8 @@ import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 import { LastSeenDisplay } from "@/components/LastSeenDisplay";
 import { SocialLinks } from "@/components/SocialLinks";
 import { StreamEmbed } from "@/components/StreamEmbed";
+import { VerificationBadge } from "@/utils/verificationBadge";
+import { FollowersModal } from "@/components/FollowersModal";
 
 interface StreamerData {
   id: string;
@@ -24,6 +26,7 @@ interface StreamerData {
   bio: string | null;
   country: string | null;
   signup_number: number | null;
+  email: string | null;
   twitch_url: string | null;
   discord_url: string | null;
   kick_url: string | null;
@@ -65,6 +68,8 @@ const StreamerProfile = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAvatarZoom, setShowAvatarZoom] = useState(false);
   const [reviewAvatarZoom, setReviewAvatarZoom] = useState<{ url: string; name: string } | null>(null);
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [followersModalType, setFollowersModalType] = useState<"followers" | "following">("followers");
   const [isPrivateProfile, setIsPrivateProfile] = useState(false);
   const [canViewProfile, setCanViewProfile] = useState(true);
 
@@ -94,7 +99,7 @@ const StreamerProfile = () => {
     // Fetch streamer profile
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
-      .select("id, full_name, username, avatar_url, bio, country, signup_number, twitch_url, discord_url, kick_url, youtube_gaming_url, show_twitch, show_discord, show_kick, show_youtube_gaming, profile_visibility")
+      .select("id, full_name, username, avatar_url, bio, country, signup_number, email, twitch_url, discord_url, kick_url, youtube_gaming_url, show_twitch, show_discord, show_kick, show_youtube_gaming, profile_visibility")
       .eq("id", id)
       .maybeSingle();
 
@@ -112,6 +117,7 @@ const StreamerProfile = () => {
       bio: profileData.bio,
       country: profileData.country,
       signup_number: (profileData as any).signup_number || null,
+      email: (profileData as any).email || null,
       twitch_url: (profileData as any).twitch_url || null,
       discord_url: (profileData as any).discord_url || null,
       kick_url: (profileData as any).kick_url || null,
@@ -343,8 +349,9 @@ const StreamerProfile = () => {
               />
             </div>
             <div className="flex items-center gap-2 mt-4">
-              <h1 className="text-2xl font-bold text-foreground">
+              <h1 className="text-2xl font-bold text-foreground inline-flex items-center gap-1">
                 {streamer.username || streamer.full_name || "Anonymous"}
+                <VerificationBadge email={streamer.email} className="w-5 h-5" />
               </h1>
               {streamer.signup_number && (
                 <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-xs font-bold">
@@ -392,18 +399,18 @@ const StreamerProfile = () => {
                 </span>
                 <p className="text-xs text-muted-foreground">Reviews</p>
               </div>
-              <div className="text-center">
+              <button className="text-center hover:opacity-80 transition-opacity" onClick={() => { setFollowersModalType("following"); setShowFollowersModal(true); }}>
                 <span className="text-lg font-bold text-foreground">
                   {followingCount}
                 </span>
                 <p className="text-xs text-muted-foreground">Following</p>
-              </div>
-              <div className="text-center">
+              </button>
+              <button className="text-center hover:opacity-80 transition-opacity" onClick={() => { setFollowersModalType("followers"); setShowFollowersModal(true); }}>
                 <span className="text-lg font-bold text-foreground">
                   {followersCount}
                 </span>
                 <p className="text-xs text-muted-foreground">Followers</p>
-              </div>
+              </button>
             </div>
         </div>
       </header>
@@ -620,6 +627,16 @@ const StreamerProfile = () => {
         imageUrl={reviewAvatarZoom?.url || ""}
         username={reviewAvatarZoom?.name}
       />
+
+      {/* Followers/Following Modal */}
+      {showFollowersModal && id && (
+        <FollowersModal
+          isOpen={showFollowersModal}
+          onClose={() => setShowFollowersModal(false)}
+          userId={id}
+          type={followersModalType}
+        />
+      )}
 
       <BottomNav />
     </div>

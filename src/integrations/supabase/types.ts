@@ -329,16 +329,19 @@ export type Database = {
           bio: string | null
           country: string | null
           created_at: string | null
+          deactivated_at: string | null
           discord_url: string | null
           email: string | null
           full_name: string | null
           gender: string | null
           header_url: string | null
           id: string
+          is_deactivated: boolean
           kick_url: string | null
           last_seen: string | null
           last_seen_visibility: string | null
           profile_visibility: string
+          scheduled_deletion_at: string | null
           show_discord: boolean | null
           show_kick: boolean | null
           show_twitch: boolean | null
@@ -355,16 +358,19 @@ export type Database = {
           bio?: string | null
           country?: string | null
           created_at?: string | null
+          deactivated_at?: string | null
           discord_url?: string | null
           email?: string | null
           full_name?: string | null
           gender?: string | null
           header_url?: string | null
           id: string
+          is_deactivated?: boolean
           kick_url?: string | null
           last_seen?: string | null
           last_seen_visibility?: string | null
           profile_visibility?: string
+          scheduled_deletion_at?: string | null
           show_discord?: boolean | null
           show_kick?: boolean | null
           show_twitch?: boolean | null
@@ -381,16 +387,19 @@ export type Database = {
           bio?: string | null
           country?: string | null
           created_at?: string | null
+          deactivated_at?: string | null
           discord_url?: string | null
           email?: string | null
           full_name?: string | null
           gender?: string | null
           header_url?: string | null
           id?: string
+          is_deactivated?: boolean
           kick_url?: string | null
           last_seen?: string | null
           last_seen_visibility?: string | null
           profile_visibility?: string
+          scheduled_deletion_at?: string | null
           show_discord?: boolean | null
           show_kick?: boolean | null
           show_twitch?: boolean | null

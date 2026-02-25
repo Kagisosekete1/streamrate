@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
+import { NotificationBell } from "@/components/NotificationBell";
 
 interface Streamer {
   id: string;
@@ -319,7 +320,7 @@ const Home = () => {
           <NewPostsBanner count={newPostsCount} onClick={handleRefresh} />
         )}
 
-        {/* Header - clean, no dad joke */}
+        {/* Header */}
         <header className="sticky top-0 z-40 bg-background border-b border-border md:hidden">
           <div className="flex items-center justify-between px-4 h-14">
             <img
@@ -328,6 +329,7 @@ const Home = () => {
               className="h-8 w-auto cursor-pointer"
               onClick={() => navigate("/home")}
             />
+            <NotificationBell />
           </div>
         </header>
 
