@@ -12,7 +12,7 @@ export const HashtagText = ({ text, className = "" }: HashtagTextProps) => {
   if (!text) return null;
 
   // Combined regex: match URLs, @mentions, or hashtags
-  const combinedRegex = /(https?:\/\/[^\s]+)|@(\w+)|#(\w+)/g;
+  const combinedRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|@(\w+)|#(\w+)/g;
   const parts: (string | JSX.Element)[] = [];
   let lastIndex = 0;
   let match;
@@ -24,7 +24,7 @@ export const HashtagText = ({ text, className = "" }: HashtagTextProps) => {
     }
 
     if (match[1]) {
-      // URL match
+      // URL match (http/https)
       const url = match[1];
       parts.push(
         <a
@@ -39,8 +39,23 @@ export const HashtagText = ({ text, className = "" }: HashtagTextProps) => {
         </a>
       );
     } else if (match[2]) {
+      // www. URL match (no protocol)
+      const url = match[2];
+      parts.push(
+        <a
+          key={`www-${match.index}`}
+          href={`https://${url}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary hover:underline cursor-pointer font-medium break-all"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {url}
+        </a>
+      );
+    } else if (match[3]) {
       // @mention match
-      const username = match[2];
+      const username = match[3];
       parts.push(
         <span
           key={`mention-${match.index}`}
@@ -60,9 +75,9 @@ export const HashtagText = ({ text, className = "" }: HashtagTextProps) => {
           @{username}
         </span>
       );
-    } else if (match[3]) {
+    } else if (match[4]) {
       // Hashtag match
-      const hashtag = match[3];
+      const hashtag = match[4];
       parts.push(
         <span
           key={`${match.index}-${hashtag}`}
