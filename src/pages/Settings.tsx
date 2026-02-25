@@ -184,6 +184,32 @@ const NotificationsModal = ({
           </button>
         </div>
 
+        {/* System notifications blocked warning */}
+        {pushEnabled && isMedianApp() && (
+          <div className="mb-4 p-4 rounded-xl bg-destructive/10 border border-destructive/30">
+            <p className="font-semibold text-destructive text-sm mb-1">System notifications blocked?</p>
+            <p className="text-xs text-muted-foreground mb-3">
+              If you're not receiving notifications, tap below to open your phone's notification settings for StreamRate.
+            </p>
+            <button
+              onClick={() => {
+                const median = (window as any).median || (window as any).gonative;
+                // Try Median bridge to open app notification settings
+                if (median?.open?.appSettings) {
+                  median.open.appSettings();
+                } else {
+                  // Fallback: show instruction
+                  toast({ title: "Open your phone's Settings → Apps → StreamRate → Notifications and enable them." });
+                }
+              }}
+              className="w-full py-2 px-4 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition-colors"
+            >
+              <Smartphone className="w-4 h-4 inline mr-2" />
+              Open System Notification Settings
+            </button>
+          </div>
+        )}
+
         {/* Push Notification Master Toggle */}
         <div className="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/20">
           <div className="flex items-center justify-between">
