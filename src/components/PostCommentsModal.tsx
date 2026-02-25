@@ -306,7 +306,7 @@ export const PostCommentsModal = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-4 md:items-center md:pt-0"
+        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
         onClick={onClose}
       >
         <motion.div
@@ -314,7 +314,7 @@ export const PostCommentsModal = ({
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.85, opacity: 0, y: 30 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="w-[calc(100%-2rem)] max-w-sm rounded-3xl bg-card border border-border shadow-2xl max-h-[85vh] overflow-hidden flex flex-col"
+          className="w-full max-w-sm rounded-3xl bg-card border border-border shadow-2xl max-h-[85vh] overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Drag handle */}

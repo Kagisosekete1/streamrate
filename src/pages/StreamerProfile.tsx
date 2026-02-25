@@ -17,6 +17,8 @@ import { SocialLinks } from "@/components/SocialLinks";
 import { StreamEmbed } from "@/components/StreamEmbed";
 import { VerificationBadge } from "@/utils/verificationBadge";
 import { FollowersModal } from "@/components/FollowersModal";
+import { ProfileContentGrid } from "@/components/ProfileContentGrid";
+import { ReelViewer } from "@/components/ReelViewer";
 
 interface StreamerData {
   id: string;
@@ -72,6 +74,11 @@ const StreamerProfile = () => {
   const [followersModalType, setFollowersModalType] = useState<"followers" | "following">("followers");
   const [isPrivateProfile, setIsPrivateProfile] = useState(false);
   const [canViewProfile, setCanViewProfile] = useState(true);
+  const [profilePosts, setProfilePosts] = useState<any[]>([]);
+  const [profileReels, setProfileReels] = useState<any[]>([]);
+  const [profileActiveTab, setProfileActiveTab] = useState<"posts" | "photos" | "reels" | "saved">("posts");
+  const [showReelViewer, setShowReelViewer] = useState(false);
+  const [reelViewerIndex, setReelViewerIndex] = useState(0);
 
   useEffect(() => {
     if (id) {
@@ -216,6 +223,41 @@ const StreamerProfile = () => {
     }
 
     setLoading(false);
+
+    // Fetch posts for this profile
+    const { data: postsData } = await supabase
+      .from("posts")
+      .select("id, content, image_url, created_at")
+      .eq("user_id", id)
+      .order("created_at", { ascending: false });
+
+    const postsWithCounts = await Promise.all(
+      (postsData || []).map(async (post) => {
+        const { count: likes } = await supabase
+          .from("post_likes")
+          .select("*", { count: "exact", head: true })
+          .eq("post_id", post.id);
+        const { count: comments } = await supabase
+          .from("comments")
+          .select("*", { count: "exact", head: true })
+          .eq("post_id", post.id);
+        return { ...post, likes_count: likes || 0, comments_count: comments || 0 };
+      })
+    );
+    setProfilePosts(postsWithCounts);
+
+    // Fetch reels for this profile
+    const { data: reelsData } = await supabase
+      .from("reels")
+      .select("*")
+      .eq("user_id", id)
+      .order("created_at", { ascending: false });
+
+    const enrichedReels = (reelsData || []).map(reel => ({
+      ...reel,
+      user: { username: profileData?.username, avatar_url: profileData?.avatar_url }
+    }));
+    setProfileReels(enrichedReels);
   };
 
   const handleFollow = async () => {
@@ -610,6 +652,22 @@ const StreamerProfile = () => {
           </div>
         )}
       </section>
+
+          {/* Profile Content Grid - Posts/Photos/Reels */}
+          <ProfileContentGrid
+            posts={profilePosts}
+            savedPosts={[]}
+            reels={profileReels}
+            activeTab={profileActiveTab}
+            onTabChange={setProfileActiveTab}
+            onReelClick={(index) => { setReelViewerIndex(index); setShowReelViewer(true); }}
+            onPostDelete={() => {}}
+            onReelDelete={() => {}}
+            isOwnProfile={user?.id === id}
+            authorName={streamer?.username || streamer?.full_name || "User"}
+            authorAvatar={streamer?.avatar_url || ""}
+            authorId={id}
+          />
         </>
       )}
 
@@ -637,6 +695,14 @@ const StreamerProfile = () => {
           type={followersModalType}
         />
       )}
+
+      {/* Reel Viewer */}
+      <ReelViewer
+        isOpen={showReelViewer}
+        onClose={() => setShowReelViewer(false)}
+        reels={profileReels}
+        initialIndex={reelViewerIndex}
+      />
 
       <BottomNav />
     </div>
