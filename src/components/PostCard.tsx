@@ -422,7 +422,7 @@ export const PostCard = ({
         {!isPrivate && (
           <button 
             onClick={handleCommentClick}
-            className="text-sm text-muted-foreground mt-2 mb-2"
+            className="text-sm text-muted-foreground mt-3 mb-3"
           >
             {comments > 0 ? `View all ${comments} comments` : "Add a comment..."}
           </button>
