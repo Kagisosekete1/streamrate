@@ -122,20 +122,6 @@ const NotificationsModal = ({
           setPushEnabled(true);
           localStorage.setItem("median_push_enabled", "true");
           toast({ title: "Push notifications enabled!" });
-
-          // If system notifications are still blocked, guide user
-          setTimeout(async () => {
-            try {
-              const info = await median?.onesignal?.onesignalInfo?.();
-              if (info && !info.subscribed) {
-                toast({
-                  title: "System notifications blocked",
-                  description: "Go to your phone's Settings → Apps → StreamRate → Notifications and enable them.",
-                  variant: "destructive",
-                });
-              }
-            } catch {}
-          }, 2000);
         } else {
           try {
             await median?.onesignal?.setSubscription?.(false);
