@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { LinkPreview } from "@/components/LinkPreview";
 import { MentionInput } from "@/components/MentionInput";
+import { HashtagText } from "@/components/HashtagText";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -435,7 +436,7 @@ export const CommentSection = ({ postId, postOwnerId, highlightCommentId }: Comm
               ) : (
                 <>
                   <p className="text-foreground/80 text-sm mt-1">
-                    {renderContentWithMentions(comment.content)}
+                    <HashtagText text={comment.content} />
                   </p>
                   {(() => {
                     const urlMatch = comment.content.match(/https?:\/\/[^\s]+/);
