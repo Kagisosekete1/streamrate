@@ -82,7 +82,7 @@ export const LikesModal = ({ isOpen, onClose, postId, type }: LikesModalProps) =
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center"
         onClick={onClose}
       >
         <motion.div
@@ -90,7 +90,7 @@ export const LikesModal = ({ isOpen, onClose, postId, type }: LikesModalProps) =
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="absolute left-4 right-4 top-1/2 -translate-y-1/2 mx-auto max-w-sm rounded-3xl bg-card border border-border shadow-2xl max-h-[70vh] overflow-hidden"
+          className="w-[calc(100%-2rem)] max-w-sm rounded-3xl bg-card border border-border shadow-2xl max-h-[80vh] overflow-hidden flex flex-col mx-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Drag handle */}
@@ -106,7 +106,7 @@ export const LikesModal = ({ isOpen, onClose, postId, type }: LikesModalProps) =
           </div>
 
           {/* Users List */}
-          <div className="overflow-y-auto max-h-[50vh] p-2">
+          <div className="flex-1 overflow-y-auto p-2">
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
