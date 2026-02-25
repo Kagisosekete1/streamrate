@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, X } from "lucide-react";
-import { promptForPushNotifications, getOneSignalPermission } from "@/utils/onesignal";
 
 export const PushNotificationPrompt = () => {
   const [showPrompt, setShowPrompt] = useState(false);
@@ -16,29 +15,55 @@ export const PushNotificationPrompt = () => {
       return;
     }
 
-    const granted = getOneSignalPermission();
-    setPermissionGranted(!!granted);
-
-    if (!granted) {
-      const timer = setTimeout(() => {
-        setShowPrompt(true);
-      }, 3000);
-      return () => clearTimeout(timer);
+    // Check if notifications are already granted
+    if ("Notification" in window && Notification.permission === "granted") {
+      setPermissionGranted(true);
+      return;
     }
+
+    const timer = setTimeout(() => {
+      setShowPrompt(true);
+    }, 3000);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleEnable = async (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (enabling) return;
     setEnabling(true);
+
     try {
-      const granted = await promptForPushNotifications();
-      if (granted) {
-        setPermissionGranted(true);
-        setShowPrompt(false);
+      // Use the native browser Notification API directly
+      if ("Notification" in window) {
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+          setPermissionGranted(true);
+          setShowPrompt(false);
+          localStorage.setItem("push_prompt_dismissed", "true");
+
+          // Try to register OneSignal via the global deferred queue
+          try {
+            const OneSignalDeferred = (window as any).OneSignalDeferred;
+            if (OneSignalDeferred) {
+              OneSignalDeferred.push(async (OneSignal: any) => {
+                await OneSignal.Notifications.requestPermission();
+              });
+            }
+          } catch {
+            // OneSignal not available, that's fine - browser notifications still work
+          }
+          return;
+        }
       }
+
+      // If permission denied or not supported, dismiss gracefully
+      setShowPrompt(false);
+      localStorage.setItem("push_prompt_dismissed", "true");
     } catch (err) {
       console.error("Push notification enable error:", err);
+      // Don't get stuck - dismiss on error
+      setShowPrompt(false);
+      localStorage.setItem("push_prompt_dismissed", "true");
     } finally {
       setEnabling(false);
     }
