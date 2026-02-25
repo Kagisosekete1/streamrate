@@ -26,6 +26,18 @@ export const initOneSignal = async () => {
 
 export const setOneSignalExternalUserId = async (userId: string) => {
   try {
+    // For Median.co native apps, use the Median bridge
+    const median = (window as any).median || (window as any).gonative;
+    if (median?.onesignal) {
+      try {
+        await median.onesignal.externalUserId?.set?.(userId);
+        console.log("Median OneSignal externalUserId set:", userId);
+      } catch (e) {
+        console.log("Median externalUserId fallback:", e);
+      }
+      return;
+    }
+    // For web/PWA, use the OneSignal Web SDK
     await OneSignal.login(userId);
     console.log("OneSignal external user ID set:", userId);
   } catch (error) {
