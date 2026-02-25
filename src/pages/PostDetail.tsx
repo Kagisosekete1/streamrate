@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Heart } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -25,6 +25,8 @@ interface Post {
 
 const PostDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const highlightCommentId = searchParams.get("commentId");
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -49,7 +51,6 @@ const PostDetail = () => {
       return;
     }
 
-    // Fetch profile separately
     const { data: profileData } = await supabase
       .from("profiles")
       .select("full_name, avatar_url")
@@ -61,7 +62,6 @@ const PostDetail = () => {
       profiles: profileData,
     });
 
-    // Get counts
     const { count: likes } = await supabase
       .from("post_likes")
       .select("*", { count: "exact", head: true })
@@ -75,7 +75,6 @@ const PostDetail = () => {
     setLikesCount(likes || 0);
     setCommentsCount(comments || 0);
 
-    // Check if user liked
     if (user) {
       const { data: likeData } = await supabase
         .from("post_likes")
@@ -98,22 +97,14 @@ const PostDetail = () => {
       toast({ title: "Please sign in to like", variant: "destructive" });
       return;
     }
-
     if (!id) return;
 
     if (isLiked) {
-      await supabase
-        .from("post_likes")
-        .delete()
-        .eq("post_id", id)
-        .eq("user_id", user.id);
+      await supabase.from("post_likes").delete().eq("post_id", id).eq("user_id", user.id);
       setIsLiked(false);
       setLikesCount((prev) => prev - 1);
     } else {
-      await supabase.from("post_likes").insert({
-        post_id: id,
-        user_id: user.id,
-      });
+      await supabase.from("post_likes").insert({ post_id: id, user_id: user.id });
       setIsLiked(true);
       setLikesCount((prev) => prev + 1);
     }
@@ -137,7 +128,6 @@ const PostDetail = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border/50">
         <div className="flex items-center gap-4 px-4 py-4">
           <button onClick={() => navigate(-1)}>
@@ -148,7 +138,6 @@ const PostDetail = () => {
       </header>
 
       <main className="px-4 py-4">
-        {/* Post content */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -173,54 +162,26 @@ const PostDetail = () => {
           <p className="text-foreground/90 leading-relaxed mb-4">{post.content}</p>
 
           {post.image_url && (
-            <img
-              src={post.image_url}
-              alt="Post image"
-              className="w-full rounded-lg mb-4"
-            />
+            <img src={post.image_url} alt="Post image" className="w-full rounded-lg mb-4" />
           )}
 
-          {/* Actions */}
           <div className="flex items-center gap-6 pt-4 border-t border-border/30">
-            <button
-              onClick={handleLike}
-              className="flex items-center gap-2 group transition-all duration-200"
-            >
-              <motion.div
-                whileTap={{ scale: 1.3 }}
-                transition={{ type: "spring", stiffness: 500 }}
-              >
-                <Heart
-                  className={cn(
-                    "w-6 h-6 transition-colors",
-                    isLiked
-                      ? "fill-accent text-accent"
-                      : "text-muted-foreground group-hover:text-accent"
-                  )}
-                />
+            <button onClick={handleLike} className="flex items-center gap-2 group transition-all duration-200">
+              <motion.div whileTap={{ scale: 1.3 }} transition={{ type: "spring", stiffness: 500 }}>
+                <Heart className={cn("w-6 h-6 transition-colors", isLiked ? "fill-accent text-accent" : "text-muted-foreground group-hover:text-accent")} />
               </motion.div>
-              <span
-                className={cn(
-                  "text-sm font-medium",
-                  isLiked ? "text-accent" : "text-muted-foreground"
-                )}
-              >
-                {likesCount}
-              </span>
+              <span className={cn("text-sm font-medium", isLiked ? "text-accent" : "text-muted-foreground")}>{likesCount}</span>
             </button>
-
             <div className="flex items-center gap-2 text-muted-foreground">
               <span className="text-sm font-medium">{commentsCount} comments</span>
             </div>
-
             <ShareMenu postId={post.id} title={post.content.slice(0, 50)} />
           </div>
         </motion.div>
 
-        {/* Comments section */}
         <div className="mt-6">
           <h2 className="text-lg font-semibold text-foreground mb-4">Comments</h2>
-          <CommentSection postId={post.id} postOwnerId={post.user_id} />
+          <CommentSection postId={post.id} postOwnerId={post.user_id} highlightCommentId={highlightCommentId} />
         </div>
       </main>
 

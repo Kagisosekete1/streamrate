@@ -201,6 +201,7 @@ export type Database = {
       }
       notifications: {
         Row: {
+          comment_id: string | null
           created_at: string
           from_user_id: string | null
           id: string
@@ -212,6 +213,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          comment_id?: string | null
           created_at?: string
           from_user_id?: string | null
           id?: string
@@ -223,6 +225,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          comment_id?: string | null
           created_at?: string
           from_user_id?: string | null
           id?: string
