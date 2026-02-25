@@ -16,6 +16,7 @@ import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 import { NotificationBell } from "@/components/NotificationBell";
+import { useOnAppRefresh } from "@/hooks/useAppVisibility";
 
 interface Streamer {
   id: string;
@@ -110,9 +111,52 @@ const Home = () => {
     isLoading: loadingMore,
   });
 
+  // Try to restore cached feed on mount, only fetch fresh if no cache
   useEffect(() => {
+    const cached = sessionStorage.getItem('home-feed-cache');
+    if (cached) {
+      try {
+        const { posts: cachedPosts, streamers, timestamp } = JSON.parse(cached);
+        const age = Date.now() - timestamp;
+        // Use cache if less than 30 min old
+        if (age < 30 * 60 * 1000 && cachedPosts?.length > 0) {
+          setPosts(cachedPosts.map((p: any) => ({
+            ...p,
+            // Dates come back as strings from JSON
+          })));
+          setTrendingStreamers(streamers || []);
+          setHasMorePosts(cachedPosts.length >= POSTS_PER_PAGE);
+          if (cachedPosts.length > 0) {
+            latestPostId.current = cachedPosts[0].id;
+          }
+          setLoading(false);
+          return;
+        }
+      } catch (e) {
+        // Invalid cache, proceed with fresh fetch
+      }
+    }
     fetchData();
+  }, [user]);
 
+  // Cache posts whenever they change
+  useEffect(() => {
+    if (posts.length > 0) {
+      sessionStorage.setItem('home-feed-cache', JSON.stringify({
+        posts,
+        streamers: trendingStreamers,
+        timestamp: Date.now(),
+      }));
+    }
+  }, [posts, trendingStreamers]);
+
+  // Listen for the 30-min-away refresh event
+  useOnAppRefresh(useCallback(() => {
+    fetchData();
+  }, [user]));
+
+  // Realtime subscriptions (only for new post banners & profile updates)
+  useEffect(() => {
     const postsChannel = supabase
       .channel("home-posts-realtime")
       .on(
@@ -142,7 +186,6 @@ const Home = () => {
         },
         () => {
           fetchTrendingStreamers();
-          fetchPosts();
         }
       )
       .subscribe();
