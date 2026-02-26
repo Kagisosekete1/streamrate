@@ -75,60 +75,37 @@ const NotificationsModal = ({
     }
   }, []);
 
+  // Helper to run a bridge call with a timeout so it never hangs forever
+  const withTimeout = (promise: Promise<any> | undefined, ms = 3000) => {
+    if (!promise) return Promise.resolve();
+    return Promise.race([
+      promise,
+      new Promise((resolve) => setTimeout(resolve, ms)),
+    ]);
+  };
+
   const handleTogglePush = async (checked: boolean) => {
     setLoading(true);
     try {
       if (isMedianApp()) {
         const median = (window as any).median || (window as any).gonative;
+
+        // Update UI and localStorage FIRST so it's never stuck
+        setPushEnabled(checked);
+        localStorage.setItem("median_push_enabled", checked ? "true" : "false");
+
         if (checked) {
-          // Step 1: Request Android system-level notification permission (Android 13+)
-          // This triggers the native OS permission dialog
-          try {
-            await median?.run?.deviceInfo?.();
-          } catch {}
-          
-          // Step 2: Prompt OneSignal permission (triggers native permission dialog if not granted)
-          try {
-            await median?.onesignal?.promptForPermission?.();
-          } catch (e) {
-            console.log("promptForPermission:", e);
-          }
+          // Fire bridge calls with timeouts so they can't hang
+          try { await withTimeout(median?.onesignal?.promptForPermission?.()); } catch {}
+          try { await withTimeout(median?.onesignal?.setSubscription?.(true)); } catch {}
 
-          // Step 3: Enable OneSignal subscription
-          try {
-            await median?.onesignal?.setSubscription?.(true);
-          } catch (e) {
-            console.log("setSubscription:", e);
-          }
-
-          // Step 4: Set external user ID so OneSignal can target this user
           if (userId) {
-            try {
-              // Median.co bridge method to link OneSignal player to our user
-              await median?.onesignal?.externalUserId?.set?.(userId);
-              console.log("OneSignal externalUserId set:", userId);
-            } catch (e) {
-              console.log("externalUserId set:", e);
-            }
-            // Also try the tags approach as fallback
-            try {
-              await median?.onesignal?.tag?.set?.({ key: "user_id", value: userId });
-            } catch (e) {
-              console.log("tag set:", e);
-            }
+            try { await withTimeout(median?.onesignal?.externalUserId?.set?.(userId)); } catch {}
+            try { await withTimeout(median?.onesignal?.tag?.set?.({ key: "user_id", value: userId })); } catch {}
           }
-
-          setPushEnabled(true);
-          localStorage.setItem("median_push_enabled", "true");
           toast({ title: "Push notifications enabled!" });
         } else {
-          try {
-            await median?.onesignal?.setSubscription?.(false);
-          } catch (e) {
-            console.log("setSubscription off:", e);
-          }
-          setPushEnabled(false);
-          localStorage.setItem("median_push_enabled", "false");
+          try { await withTimeout(median?.onesignal?.setSubscription?.(false)); } catch {}
           toast({ title: "Push notifications disabled" });
         }
       } else if ("Notification" in window) {
