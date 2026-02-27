@@ -130,6 +130,45 @@ export type Database = {
           },
         ]
       }
+      connected_platforms: {
+        Row: {
+          access_token: string | null
+          connected_at: string
+          id: string
+          is_active: boolean
+          last_synced_at: string | null
+          platform: string
+          platform_user_id: string | null
+          platform_username: string | null
+          refresh_token: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          connected_at?: string
+          id?: string
+          is_active?: boolean
+          last_synced_at?: string | null
+          platform: string
+          platform_user_id?: string | null
+          platform_username?: string | null
+          refresh_token?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          connected_at?: string
+          id?: string
+          is_active?: boolean
+          last_synced_at?: string | null
+          platform?: string
+          platform_user_id?: string | null
+          platform_username?: string | null
+          refresh_token?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       draft_posts: {
         Row: {
           content: string | null
@@ -752,6 +791,57 @@ export type Database = {
           price?: number
           seller_id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      streaming_analytics: {
+        Row: {
+          chat_messages_count: number | null
+          engagement_rate: number | null
+          follower_count: number | null
+          id: string
+          is_live: boolean | null
+          new_followers: number | null
+          peak_viewers: number | null
+          platform: string
+          recorded_at: string
+          stream_duration_minutes: number | null
+          stream_title: string | null
+          subscriber_count: number | null
+          user_id: string
+          viewer_count: number | null
+        }
+        Insert: {
+          chat_messages_count?: number | null
+          engagement_rate?: number | null
+          follower_count?: number | null
+          id?: string
+          is_live?: boolean | null
+          new_followers?: number | null
+          peak_viewers?: number | null
+          platform: string
+          recorded_at?: string
+          stream_duration_minutes?: number | null
+          stream_title?: string | null
+          subscriber_count?: number | null
+          user_id: string
+          viewer_count?: number | null
+        }
+        Update: {
+          chat_messages_count?: number | null
+          engagement_rate?: number | null
+          follower_count?: number | null
+          id?: string
+          is_live?: boolean | null
+          new_followers?: number | null
+          peak_viewers?: number | null
+          platform?: string
+          recorded_at?: string
+          stream_duration_minutes?: number | null
+          stream_title?: string | null
+          subscriber_count?: number | null
+          user_id?: string
+          viewer_count?: number | null
         }
         Relationships: []
       }

@@ -15,6 +15,7 @@ import {
   LogOut,
   Radio,
   ShoppingBag,
+  BarChart3,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,7 @@ const mainNavItems: NavItem[] = [
 const bottomNavItems: NavItem[] = [
   { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
   { icon: ShoppingBag, label: "Market", path: "/store" },
+  { icon: BarChart3, label: "Analytics", path: "/streaming-analytics" },
   { icon: SlidersHorizontal, label: "Settings", path: "/settings" },
 ];
 
