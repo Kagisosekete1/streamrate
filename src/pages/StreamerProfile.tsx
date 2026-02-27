@@ -394,7 +394,7 @@ const StreamerProfile = () => {
             <div className="flex items-center gap-2 mt-4">
               <h1 className="text-2xl font-bold text-foreground inline-flex items-center gap-1">
                 {streamer.username || streamer.full_name || "Anonymous"}
-                <VerificationBadge email={streamer.email} className="w-5 h-5" />
+                <VerificationBadge email={streamer.email} signupNumber={streamer.signup_number} className="w-5 h-5" />
               </h1>
               {streamer.signup_number && (
                 <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-xs font-bold">

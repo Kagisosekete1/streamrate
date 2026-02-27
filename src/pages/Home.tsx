@@ -37,6 +37,7 @@ interface Post {
     username: string | null;
     avatar_url: string | null;
     email: string | null;
+    signup_number: number | null;
   } | null;
   likes_count: number;
   comments_count: number;
@@ -285,7 +286,7 @@ const Home = () => {
     const userIds = [...new Set(filteredPosts.map((p) => p.user_id))];
     const { data: profilesData } = await supabase
       .from("profiles")
-      .select("id, username, avatar_url, email")
+      .select("id, username, avatar_url, email, signup_number")
       .in("id", userIds);
 
     const profilesMap = new Map((profilesData || []).map((p) => [p.id, p]));
@@ -327,7 +328,7 @@ const Home = () => {
         return {
           ...post,
           profiles: profile
-            ? { username: profile.username, avatar_url: profile.avatar_url, email: profile.email }
+            ? { username: profile.username, avatar_url: profile.avatar_url, email: profile.email, signup_number: profile.signup_number }
             : null,
           likes_count: likesCount || 0,
           comments_count: commentsCount || 0,
@@ -410,6 +411,7 @@ const Home = () => {
                   isBookmarked={post.is_bookmarked}
                   isPrivate={post.is_private}
                   streamerEmail={post.profiles?.email}
+                  signupNumber={post.profiles?.signup_number}
                   index={index}
                   onDelete={() => setPosts((prev) => prev.filter((p) => p.id !== post.id))}
                 />

@@ -391,6 +391,7 @@ const Store = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sellerPaid, setSellerPaid] = useState(false);
   const [checkingSubscription, setCheckingSubscription] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchProducts();
@@ -505,7 +506,14 @@ const Store = () => {
     setProducts((prev) => prev.filter((p) => p.id !== productId));
   };
 
-  const filteredProducts = activeCategory === "All" ? products : products.filter((p) => p.category === activeCategory);
+  const filteredProducts = (() => {
+    let filtered = activeCategory === "All" ? products : products.filter((p) => p.category === activeCategory);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter((p) => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+    }
+    return filtered;
+  })();
 
   // Seller's own products
   const myProducts = isSeller ? products.filter((p) => p.seller_id === user?.id) : [];
@@ -539,6 +547,16 @@ const Store = () => {
         </header>
 
         <main className="px-4 py-4">
+          {/* Search Bar */}
+          <div className="mb-4">
+            <Input
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full"
+            />
+          </div>
+
           {/* Seller's own listings section */}
           {isSeller && myProducts.length > 0 && (
             <div className="mb-6">
