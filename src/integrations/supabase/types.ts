@@ -718,6 +718,7 @@ export type Database = {
           external_url: string | null
           id: string
           image_url: string
+          images: string[] | null
           is_active: boolean
           name: string
           price: number
@@ -731,6 +732,7 @@ export type Database = {
           external_url?: string | null
           id?: string
           image_url?: string
+          images?: string[] | null
           is_active?: boolean
           name: string
           price?: number
@@ -744,6 +746,7 @@ export type Database = {
           external_url?: string | null
           id?: string
           image_url?: string
+          images?: string[] | null
           is_active?: boolean
           name?: string
           price?: number

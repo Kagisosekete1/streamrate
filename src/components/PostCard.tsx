@@ -90,6 +90,7 @@ interface PostCardProps {
   isBookmarked?: boolean;
   isPrivate?: boolean;
   streamerEmail?: string | null;
+  signupNumber?: number | null;
   index?: number;
   onDelete?: () => void;
   onUpdate?: () => void;
@@ -110,6 +111,7 @@ export const PostCard = ({
   isBookmarked: initialIsBookmarked = false,
   isPrivate = false,
   streamerEmail,
+  signupNumber,
   index = 0,
   onDelete,
   onUpdate,
@@ -315,7 +317,7 @@ export const PostCard = ({
               className="font-semibold text-sm text-foreground hover:text-muted-foreground inline-flex items-center gap-1"
             >
               {streamerName}
-              <VerificationBadge email={streamerEmail} />
+              <VerificationBadge email={streamerEmail} signupNumber={signupNumber} />
             </Link>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span>{formatDistanceToNow(createdAt, { addSuffix: false })}</span>

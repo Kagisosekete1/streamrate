@@ -748,7 +748,7 @@ const Profile = () => {
             <div className="flex items-center gap-2 mt-4">
               <h1 className="text-xl font-bold text-foreground inline-flex items-center gap-1">
                 {profile.username || "Anonymous"}
-                <VerificationBadge email={profile.email} className="w-5 h-5" />
+                <VerificationBadge email={profile.email} signupNumber={(profile as any).signup_number} className="w-5 h-5" />
               </h1>
               {(profile as any).signup_number && (
                 <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-xs font-bold">

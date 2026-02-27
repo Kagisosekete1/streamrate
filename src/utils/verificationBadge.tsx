@@ -1,37 +1,38 @@
 import React from "react";
 
-// Verification badge configuration
-const VERIFIED_ACCOUNTS: Record<string, "red" | "blue" | "gold"> = {
+// Manual verification overrides (red/blue only)
+const VERIFIED_ACCOUNTS: Record<string, "red" | "blue"> = {
   "kgsinnocent@gmail.com": "red",
   "kagisosekete5@gmail.com": "blue",
-  // Gold verified accounts
-  "sheldzsteyn94@gmail.com": "gold",
-  "leef4680@gmail.com": "gold",
-  "paranigelactivity@gmail.com": "gold",
-  "tjduo082@gmail.com": "gold",
-  "valorain420@gmail.com": "gold",
-  "leandidplsss78@gmail.com": "gold",
-  "lelolego67@gmail.com": "gold",
-  "thegamingyard6208@gmail.com": "gold",
-  "semogrouppayments@gmail.com": "gold",
-  "parrymichaeljungalism@gmail.com": "gold",
-  "saikosairen@gmail.com": "gold",
-  "mclyleward@gmail.com": "gold",
-  "kagisosekete4@gmail.com": "gold",
-  "sitholekuhle85@gmail.com": "gold",
-  "seketefilmstv@gmail.com": "gold",
-  "themorgueza@gmail.com": "gold",
-  "oxydizeza@gmail.com": "gold",
-  "phenyonyandex@gmail.com": "gold",
 };
 
-export const getVerificationBadge = (email: string | null | undefined): "red" | "blue" | "gold" | null => {
+// Gold verification is automatic for the first 100 signups
+export const getVerificationBadge = (
+  email: string | null | undefined,
+  signupNumber?: number | null
+): "red" | "blue" | "gold" | null => {
   if (!email) return null;
-  return VERIFIED_ACCOUNTS[email.toLowerCase()] || null;
+  
+  // Check manual overrides first
+  const manual = VERIFIED_ACCOUNTS[email.toLowerCase()];
+  if (manual) return manual;
+  
+  // Auto-gold for first 100 signups
+  if (signupNumber && signupNumber <= 100) return "gold";
+  
+  return null;
 };
 
-export const VerificationBadge = ({ email, className = "w-4 h-4" }: { email: string | null | undefined; className?: string }) => {
-  const badge = getVerificationBadge(email);
+export const VerificationBadge = ({
+  email,
+  signupNumber,
+  className = "w-4 h-4",
+}: {
+  email: string | null | undefined;
+  signupNumber?: number | null;
+  className?: string;
+}) => {
+  const badge = getVerificationBadge(email, signupNumber);
   if (!badge) return null;
 
   const colorMap = {
