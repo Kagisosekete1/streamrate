@@ -27,6 +27,7 @@ import About from "./pages/About";
 import Install from "./pages/Install";
 import Live from "./pages/Live";
 import Store from "./pages/Store";
+import StreamingAnalytics from "./pages/StreamingAnalytics";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,6 +67,7 @@ function AppContent() {
           <Route path="/install" element={<Install />} />
           <Route path="/live" element={<Live />} />
           <Route path="/store" element={<Store />} />
+          <Route path="/streaming-analytics" element={<StreamingAnalytics />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <CookieConsent />

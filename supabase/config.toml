@@ -3,3 +3,5 @@ project_id = "eqgouykzakjdmgmbnsca"
 [functions]
   [functions.auth-email-hook]
     verify_jwt = false
+  [functions.sync-streaming-analytics]
+    verify_jwt = false
