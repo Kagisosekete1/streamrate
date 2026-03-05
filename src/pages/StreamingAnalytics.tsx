@@ -81,8 +81,18 @@ const StreamingAnalytics = () => {
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
-  }, [user]);
+    // Auto-sync every 5 minutes
+    const autoSyncInterval = setInterval(() => {
+      platforms.forEach(p => {
+        if (p.is_active) syncPlatform(p.platform);
+      });
+    }, 5 * 60 * 1000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(autoSyncInterval);
+    };
+  }, [user, platforms]);
 
   const fetchData = async () => {
     if (!user) return;

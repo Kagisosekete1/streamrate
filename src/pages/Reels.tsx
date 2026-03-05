@@ -49,7 +49,9 @@ const Reels = () => {
       }
 
       if (reelsData && reelsData.length > 0) {
-        const initialReels = reelsData.map(reel => ({
+        // Shuffle reels for random playback order
+        const shuffled = [...reelsData].sort(() => Math.random() - 0.5);
+        const initialReels = shuffled.map(reel => ({
           ...reel,
           user: { username: null, avatar_url: null }
         }));
@@ -66,7 +68,7 @@ const Reels = () => {
 
         if (profiles) {
           const profileMap = Object.fromEntries(profiles.map(p => [p.id, p]));
-          setReels(reelsData.map(reel => ({
+          setReels(prev => prev.map(reel => ({
             ...reel,
             user: profileMap[reel.user_id]
               ? { username: profileMap[reel.user_id].username, avatar_url: profileMap[reel.user_id].avatar_url }
