@@ -180,8 +180,6 @@ const Notifications = () => {
         return <Bell className="w-4 h-4 text-blue-400" />;
       case "profile_view":
         return <Eye className="w-4 h-4 text-cyan-400" />;
-      case "reel_view":
-        return <Eye className="w-4 h-4 text-pink-400" />;
       default:
         return <Bell className="w-4 h-4 text-primary" />;
     }
