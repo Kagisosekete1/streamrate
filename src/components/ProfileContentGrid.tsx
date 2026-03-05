@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { HashtagText } from "./HashtagText";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PhotoViewerModal } from "./PhotoViewerModal";
+import { ReelThumbnail } from "./ReelThumbnail";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -241,22 +242,8 @@ export const ProfileContentGrid = ({
                     whileHover={{ scale: 1.02 }}
                     className="aspect-[9/16] relative group cursor-pointer rounded-xl sm:rounded-2xl overflow-hidden bg-secondary/50"
                   >
-                    <video
-                      src={reel.video_url}
-                      className="w-full h-full object-cover [&::-webkit-media-controls]:hidden [&::-webkit-media-controls-enclosure]:hidden [&::-webkit-media-controls-panel]:hidden [&::-webkit-media-controls-play-button]:hidden [&::-webkit-media-controls-start-playback-button]:!hidden [&::-webkit-media-controls-overlay-play-button]:hidden"
-                      muted
-                      loop
-                      playsInline
-                      preload="metadata"
-                      controls={false}
-                      disablePictureInPicture
-                      // @ts-ignore - webkit specific
-                      webkit-playsinline="true"
-                      onMouseEnter={(e) => e.currentTarget.play()}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.pause();
-                        e.currentTarget.currentTime = 0;
-                      }}
+                    <ReelThumbnail
+                      videoUrl={reel.video_url}
                       onClick={() => onReelClick(index)}
                     />
                     
