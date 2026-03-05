@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { HashtagText } from "./HashtagText";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PhotoViewerModal } from "./PhotoViewerModal";
+import { ReelThumbnail } from "./ReelThumbnail";
 import {
   AlertDialog,
   AlertDialogAction,
