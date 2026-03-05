@@ -369,14 +369,9 @@ const Hashtags = () => {
                   className="aspect-[9/16] cursor-pointer relative group rounded-lg overflow-hidden"
                   onClick={() => openReel(index)}
                 >
-                  <video
-                    src={reel.video_url}
-                    className="w-full h-full object-cover"
-                    muted
-                    loop
-                    playsInline
-                    onMouseEnter={(e) => e.currentTarget.play()}
-                    onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+                  <ReelThumbnail
+                    videoUrl={reel.video_url}
+                    onClick={() => openReel(index)}
                   />
                   <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <Play className="w-8 h-8 text-white fill-white" />
