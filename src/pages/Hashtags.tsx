@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ReelViewer } from "@/components/ReelViewer";
 import { Input } from "@/components/ui/input";
+import { ReelThumbnail } from "@/components/ReelThumbnail";
 
 interface Hashtag {
   id: string;
