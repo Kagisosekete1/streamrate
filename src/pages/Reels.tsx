@@ -68,7 +68,7 @@ const Reels = () => {
 
         if (profiles) {
           const profileMap = Object.fromEntries(profiles.map(p => [p.id, p]));
-          setReels(reelsData.map(reel => ({
+          setReels(prev => prev.map(reel => ({
             ...reel,
             user: profileMap[reel.user_id]
               ? { username: profileMap[reel.user_id].username, avatar_url: profileMap[reel.user_id].avatar_url }
