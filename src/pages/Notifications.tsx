@@ -149,8 +149,6 @@ const Notifications = () => {
       navigate(`/reels?reelId=${notification.reel_id}`);
     } else if (notification.type === "profile_view" && notification.from_user_id) {
       navigate(`/streamer/${notification.from_user_id}`);
-    } else if (notification.type === "reel_view" && notification.reel_id) {
-      navigate(`/reels?reelId=${notification.reel_id}`);
     } else if (notification.type === "new_follower") {
       setShowFollowersModal(true);
     } else if (notification.from_user_id) {
