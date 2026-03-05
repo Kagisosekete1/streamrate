@@ -149,8 +149,6 @@ const Notifications = () => {
       navigate(`/reels?reelId=${notification.reel_id}`);
     } else if (notification.type === "profile_view" && notification.from_user_id) {
       navigate(`/streamer/${notification.from_user_id}`);
-    } else if (notification.type === "reel_view" && notification.reel_id) {
-      navigate(`/reels?reelId=${notification.reel_id}`);
     } else if (notification.type === "new_follower") {
       setShowFollowersModal(true);
     } else if (notification.from_user_id) {
@@ -182,8 +180,6 @@ const Notifications = () => {
         return <Bell className="w-4 h-4 text-blue-400" />;
       case "profile_view":
         return <Eye className="w-4 h-4 text-cyan-400" />;
-      case "reel_view":
-        return <Eye className="w-4 h-4 text-pink-400" />;
       default:
         return <Bell className="w-4 h-4 text-primary" />;
     }
