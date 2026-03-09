@@ -137,23 +137,48 @@ const Notifications = () => {
       markAsRead(notification.id);
     }
 
+    // Profile view → go to viewer's profile
+    if (notification.type === "profile_view" && notification.from_user_id) {
+      navigate(`/streamer/${notification.from_user_id}`);
+      return;
+    }
+
+    // Reel interactions → open reel
+    if (notification.reel_id && (notification.type === "reel_like" || notification.type === "reel_comment" || notification.type === "mention")) {
+      navigate(`/reels?reelId=${notification.reel_id}`);
+      return;
+    }
+
     // Comment/mention notifications deep-link to the specific comment
     if (notification.post_id && (notification.type === "comment" || notification.type === "comment_reply" || notification.type === "comment_like" || notification.type === "mention")) {
       const commentParam = notification.comment_id ? `?commentId=${notification.comment_id}` : "";
       navigate(`/post/${notification.post_id}${commentParam}`);
-    } else if (notification.type === "post_like" && notification.post_id) {
+      return;
+    }
+
+    if (notification.type === "post_like" && notification.post_id) {
       navigate(`/post/${notification.post_id}`);
-    } else if (notification.post_id && notification.type === "new_post") {
+      return;
+    }
+
+    if (notification.post_id && notification.type === "new_post") {
       navigate(`/post/${notification.post_id}`);
-    } else if (notification.reel_id && (notification.type === "reel_like" || notification.type === "reel_comment" || notification.type === "mention")) {
-      navigate(`/reels?reelId=${notification.reel_id}`);
-    } else if (notification.type === "profile_view" && notification.from_user_id) {
-      navigate(`/streamer/${notification.from_user_id}`);
-    } else if (notification.type === "new_follower") {
+      return;
+    }
+
+    if (notification.type === "new_follower") {
       setShowFollowersModal(true);
-    } else if (notification.from_user_id) {
+      return;
+    }
+
+    // Fallback: if there's a from_user_id, go to their profile
+    if (notification.from_user_id) {
       navigate(`/streamer/${notification.from_user_id}`);
-    } else if (notification.post_id) {
+      return;
+    }
+
+    // Fallback: if there's a post_id, go to the post
+    if (notification.post_id) {
       navigate(`/post/${notification.post_id}`);
     }
   };
