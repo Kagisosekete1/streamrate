@@ -212,7 +212,9 @@ const Notifications = () => {
 
   // Group new_follower notifications by day
   const groupedNotifications = (() => {
+    // Filter out reel_view notifications entirely
     const filtered = notifications.filter((n) => {
+      if (n.type === "reel_view") return false;
       if (activeFilter === "all") return true;
       if (activeFilter === "follows") return n.type === "follow" || n.type === "new_follower";
       if (activeFilter === "posts") return n.type === "new_post";

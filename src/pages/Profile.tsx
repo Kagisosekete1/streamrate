@@ -925,9 +925,9 @@ const Profile = () => {
                   <Input
                     value={editForm.username}
                     onChange={(e) =>
-                      setEditForm({ ...editForm, username: e.target.value })
+                      setEditForm({ ...editForm, username: e.target.value.replace(/\s/g, '') })
                     }
-                    placeholder="Your username"
+                    placeholder="Your username (no spaces)"
                   />
                 </div>
 
