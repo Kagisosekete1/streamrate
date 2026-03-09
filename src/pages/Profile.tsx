@@ -561,11 +561,14 @@ const Profile = () => {
   };
 
   const handleSaveProfile = async () => {
-    // Validate username is one word (no spaces)
-    if (editForm.username && /\s/.test(editForm.username)) {
+    // Normalize username: lowercase, no spaces
+    const cleanUsername = editForm.username ? editForm.username.replace(/\s/g, '').toLowerCase() : '';
+    
+    // Validate username format
+    if (cleanUsername && !/^[a-z0-9_]+$/.test(cleanUsername)) {
       toast({
         title: "Invalid username",
-        description: "Username must be a single word with no spaces.",
+        description: "Username can only contain lowercase letters, numbers, and underscores.",
         variant: "destructive",
       });
       return;
