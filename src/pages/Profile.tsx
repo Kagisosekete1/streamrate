@@ -928,9 +928,9 @@ const Profile = () => {
                   <Input
                     value={editForm.username}
                     onChange={(e) =>
-                      setEditForm({ ...editForm, username: e.target.value.replace(/\s/g, '') })
+                      setEditForm({ ...editForm, username: e.target.value.replace(/\s/g, '').toLowerCase() })
                     }
-                    placeholder="Your username (no spaces)"
+                    placeholder="yourname (lowercase, no spaces)"
                   />
                 </div>
 
