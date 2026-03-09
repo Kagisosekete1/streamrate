@@ -575,11 +575,11 @@ const Profile = () => {
     }
 
     // Validate username uniqueness
-    if (editForm.username && editForm.username !== profile?.username) {
+    if (cleanUsername && cleanUsername !== profile?.username?.toLowerCase()) {
       const { data: existingUser } = await supabase
         .from("profiles")
         .select("id")
-        .eq("username", editForm.username)
+        .eq("username", cleanUsername)
         .neq("id", user.id)
         .maybeSingle();
 
