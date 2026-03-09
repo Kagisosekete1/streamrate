@@ -561,22 +561,25 @@ const Profile = () => {
   };
 
   const handleSaveProfile = async () => {
-    // Validate username is one word (no spaces)
-    if (editForm.username && /\s/.test(editForm.username)) {
+    // Normalize username: lowercase, no spaces
+    const cleanUsername = editForm.username ? editForm.username.replace(/\s/g, '').toLowerCase() : '';
+    
+    // Validate username format
+    if (cleanUsername && !/^[a-z0-9_]+$/.test(cleanUsername)) {
       toast({
         title: "Invalid username",
-        description: "Username must be a single word with no spaces.",
+        description: "Username can only contain lowercase letters, numbers, and underscores.",
         variant: "destructive",
       });
       return;
     }
 
     // Validate username uniqueness
-    if (editForm.username && editForm.username !== profile?.username) {
+    if (cleanUsername && cleanUsername !== profile?.username?.toLowerCase()) {
       const { data: existingUser } = await supabase
         .from("profiles")
         .select("id")
-        .eq("username", editForm.username)
+        .eq("username", cleanUsername)
         .neq("id", user.id)
         .maybeSingle();
 
@@ -595,7 +598,7 @@ const Profile = () => {
       .from("profiles")
       .update({
         full_name: editForm.full_name,
-        username: editForm.username,
+        username: cleanUsername,
         bio: editForm.bio,
         country: editForm.country,
         twitch_url: editForm.twitch_url || null,
@@ -925,9 +928,9 @@ const Profile = () => {
                   <Input
                     value={editForm.username}
                     onChange={(e) =>
-                      setEditForm({ ...editForm, username: e.target.value.replace(/\s/g, '') })
+                      setEditForm({ ...editForm, username: e.target.value.replace(/\s/g, '').toLowerCase() })
                     }
-                    placeholder="Your username (no spaces)"
+                    placeholder="yourname (lowercase, no spaces)"
                   />
                 </div>
 
