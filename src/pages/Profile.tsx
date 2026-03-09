@@ -561,6 +561,16 @@ const Profile = () => {
   };
 
   const handleSaveProfile = async () => {
+    // Validate username is one word (no spaces)
+    if (editForm.username && /\s/.test(editForm.username)) {
+      toast({
+        title: "Invalid username",
+        description: "Username must be a single word with no spaces.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Validate username uniqueness
     if (editForm.username && editForm.username !== profile?.username) {
       const { data: existingUser } = await supabase
