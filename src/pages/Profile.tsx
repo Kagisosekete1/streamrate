@@ -598,7 +598,7 @@ const Profile = () => {
       .from("profiles")
       .update({
         full_name: editForm.full_name,
-        username: editForm.username,
+        username: cleanUsername,
         bio: editForm.bio,
         country: editForm.country,
         twitch_url: editForm.twitch_url || null,
