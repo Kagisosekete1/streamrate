@@ -862,6 +862,12 @@ const Profile = () => {
         </div>
       </section>
 
+      {/* Live Twitch Stream Preview */}
+      <TwitchLiveEmbed
+        twitchUrl={socialLinks.twitch_url}
+        showTwitch={socialLinks.show_twitch}
+      />
+
 
       {/* Profile Content Grid */}
       <ProfileContentGrid
