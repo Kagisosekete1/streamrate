@@ -432,6 +432,12 @@ const StreamerProfile = () => {
               showYoutubeGaming={streamer.show_youtube_gaming}
               className="mt-3"
             />
+
+            {/* Live Twitch Stream Preview */}
+            <TwitchLiveEmbed
+              twitchUrl={streamer.twitch_url}
+              showTwitch={streamer.show_twitch}
+            />
           </motion.div>
 
             <div className="flex items-center justify-center gap-6 mt-6">

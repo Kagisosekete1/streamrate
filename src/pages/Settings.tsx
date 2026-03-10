@@ -96,16 +96,15 @@ const NotificationsModal = ({
 
         if (checked) {
           // Fire bridge calls with timeouts so they can't hang
-          try { await withTimeout(median?.onesignal?.promptForPermission?.()); } catch {}
-          try { await withTimeout(median?.onesignal?.setSubscription?.(true)); } catch {}
+          try { await withTimeout(median?.webpushr?.promptForPermission?.()); } catch {}
+          try { await withTimeout(median?.webpushr?.setSubscription?.(true)); } catch {}
 
           if (userId) {
-            try { await withTimeout(median?.onesignal?.externalUserId?.set?.(userId)); } catch {}
-            try { await withTimeout(median?.onesignal?.tag?.set?.({ key: "user_id", value: userId })); } catch {}
+            try { await withTimeout(median?.webpushr?.externalUserId?.set?.(userId)); } catch {}
           }
           toast({ title: "Push notifications enabled!" });
         } else {
-          try { await withTimeout(median?.onesignal?.setSubscription?.(false)); } catch {}
+          try { await withTimeout(median?.webpushr?.setSubscription?.(false)); } catch {}
           toast({ title: "Push notifications disabled" });
         }
       } else if ("Notification" in window) {
