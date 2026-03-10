@@ -435,7 +435,6 @@ const Home = () => {
         </main>
 
         <PushNotificationPrompt />
-        <InstallAppPrompt />
         <StreamiiAi />
       </div>
     </AppLayout>
