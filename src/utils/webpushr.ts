@@ -20,14 +20,24 @@ export const initWebpushr = () => {
 };
 
 export const setWebpushrUserId = (userId: string) => {
-  try {
-    const w = window as any;
-    if (w.webpushr) {
-      w.webpushr('sid', userId);
-      console.log("Webpushr subscriber ID set:", userId);
+  const attempt = () => {
+    try {
+      const w = window as any;
+      if (typeof w.webpushr === 'function') {
+        w.webpushr('sid', userId);
+        console.log("Webpushr subscriber ID set:", userId);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.log("Webpushr sid set skipped:", error);
+      return false;
     }
-  } catch (error) {
-    console.log("Webpushr sid set skipped:", error);
+  };
+
+  if (!attempt()) {
+    // Retry after SDK loads
+    setTimeout(() => attempt(), 3000);
   }
 };
 
