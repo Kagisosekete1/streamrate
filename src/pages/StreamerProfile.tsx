@@ -19,6 +19,7 @@ import { FollowersModal } from "@/components/FollowersModal";
 import { ProfileContentGrid } from "@/components/ProfileContentGrid";
 import { ReelViewer } from "@/components/ReelViewer";
 import { ReviewsModal } from "@/components/ReviewsModal";
+import { TwitchLiveEmbed } from "@/components/TwitchLiveEmbed";
 
 interface StreamerData {
   id: string;
