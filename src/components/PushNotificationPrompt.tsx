@@ -15,7 +15,6 @@ export const PushNotificationPrompt = () => {
       return;
     }
 
-    // Check if notifications are already granted
     if ("Notification" in window && Notification.permission === "granted") {
       setPermissionGranted(true);
       return;
@@ -33,7 +32,6 @@ export const PushNotificationPrompt = () => {
     setEnabling(true);
 
     try {
-      // Use the native browser Notification API directly
       if ("Notification" in window) {
         const permission = await Notification.requestPermission();
         if (permission === "granted") {
@@ -41,27 +39,23 @@ export const PushNotificationPrompt = () => {
           setShowPrompt(false);
           localStorage.setItem("push_prompt_dismissed", "true");
 
-          // Try to register OneSignal via the global deferred queue
+          // Trigger Webpushr prompt
           try {
-            const OneSignalDeferred = (window as any).OneSignalDeferred;
-            if (OneSignalDeferred) {
-              OneSignalDeferred.push(async (OneSignal: any) => {
-                await OneSignal.Notifications.requestPermission();
-              });
+            const w = window as any;
+            if (w.webpushr) {
+              w.webpushr('prompt');
             }
           } catch {
-            // OneSignal not available, that's fine - browser notifications still work
+            // Webpushr not available, browser notifications still work
           }
           return;
         }
       }
 
-      // If permission denied or not supported, dismiss gracefully
       setShowPrompt(false);
       localStorage.setItem("push_prompt_dismissed", "true");
     } catch (err) {
       console.error("Push notification enable error:", err);
-      // Don't get stuck - dismiss on error
       setShowPrompt(false);
       localStorage.setItem("push_prompt_dismissed", "true");
     } finally {
