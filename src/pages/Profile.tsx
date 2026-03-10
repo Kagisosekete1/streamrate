@@ -18,6 +18,7 @@ import { FollowersModal } from "@/components/FollowersModal";
 import { LastSeenDisplay } from "@/components/LastSeenDisplay";
 import { SocialLinks } from "@/components/SocialLinks";
 import { ReviewsModal } from "@/components/ReviewsModal";
+import { TwitchLiveEmbed } from "@/components/TwitchLiveEmbed";
 
 interface Post {
   id: string;
@@ -860,6 +861,12 @@ const Profile = () => {
           </Button>
         </div>
       </section>
+
+      {/* Live Twitch Stream Preview */}
+      <TwitchLiveEmbed
+        twitchUrl={socialLinks.twitch_url}
+        showTwitch={socialLinks.show_twitch}
+      />
 
 
       {/* Profile Content Grid */}

@@ -5,3 +5,5 @@ project_id = "eqgouykzakjdmgmbnsca"
     verify_jwt = false
   [functions.sync-streaming-analytics]
     verify_jwt = false
+  [functions.check-twitch-live]
+    verify_jwt = false

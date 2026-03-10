@@ -19,6 +19,7 @@ import { FollowersModal } from "@/components/FollowersModal";
 import { ProfileContentGrid } from "@/components/ProfileContentGrid";
 import { ReelViewer } from "@/components/ReelViewer";
 import { ReviewsModal } from "@/components/ReviewsModal";
+import { TwitchLiveEmbed } from "@/components/TwitchLiveEmbed";
 
 interface StreamerData {
   id: string;
@@ -430,6 +431,12 @@ const StreamerProfile = () => {
               showKick={streamer.show_kick}
               showYoutubeGaming={streamer.show_youtube_gaming}
               className="mt-3"
+            />
+
+            {/* Live Twitch Stream Preview */}
+            <TwitchLiveEmbed
+              twitchUrl={streamer.twitch_url}
+              showTwitch={streamer.show_twitch}
             />
           </motion.div>
 
