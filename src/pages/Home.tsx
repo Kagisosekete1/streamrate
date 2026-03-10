@@ -8,7 +8,7 @@ import { PostCard } from "@/components/PostCard";
 import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 import { NewPostsBanner } from "@/components/NewPostsBanner";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
-import { InstallAppPrompt } from "@/components/InstallAppPrompt";
+
 import { StreamiiAi } from "@/components/StreamiiAi";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
