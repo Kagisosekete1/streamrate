@@ -1,4 +1,4 @@
-const CACHE_NAME = "streamrate-v1";
+const CACHE_NAME = "streamrate-v2";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -8,7 +8,7 @@ const STATIC_ASSETS = [
   "/pwa-512x512.png",
 ];
 
-// Install event - cache static assets
+// Install event - cache static assets and force activate
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -18,7 +18,7 @@ self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up ALL old caches
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -37,11 +37,11 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // Skip non-GET requests
   if (request.method !== "GET") return;
-
-  // Skip chrome-extension and other non-http(s) requests
   if (!url.protocol.startsWith("http")) return;
+
+  // Never cache OAuth redirects
+  if (url.pathname.startsWith("/~oauth")) return;
 
   // Cache-first for fonts
   if (url.hostname.includes("fonts.googleapis.com") || url.hostname.includes("fonts.gstatic.com")) {
@@ -61,7 +61,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Default: network-first for navigation, stale-while-revalidate for others
   if (request.mode === "navigate") {
     event.respondWith(networkFirst(request));
   } else {
@@ -72,7 +71,6 @@ self.addEventListener("fetch", (event) => {
 async function cacheFirst(request) {
   const cached = await caches.match(request);
   if (cached) return cached;
-
   try {
     const response = await fetch(request);
     if (response.ok) {
@@ -96,13 +94,10 @@ async function networkFirst(request) {
   } catch (e) {
     const cached = await caches.match(request);
     if (cached) return cached;
-    
-    // Return offline page for navigation requests
     if (request.mode === "navigate") {
       const offlineCache = await caches.match("/");
       if (offlineCache) return offlineCache;
     }
-    
     return new Response("Offline", { status: 503 });
   }
 }
@@ -110,7 +105,6 @@ async function networkFirst(request) {
 async function staleWhileRevalidate(request) {
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(request);
-
   const fetchPromise = fetch(request)
     .then((response) => {
       if (response.ok) {
@@ -119,11 +113,9 @@ async function staleWhileRevalidate(request) {
       return response;
     })
     .catch(() => cached || new Response("Offline", { status: 503 }));
-
   return cached || fetchPromise;
 }
 
-// Handle background sync for offline posts
 self.addEventListener("sync", (event) => {
   if (event.tag === "sync-posts") {
     event.waitUntil(syncPosts());
