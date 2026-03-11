@@ -63,7 +63,6 @@ function AppContent() {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/analytics/reels" element={<ReelAnalytics />} />
           <Route path="/about" element={<About />} />
-          <Route path="/install" element={<Install />} />
           <Route path="/live" element={<Live />} />
           <Route path="/store" element={<Store />} />
           <Route path="/streaming-analytics" element={<StreamingAnalytics />} />
