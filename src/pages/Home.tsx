@@ -17,6 +17,7 @@ import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useOnAppRefresh } from "@/hooks/useAppVisibility";
+import { IOSInstallBanner } from "@/components/IOSInstallBanner";
 
 interface Streamer {
   id: string;
