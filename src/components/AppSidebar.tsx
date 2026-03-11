@@ -153,13 +153,20 @@ export const AppSidebar = () => {
                 : "text-foreground hover:bg-secondary"
             )}
           >
-            <item.icon
-              className={cn(
-                "w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-110",
-                isActive(item.path) ? "text-primary" : ""
+            <div className="relative">
+              <item.icon
+                className={cn(
+                  "w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-110",
+                  isActive(item.path) ? "text-primary" : ""
+                )}
+                strokeWidth={isActive(item.path) ? 2.5 : 1.5}
+              />
+              {item.label === "Notifications" && unreadCount > 0 && (
+                <span className="absolute -top-2 -right-2 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
               )}
-              strokeWidth={isActive(item.path) ? 2.5 : 1.5}
-            />
+            </div>
             <AnimatePresence>
               {isExpanded && (
                 <motion.span
