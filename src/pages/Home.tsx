@@ -437,6 +437,7 @@ const Home = () => {
 
         <PushNotificationPrompt />
         <StreamiiAi />
+        <IOSInstallBanner />
       </div>
     </AppLayout>
   );
