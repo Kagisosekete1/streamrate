@@ -64,6 +64,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   const [doubleTapPosition, setDoubleTapPosition] = useState({ x: 0, y: 0 });
   const [showAvatarView, setShowAvatarView] = useState(false);
   const [showReportBlock, setShowReportBlock] = useState(false);
+  const [captionExpanded, setCaptionExpanded] = useState(false);
   const lastTapTime = useRef<number>(0);
   const viewStartTime = useRef<number>(0);
   
