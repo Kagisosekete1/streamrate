@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -18,6 +18,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -46,8 +47,50 @@ const bottomNavItems: NavItem[] = [
 export const AppSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const [isExpanded, setIsExpanded] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread notification count (excluding reel_view)
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchUnread = async () => {
+      const { data } = await supabase
+        .from("notifications")
+        .select("id, type")
+        .eq("user_id", user.id)
+        .eq("is_read", false);
+
+      if (data) {
+        setUnreadCount(data.filter(n => n.type !== "reel_view").length);
+      }
+    };
+
+    fetchUnread();
+
+    const channel = supabase
+      .channel("sidebar-notifications")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          if ((payload.new as any).type !== "reel_view") {
+            setUnreadCount((prev) => prev + 1);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   const isActive = (path: string) => {
     if (path.includes("?")) {
@@ -110,13 +153,20 @@ export const AppSidebar = () => {
                 : "text-foreground hover:bg-secondary"
             )}
           >
-            <item.icon
-              className={cn(
-                "w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-110",
-                isActive(item.path) ? "text-primary" : ""
+            <div className="relative">
+              <item.icon
+                className={cn(
+                  "w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-110",
+                  isActive(item.path) ? "text-primary" : ""
+                )}
+                strokeWidth={isActive(item.path) ? 2.5 : 1.5}
+              />
+              {item.label === "Notifications" && unreadCount > 0 && (
+                <span className="absolute -top-2 -right-2 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
               )}
-              strokeWidth={isActive(item.path) ? 2.5 : 1.5}
-            />
+            </div>
             <AnimatePresence>
               {isExpanded && (
                 <motion.span

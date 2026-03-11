@@ -17,6 +17,8 @@ export const PushNotificationPrompt = () => {
 
     if ("Notification" in window && Notification.permission === "granted") {
       setPermissionGranted(true);
+      // Hide webpushr native bell widget on desktop when subscribed
+      hideWebpushrBell();
       return;
     }
 
@@ -25,6 +27,17 @@ export const PushNotificationPrompt = () => {
     }, 3000);
     return () => clearTimeout(timer);
   }, []);
+
+  // Hide the webpushr notification bell widget injected by the SDK
+  const hideWebpushrBell = () => {
+    const style = document.createElement("style");
+    style.textContent = `
+      #webpushr-bell-optin, .webpushr-prompt-wrapper, [id^="webpushr"] {
+        display: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+  };
 
   const handleEnable = async (e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -38,6 +51,7 @@ export const PushNotificationPrompt = () => {
           setPermissionGranted(true);
           setShowPrompt(false);
           localStorage.setItem("push_prompt_dismissed", "true");
+          hideWebpushrBell();
 
           // Trigger Webpushr prompt
           try {

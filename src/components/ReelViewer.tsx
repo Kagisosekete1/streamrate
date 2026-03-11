@@ -64,6 +64,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   const [doubleTapPosition, setDoubleTapPosition] = useState({ x: 0, y: 0 });
   const [showAvatarView, setShowAvatarView] = useState(false);
   const [showReportBlock, setShowReportBlock] = useState(false);
+  const [captionExpanded, setCaptionExpanded] = useState(false);
   const lastTapTime = useRef<number>(0);
   const viewStartTime = useRef<number>(0);
   
@@ -259,13 +260,13 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   // Navigate to next/prev reel
   const goToReel = useCallback((direction: -1 | 1) => {
     if (showComments) return;
+    setCaptionExpanded(false);
     if (direction === -1 && currentIndex < reels.length - 1) {
       setSlideDirection(-1);
       setCurrentIndex(prev => prev + 1);
       setIsPlaying(true);
       setVideoProgress(0);
       triggerHaptic();
-      // Trigger load more when 3 reels from end
       if (currentIndex >= reels.length - 4 && onLoadMore) {
         onLoadMore();
       }
@@ -730,12 +731,25 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                 )}
               </div>
 
-              {/* Caption with hashtags */}
+              {/* Caption with hashtags - truncated with See more/less */}
               {currentReel.caption && (
                 <>
-                  <div className="text-white text-xs leading-relaxed line-clamp-2">
+                  <div 
+                    className={cn(
+                      "text-white text-xs leading-relaxed",
+                      !captionExpanded && "line-clamp-2"
+                    )}
+                  >
                     <HashtagText text={currentReel.caption} />
                   </div>
+                  {currentReel.caption.length > 80 && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setCaptionExpanded(!captionExpanded); }}
+                      className="text-white/70 text-[11px] font-medium"
+                    >
+                      {captionExpanded ? "See less" : "...See more"}
+                    </button>
+                  )}
                   {(() => {
                     const urlMatch = currentReel.caption!.match(/https?:\/\/[^\s]+/);
                     return urlMatch ? <LinkPreview url={urlMatch[0]} /> : null;
