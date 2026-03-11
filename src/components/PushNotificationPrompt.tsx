@@ -51,6 +51,7 @@ export const PushNotificationPrompt = () => {
           setPermissionGranted(true);
           setShowPrompt(false);
           localStorage.setItem("push_prompt_dismissed", "true");
+          hideWebpushrBell();
 
           // Trigger Webpushr prompt
           try {
