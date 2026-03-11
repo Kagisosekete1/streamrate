@@ -24,7 +24,6 @@ import ReelAnalytics from "./pages/ReelAnalytics";
 import CreateReel from "./pages/CreateReel";
 import Leaderboard from "./pages/Leaderboard";
 import About from "./pages/About";
-import Install from "./pages/Install";
 import Live from "./pages/Live";
 import Store from "./pages/Store";
 import StreamingAnalytics from "./pages/StreamingAnalytics";
@@ -64,7 +63,6 @@ function AppContent() {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/analytics/reels" element={<ReelAnalytics />} />
           <Route path="/about" element={<About />} />
-          <Route path="/install" element={<Install />} />
           <Route path="/live" element={<Live />} />
           <Route path="/store" element={<Store />} />
           <Route path="/streaming-analytics" element={<StreamingAnalytics />} />
