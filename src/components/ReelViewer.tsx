@@ -731,12 +731,25 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                 )}
               </div>
 
-              {/* Caption with hashtags */}
+              {/* Caption with hashtags - truncated with See more/less */}
               {currentReel.caption && (
                 <>
-                  <div className="text-white text-xs leading-relaxed line-clamp-2">
+                  <div 
+                    className={cn(
+                      "text-white text-xs leading-relaxed",
+                      !captionExpanded && "line-clamp-2"
+                    )}
+                  >
                     <HashtagText text={currentReel.caption} />
                   </div>
+                  {currentReel.caption.length > 80 && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setCaptionExpanded(!captionExpanded); }}
+                      className="text-white/70 text-[11px] font-medium"
+                    >
+                      {captionExpanded ? "See less" : "...See more"}
+                    </button>
+                  )}
                   {(() => {
                     const urlMatch = currentReel.caption!.match(/https?:\/\/[^\s]+/);
                     return urlMatch ? <LinkPreview url={urlMatch[0]} /> : null;
