@@ -260,13 +260,13 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   // Navigate to next/prev reel
   const goToReel = useCallback((direction: -1 | 1) => {
     if (showComments) return;
+    setCaptionExpanded(false);
     if (direction === -1 && currentIndex < reels.length - 1) {
       setSlideDirection(-1);
       setCurrentIndex(prev => prev + 1);
       setIsPlaying(true);
       setVideoProgress(0);
       triggerHaptic();
-      // Trigger load more when 3 reels from end
       if (currentIndex >= reels.length - 4 && onLoadMore) {
         onLoadMore();
       }

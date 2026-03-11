@@ -5,7 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const ONESIGNAL_APP_ID = "af56c3a2-740c-45c3-a95b-af51cda2bfcd";
+const WEBPUSHR_KEY = "fa200af9ee0a191b63247fe29832636d";
+const WEBPUSHR_AUTH_TOKEN = "119503";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -13,49 +14,52 @@ serve(async (req) => {
   }
 
   try {
-    const ONESIGNAL_REST_API_KEY = Deno.env.get("ONESIGNAL_REST_API_KEY");
-    if (!ONESIGNAL_REST_API_KEY) {
-      throw new Error("ONESIGNAL_REST_API_KEY not configured");
-    }
+    const { title, message, target_url, sid, icon, image } = await req.json();
 
-    const { userId, title, message, data } = await req.json();
-
-    if (!userId || !title || !message) {
+    if (!title || !message || !target_url) {
       return new Response(
-        JSON.stringify({ error: "userId, title, and message are required" }),
+        JSON.stringify({ error: "title, message, and target_url are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Send notification via OneSignal using external_id targeting
-    const response = await fetch("https://onesignal.com/api/v1/notifications", {
+    const payload: Record<string, unknown> = {
+      title,
+      message,
+      target_url,
+    };
+
+    if (icon) payload.icon = icon;
+    if (image) payload.image = image;
+
+    // Determine endpoint: send to specific subscriber or all
+    const endpoint = sid
+      ? "https://api.webpushr.com/v1/notification/send/sid"
+      : "https://api.webpushr.com/v1/notification/send/all";
+
+    if (sid) {
+      payload.sid = sid;
+    }
+
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Basic ${ONESIGNAL_REST_API_KEY}`,
+        "Content-Type": "Application/Json",
+        "webpushrKey": WEBPUSHR_KEY,
+        "webpushrAuthToken": WEBPUSHR_AUTH_TOKEN,
       },
-      body: JSON.stringify({
-        app_id: ONESIGNAL_APP_ID,
-        include_aliases: {
-          external_id: [userId],
-        },
-        target_channel: "push",
-        headings: { en: title },
-        contents: { en: message },
-        data: data || {},
-        web_url: data?.url || undefined,
-      }),
+      body: JSON.stringify(payload),
     });
 
     const result = await response.json();
-    console.log("OneSignal response:", JSON.stringify(result));
+    console.log("Webpushr response:", JSON.stringify(result));
 
     return new Response(
       JSON.stringify({ success: true, result }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error sending OneSignal notification:", error);
+    console.error("Error sending Webpushr notification:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

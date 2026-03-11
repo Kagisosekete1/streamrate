@@ -53,6 +53,7 @@ export const NotificationBell = () => {
         },
         (payload) => {
           const newNotification = payload.new as Notification;
+          if (newNotification.type === "reel_view") return;
           setNotifications((prev) => [newNotification, ...prev]);
           setUnreadCount((prev) => prev + 1);
         }
