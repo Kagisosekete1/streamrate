@@ -86,13 +86,15 @@ export const NotificationBell = () => {
         (profiles || []).map((p) => [p.id, p])
       );
 
-      const notificationsWithUsers = data.map((n) => ({
-        ...n,
-        from_user: n.from_user_id ? profilesMap.get(n.from_user_id) : undefined,
-      }));
+      const notificationsWithUsers = data
+        .filter((n) => n.type !== "reel_view")
+        .map((n) => ({
+          ...n,
+          from_user: n.from_user_id ? profilesMap.get(n.from_user_id) : undefined,
+        }));
 
       setNotifications(notificationsWithUsers);
-      setUnreadCount(data.filter((n) => !n.is_read).length);
+      setUnreadCount(notificationsWithUsers.filter((n) => !n.is_read).length);
     }
   };
 
