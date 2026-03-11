@@ -47,8 +47,50 @@ const bottomNavItems: NavItem[] = [
 export const AppSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const [isExpanded, setIsExpanded] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread notification count (excluding reel_view)
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchUnread = async () => {
+      const { data } = await supabase
+        .from("notifications")
+        .select("id, type")
+        .eq("user_id", user.id)
+        .eq("is_read", false);
+
+      if (data) {
+        setUnreadCount(data.filter(n => n.type !== "reel_view").length);
+      }
+    };
+
+    fetchUnread();
+
+    const channel = supabase
+      .channel("sidebar-notifications")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          if ((payload.new as any).type !== "reel_view") {
+            setUnreadCount((prev) => prev + 1);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   const isActive = (path: string) => {
     if (path.includes("?")) {
