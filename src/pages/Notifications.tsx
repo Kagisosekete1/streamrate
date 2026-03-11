@@ -66,6 +66,7 @@ const Notifications = () => {
         },
         (payload) => {
           const newNotification = payload.new as Notification;
+          if (newNotification.type === "reel_view") return;
           setNotifications((prev) => [newNotification, ...prev]);
         }
       )
