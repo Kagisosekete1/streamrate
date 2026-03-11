@@ -24,7 +24,6 @@ import ReelAnalytics from "./pages/ReelAnalytics";
 import CreateReel from "./pages/CreateReel";
 import Leaderboard from "./pages/Leaderboard";
 import About from "./pages/About";
-import Install from "./pages/Install";
 import Live from "./pages/Live";
 import Store from "./pages/Store";
 import StreamingAnalytics from "./pages/StreamingAnalytics";
