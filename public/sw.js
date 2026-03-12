@@ -1,4 +1,7 @@
-const CACHE_NAME = "streamrate-v2";
+// Import Webpushr service worker for push notification handling
+importScripts('https://cdn.webpushr.com/sw-server.min.js');
+
+const CACHE_NAME = "streamrate-v3";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -42,6 +45,9 @@ self.addEventListener("fetch", (event) => {
 
   // Never cache OAuth redirects
   if (url.pathname.startsWith("/~oauth")) return;
+
+  // Don't cache webpushr requests
+  if (url.hostname.includes("webpushr.com")) return;
 
   // Cache-first for fonts
   if (url.hostname.includes("fonts.googleapis.com") || url.hostname.includes("fonts.gstatic.com")) {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Tv, ExternalLink, Radio } from "lucide-react";
+import { Tv, ExternalLink, Radio, Users, Gamepad2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +19,23 @@ interface LiveStreamer {
   show_kick: boolean;
   show_youtube_gaming: boolean;
   show_discord: boolean;
+  // Live data from Twitch API
+  is_live?: boolean;
+  stream_title?: string;
+  viewer_count?: number;
+  game_name?: string;
 }
+
+const extractTwitchUsername = (url: string): string | null => {
+  try {
+    const parsed = new URL(url);
+    const parts = parsed.pathname.split("/").filter(Boolean);
+    return parts[0] || null;
+  } catch {
+    // Maybe it's just a username
+    return url.replace(/^@/, "").trim() || null;
+  }
+};
 
 const Live = () => {
   const navigate = useNavigate();
@@ -28,37 +44,78 @@ const Live = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStreamersWithLinks();
+    fetchLiveStreamers();
   }, []);
 
-  const fetchStreamersWithLinks = async () => {
+  const fetchLiveStreamers = async () => {
     const { data } = await supabase
       .from("profiles")
       .select("id, username, full_name, avatar_url, twitch_url, kick_url, youtube_gaming_url, discord_url, show_twitch, show_kick, show_youtube_gaming, show_discord");
 
-    if (data) {
-      // Only show users who have at least one visible streaming platform link
-      const withLinks = data.filter(
-        (p) =>
-          (p.twitch_url && p.show_twitch) ||
-          (p.kick_url && p.show_kick) ||
-          (p.youtube_gaming_url && p.show_youtube_gaming)
-      );
-      setStreamers(withLinks as LiveStreamer[]);
+    if (!data) {
+      setLoading(false);
+      return;
     }
+
+    // Filter users with at least one visible streaming link
+    const withLinks = data.filter(
+      (p) =>
+        (p.twitch_url && p.show_twitch) ||
+        (p.kick_url && p.show_kick) ||
+        (p.youtube_gaming_url && p.show_youtube_gaming)
+    );
+
+    // Check Twitch live status for users with Twitch links
+    const liveResults: LiveStreamer[] = [];
+
+    const twitchChecks = withLinks
+      .filter((p) => p.twitch_url && p.show_twitch)
+      .map(async (p) => {
+        const twitchUsername = extractTwitchUsername(p.twitch_url!);
+        if (!twitchUsername) return null;
+
+        try {
+          const { data: liveData } = await supabase.functions.invoke("check-twitch-live", {
+            body: { username: twitchUsername },
+          });
+
+          if (liveData?.is_live) {
+            return {
+              ...p,
+              is_live: true,
+              stream_title: liveData.stream_title,
+              viewer_count: liveData.viewer_count,
+              game_name: liveData.game_name,
+            } as LiveStreamer;
+          }
+        } catch (err) {
+          console.error(`Failed to check live for ${twitchUsername}:`, err);
+        }
+        return null;
+      });
+
+    const results = await Promise.all(twitchChecks);
+    results.forEach((r) => {
+      if (r) liveResults.push(r);
+    });
+
+    // Sort by viewer count descending
+    liveResults.sort((a, b) => (b.viewer_count || 0) - (a.viewer_count || 0));
+
+    setStreamers(liveResults);
     setLoading(false);
   };
 
   const getPlatformLinks = (streamer: LiveStreamer) => {
-    const links: { name: string; url: string; color: string; bg: string; icon: string }[] = [];
+    const links: { name: string; url: string; color: string; bg: string }[] = [];
     if (streamer.twitch_url && streamer.show_twitch) {
-      links.push({ name: "Twitch", url: streamer.twitch_url, color: "text-purple-400", bg: "bg-purple-500/20", icon: "🟣" });
+      links.push({ name: "Twitch", url: streamer.twitch_url, color: "text-purple-400", bg: "bg-purple-500/20" });
     }
     if (streamer.kick_url && streamer.show_kick) {
-      links.push({ name: "Kick", url: streamer.kick_url, color: "text-green-400", bg: "bg-green-500/20", icon: "🟢" });
+      links.push({ name: "Kick", url: streamer.kick_url, color: "text-green-400", bg: "bg-green-500/20" });
     }
     if (streamer.youtube_gaming_url && streamer.show_youtube_gaming) {
-      links.push({ name: "YouTube", url: streamer.youtube_gaming_url, color: "text-red-400", bg: "bg-red-500/20", icon: "🔴" });
+      links.push({ name: "YouTube", url: streamer.youtube_gaming_url, color: "text-red-400", bg: "bg-red-500/20" });
     }
     return links;
   };
@@ -70,15 +127,15 @@ const Live = () => {
           <div className="px-4 py-4">
             <div className="flex items-center gap-2">
               <Radio className="w-6 h-6 text-red-500 animate-pulse" />
-              <h1 className="text-2xl font-bold text-foreground">Live</h1>
+              <h1 className="text-2xl font-bold text-foreground">Live Now</h1>
               {streamers.length > 0 && (
                 <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-xs font-bold">
-                  {streamers.length} streamers
+                  {streamers.length} live
                 </span>
               )}
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              Watch streamers live on their platforms
+              Streamers currently live on their platforms
             </p>
           </div>
         </header>
@@ -87,7 +144,7 @@ const Live = () => {
           {loading ? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-20 bg-secondary rounded-xl animate-pulse" />
+                <div key={i} className="h-24 bg-secondary rounded-xl animate-pulse" />
               ))}
             </div>
           ) : streamers.length === 0 ? (
@@ -95,9 +152,9 @@ const Live = () => {
               <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center mb-4">
                 <Tv className="w-8 h-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">No streamers available</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">No one is live right now</h3>
               <p className="text-muted-foreground text-sm max-w-xs">
-                No streamers have linked their streaming platforms yet. Check back later!
+                Check back later to see who's streaming!
               </p>
             </div>
           ) : (
@@ -115,17 +172,34 @@ const Live = () => {
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <img
-                          src={streamer.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+                          src={streamer.avatar_url || "/placeholder.svg"}
                           alt={streamer.username || "Streamer"}
-                          className="w-12 h-12 rounded-full object-cover ring-2 ring-primary/50"
+                          className="w-12 h-12 rounded-full object-cover ring-2 ring-red-500/70"
                         />
+                        <span className="absolute -bottom-1 -right-1 px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full uppercase">
+                          Live
+                        </span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-foreground truncate">
                           {streamer.username || streamer.full_name || "Streamer"}
                         </p>
-                        {/* Platform links that redirect to the streaming platform */}
-                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        {streamer.stream_title && (
+                          <p className="text-xs text-muted-foreground truncate">{streamer.stream_title}</p>
+                        )}
+                        <div className="flex items-center gap-3 mt-1">
+                          {streamer.viewer_count != null && (
+                            <span className="flex items-center gap-1 text-xs text-red-400">
+                              <Users className="w-3 h-3" /> {streamer.viewer_count.toLocaleString()} viewers
+                            </span>
+                          )}
+                          {streamer.game_name && (
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Gamepad2 className="w-3 h-3" /> {streamer.game_name}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 mt-2">
                           {platformLinks.map((link) => (
                             <a
                               key={link.name}
