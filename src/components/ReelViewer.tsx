@@ -732,30 +732,40 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
               </div>
 
               {/* Caption with hashtags - truncated with See more/less */}
-              {currentReel.caption && (
-                <>
-                  <div 
-                    className={cn(
-                      "text-white text-xs leading-relaxed",
-                      !captionExpanded && "line-clamp-2"
+              {currentReel.caption && (() => {
+                const words = currentReel.caption!.split(/\s+/);
+                const isLong = words.length > 8;
+                const truncatedText = isLong && !captionExpanded 
+                  ? words.slice(0, 8).join(' ')
+                  : currentReel.caption!;
+                return (
+                  <>
+                    <div className="text-white text-xs leading-relaxed">
+                      <HashtagText text={truncatedText} />
+                      {isLong && !captionExpanded && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setCaptionExpanded(true); }}
+                          className="text-white/70 text-[11px] font-medium ml-1 inline"
+                        >
+                          ...See more
+                        </button>
+                      )}
+                    </div>
+                    {isLong && captionExpanded && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setCaptionExpanded(false); }}
+                        className="text-white/70 text-[11px] font-medium"
+                      >
+                        See less
+                      </button>
                     )}
-                  >
-                    <HashtagText text={currentReel.caption} />
-                  </div>
-                  {currentReel.caption.length > 80 && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setCaptionExpanded(!captionExpanded); }}
-                      className="text-white/70 text-[11px] font-medium"
-                    >
-                      {captionExpanded ? "See less" : "...See more"}
-                    </button>
-                  )}
-                  {(() => {
-                    const urlMatch = currentReel.caption!.match(/https?:\/\/[^\s]+/);
-                    return urlMatch ? <LinkPreview url={urlMatch[0]} /> : null;
-                  })()}
-                </>
-              )}
+                    {(() => {
+                      const urlMatch = currentReel.caption!.match(/https?:\/\/[^\s]+/);
+                      return urlMatch ? <LinkPreview url={urlMatch[0]} /> : null;
+                    })()}
+                  </>
+                );
+              })()}
 
               {/* Music info bar */}
               <div className="flex items-center gap-1.5 overflow-hidden">
