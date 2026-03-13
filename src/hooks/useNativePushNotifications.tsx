@@ -37,7 +37,6 @@ export const useNativePushNotifications = () => {
         registration.showNotification(title, {
           icon: "/pwa-192x192.png",
           badge: "/pwa-192x192.png",
-          vibrate: [200, 100, 200],
           ...options,
         });
       } catch (error) {
