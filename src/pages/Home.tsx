@@ -7,7 +7,7 @@ import { TrendingStreamersSection } from "@/components/TrendingStreamersSection"
 import { PostCard } from "@/components/PostCard";
 import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 import { NewPostsBanner } from "@/components/NewPostsBanner";
-import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
+
 
 import { StreamiiAi } from "@/components/StreamiiAi";
 import { supabase } from "@/integrations/supabase/client";
@@ -435,7 +435,7 @@ const Home = () => {
           )}
         </main>
 
-        <PushNotificationPrompt />
+        
         <StreamiiAi />
         <IOSInstallBanner />
       </div>

@@ -702,14 +702,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                 </div>
               </button>
 
-              {/* Music disc animation */}
-              <motion.div
-                animate={{ rotate: isPlaying ? 360 : 0 }}
-                transition={{ duration: 3, repeat: isPlaying ? Infinity : 0, ease: "linear" }}
-                className="w-10 h-10 rounded-full bg-gradient-to-r from-gray-800 to-gray-600 flex items-center justify-center border-2 border-gray-700"
-              >
-                <Music2 className="w-4 h-4 text-white" />
-              </motion.div>
             </div>
 
             {/* Bottom info */}
@@ -767,17 +759,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                 );
               })()}
 
-              {/* Music info bar */}
-              <div className="flex items-center gap-1.5 overflow-hidden">
-                <Music2 className="w-3 h-3 text-white flex-shrink-0" />
-                <motion.div
-                  animate={{ x: [-100, 200] }}
-                  transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                  className="text-white text-[11px] whitespace-nowrap"
-                >
-                  Original sound - @{currentReel.user?.username || "user"}
-                </motion.div>
-              </div>
 
               {/* View count & counter */}
               <div className="flex items-center gap-2 text-white/60 text-[10px]">
@@ -791,28 +772,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                 <span>{formatDistanceToNow(new Date(currentReel.created_at), { addSuffix: true })}</span>
               </div>
 
-              {/* Dot indicator */}
-              {reels.length > 1 && reels.length <= 20 && (
-                <div className="flex items-center gap-1 mt-1">
-                  {reels.map((_, i) => {
-                    const distance = Math.abs(i - currentIndex);
-                    if (distance > 3) return null;
-                    return (
-                      <div
-                        key={i}
-                        className={cn(
-                          "rounded-full transition-all duration-200",
-                          i === currentIndex
-                            ? "w-4 h-1.5 bg-white"
-                            : distance === 1
-                            ? "w-1.5 h-1.5 bg-white/50"
-                            : "w-1 h-1 bg-white/30"
-                        )}
-                      />
-                    );
-                  })}
-                </div>
-              )}
             </div>
           </motion.div>
 
