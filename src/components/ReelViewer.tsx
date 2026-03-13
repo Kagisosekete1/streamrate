@@ -759,17 +759,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                 );
               })()}
 
-              {/* Music info bar */}
-              <div className="flex items-center gap-1.5 overflow-hidden">
-                <Music2 className="w-3 h-3 text-white flex-shrink-0" />
-                <motion.div
-                  animate={{ x: [-100, 200] }}
-                  transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                  className="text-white text-[11px] whitespace-nowrap"
-                >
-                  Original sound - @{currentReel.user?.username || "user"}
-                </motion.div>
-              </div>
 
               {/* View count & counter */}
               <div className="flex items-center gap-2 text-white/60 text-[10px]">
