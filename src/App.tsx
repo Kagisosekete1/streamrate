@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { useAppVisibility } from "@/hooks/useAppVisibility";
+import { useNativePushNotifications } from "@/hooks/useNativePushNotifications";
 import { CookieConsent } from "@/components/CookieConsent";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
