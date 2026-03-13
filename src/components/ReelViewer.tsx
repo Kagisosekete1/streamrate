@@ -702,14 +702,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                 </div>
               </button>
 
-              {/* Music disc animation */}
-              <motion.div
-                animate={{ rotate: isPlaying ? 360 : 0 }}
-                transition={{ duration: 3, repeat: isPlaying ? Infinity : 0, ease: "linear" }}
-                className="w-10 h-10 rounded-full bg-gradient-to-r from-gray-800 to-gray-600 flex items-center justify-center border-2 border-gray-700"
-              >
-                <Music2 className="w-4 h-4 text-white" />
-              </motion.div>
             </div>
 
             {/* Bottom info */}
