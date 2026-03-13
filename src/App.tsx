@@ -41,6 +41,7 @@ const queryClient = new QueryClient({
 
 function AppContent() {
   useAppVisibility();
+  useNativePushNotifications();
   
   return (
     <BrowserRouter>
