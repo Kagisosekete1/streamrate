@@ -95,16 +95,8 @@ const NotificationsModal = ({
         localStorage.setItem("median_push_enabled", checked ? "true" : "false");
 
         if (checked) {
-          // Fire bridge calls with timeouts so they can't hang
-          try { await withTimeout(median?.webpushr?.promptForPermission?.()); } catch {}
-          try { await withTimeout(median?.webpushr?.setSubscription?.(true)); } catch {}
-
-          if (userId) {
-            try { await withTimeout(median?.webpushr?.externalUserId?.set?.(userId)); } catch {}
-          }
           toast({ title: "Push notifications enabled!" });
         } else {
-          try { await withTimeout(median?.webpushr?.setSubscription?.(false)); } catch {}
           toast({ title: "Push notifications disabled" });
         }
       } else if ("Notification" in window) {

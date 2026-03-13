@@ -772,28 +772,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                 <span>{formatDistanceToNow(new Date(currentReel.created_at), { addSuffix: true })}</span>
               </div>
 
-              {/* Dot indicator */}
-              {reels.length > 1 && reels.length <= 20 && (
-                <div className="flex items-center gap-1 mt-1">
-                  {reels.map((_, i) => {
-                    const distance = Math.abs(i - currentIndex);
-                    if (distance > 3) return null;
-                    return (
-                      <div
-                        key={i}
-                        className={cn(
-                          "rounded-full transition-all duration-200",
-                          i === currentIndex
-                            ? "w-4 h-1.5 bg-white"
-                            : distance === 1
-                            ? "w-1.5 h-1.5 bg-white/50"
-                            : "w-1 h-1 bg-white/30"
-                        )}
-                      />
-                    );
-                  })}
-                </div>
-              )}
             </div>
           </motion.div>
 

@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (session?.user) {
           setTimeout(() => {
             fetchProfile(session.user.id);
-            setWebpushrUserId(session.user.id);
+            
           }, 0);
         } else {
           setProfile(null);
