@@ -78,6 +78,8 @@ function AppContent() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         <CookieConsent />
+        <PWAInstallBanner />
+        <IOSInstallBanner />
       </AuthProvider>
     </BrowserRouter>
   );
