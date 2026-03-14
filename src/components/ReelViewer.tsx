@@ -556,23 +556,25 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                     }
                   }}
                   onWaiting={(e) => {
-                    // Video stalled - retry play when ready
+                    // Video buffering - resume when ready
                     const vid = e.currentTarget;
-                    const onCanPlay = () => {
+                    const resumePlay = () => {
                       if (isPlaying && !showComments) {
                         vid.play().catch(() => {});
                       }
-                      vid.removeEventListener('canplay', onCanPlay);
+                      vid.removeEventListener('canplaythrough', resumePlay);
                     };
-                    vid.addEventListener('canplay', onCanPlay);
+                    vid.addEventListener('canplaythrough', resumePlay);
                   }}
-                  onStalled={(e) => {
+                  onError={(e) => {
+                    // Only reload on actual errors, not stalls
                     const vid = e.currentTarget;
-                    // Force reload on stall
                     const currentTime = vid.currentTime;
-                    vid.load();
-                    vid.currentTime = currentTime;
-                    vid.play().catch(() => {});
+                    setTimeout(() => {
+                      vid.src = currentReel.video_url;
+                      vid.currentTime = currentTime;
+                      vid.play().catch(() => {});
+                    }, 1000);
                   }}
                 />
 

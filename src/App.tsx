@@ -9,6 +9,8 @@ import { ThemeProvider } from "@/hooks/useTheme";
 import { useAppVisibility } from "@/hooks/useAppVisibility";
 import { useNativePushNotifications } from "@/hooks/useNativePushNotifications";
 import { CookieConsent } from "@/components/CookieConsent";
+import { PWAInstallBanner } from "@/components/PWAInstallBanner";
+import { IOSInstallBanner } from "@/components/IOSInstallBanner";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
@@ -76,6 +78,8 @@ function AppContent() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         <CookieConsent />
+        <PWAInstallBanner />
+        <IOSInstallBanner />
       </AuthProvider>
     </BrowserRouter>
   );
