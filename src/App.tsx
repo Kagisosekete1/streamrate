@@ -39,13 +39,18 @@ const queryClient = new QueryClient({
   },
 });
 
+function AuthenticatedFeatures() {
+  useNativePushNotifications();
+  return null;
+}
+
 function AppContent() {
   useAppVisibility();
-  useNativePushNotifications();
   
   return (
     <BrowserRouter>
       <AuthProvider>
+        <AuthenticatedFeatures />
         <Routes>
           <Route path="/" element={<Auth />} />
           <Route path="/auth" element={<Auth />} />
