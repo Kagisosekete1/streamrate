@@ -549,6 +549,31 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                   webkit-playsinline="true"
                   x-webkit-airplay="deny"
                   style={{ WebkitAppearance: 'none' } as React.CSSProperties}
+                  onLoadedData={(e) => {
+                    const vid = e.currentTarget;
+                    if (isPlaying && !showComments) {
+                      vid.play().catch(() => {});
+                    }
+                  }}
+                  onWaiting={(e) => {
+                    // Video stalled - retry play when ready
+                    const vid = e.currentTarget;
+                    const onCanPlay = () => {
+                      if (isPlaying && !showComments) {
+                        vid.play().catch(() => {});
+                      }
+                      vid.removeEventListener('canplay', onCanPlay);
+                    };
+                    vid.addEventListener('canplay', onCanPlay);
+                  }}
+                  onStalled={(e) => {
+                    const vid = e.currentTarget;
+                    // Force reload on stall
+                    const currentTime = vid.currentTime;
+                    vid.load();
+                    vid.currentTime = currentTime;
+                    vid.play().catch(() => {});
+                  }}
                 />
 
                 {/* Double tap heart animation */}
