@@ -266,13 +266,63 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     if (!video || !isOpen || !currentReel) return;
 
     const handleTimeUpdate = () => {
+      if (!video.duration || Number.isNaN(video.duration)) return;
       const progress = (video.currentTime / video.duration) * 100;
       setVideoProgress(progress);
+      lastVideoTimeRef.current = video.currentTime;
+      stalledChecksRef.current = 0;
     };
 
     video.addEventListener("timeupdate", handleTimeUpdate);
     return () => video.removeEventListener("timeupdate", handleTimeUpdate);
   }, [currentIndex, isOpen, currentReel]);
+
+  // Playback watchdog to recover from stalled reels
+  useEffect(() => {
+    if (!isOpen || !currentReel) return;
+
+    if (playbackWatchdogRef.current) {
+      clearInterval(playbackWatchdogRef.current);
+    }
+
+    playbackWatchdogRef.current = setInterval(() => {
+      const video = videoRef.current;
+      if (!video || !isPlaying || showComments) return;
+
+      if (video.paused) {
+        video.play().catch(() => {});
+        return;
+      }
+
+      if (video.seeking || video.ended || video.readyState < 2) return;
+
+      const delta = Math.abs(video.currentTime - lastVideoTimeRef.current);
+      if (delta < 0.02) {
+        stalledChecksRef.current += 1;
+      } else {
+        stalledChecksRef.current = 0;
+        lastVideoTimeRef.current = video.currentTime;
+      }
+
+      if (stalledChecksRef.current >= 2) {
+        const resumeFrom = video.currentTime;
+        try {
+          video.currentTime = Math.max(0, resumeFrom - 0.1);
+        } catch {
+          // Ignore seek failures and just replay
+        }
+        video.play().catch(() => {});
+        stalledChecksRef.current = 0;
+      }
+    }, 1300);
+
+    return () => {
+      if (playbackWatchdogRef.current) {
+        clearInterval(playbackWatchdogRef.current);
+        playbackWatchdogRef.current = null;
+      }
+    };
+  }, [currentReel?.id, isOpen, isPlaying, showComments]);
 
   // Haptic feedback helper
   const triggerHaptic = useCallback(() => {
