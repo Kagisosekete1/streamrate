@@ -68,6 +68,8 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   const [captionExpanded, setCaptionExpanded] = useState(false);
   const lastTapTime = useRef<number>(0);
   const viewStartTime = useRef<number>(0);
+  const playbackRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const waitingRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
