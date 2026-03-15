@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { HashtagText } from "@/components/HashtagText";
 import { LinkPreview } from "@/components/LinkPreview";
+import { extractFirstUrl } from "@/lib/urlPreview";
 import { useForYouAlgorithm } from "@/hooks/useForYouAlgorithm";
 import { DuetStitchModal } from "@/components/DuetStitchModal";
 import { ReelComments } from "@/components/ReelComments";
