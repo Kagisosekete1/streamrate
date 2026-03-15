@@ -74,6 +74,17 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    return () => {
+      if (playbackRetryTimeoutRef.current) {
+        clearTimeout(playbackRetryTimeoutRef.current);
+      }
+      if (waitingRetryTimeoutRef.current) {
+        clearTimeout(waitingRetryTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Get current reel safely
   const currentReel = reels[currentIndex] || null;
 
