@@ -235,13 +235,22 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
 
   // Play/pause video
   useEffect(() => {
+    if (waitingRetryTimeoutRef.current) {
+      clearTimeout(waitingRetryTimeoutRef.current);
+    }
+    if (playbackRetryTimeoutRef.current) {
+      clearTimeout(playbackRetryTimeoutRef.current);
+    }
+
     if (videoRef.current && isOpen && currentReel) {
       if (isPlaying && !showComments) {
         const playPromise = videoRef.current.play();
         if (playPromise !== undefined) {
-          playPromise.catch(() => {
-            // Auto-play was prevented, user needs to interact
-            setIsPlaying(false);
+          playPromise.catch((error: DOMException) => {
+            // AbortError can happen when quickly switching reels; only stop on autoplay policy blocks
+            if (error?.name === "NotAllowedError") {
+              setIsPlaying(false);
+            }
           });
         }
       } else {
