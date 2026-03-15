@@ -831,8 +831,8 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                       </button>
                     )}
                     {(() => {
-                      const urlMatch = currentReel.caption!.match(/https?:\/\/[^\s]+/);
-                      return urlMatch ? <LinkPreview url={urlMatch[0]} /> : null;
+                      const previewUrl = extractFirstUrl(currentReel.caption || "");
+                      return previewUrl ? <LinkPreview url={previewUrl} /> : null;
                     })()}
                   </>
                 );
