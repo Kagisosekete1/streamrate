@@ -417,8 +417,8 @@ export const PostCard = ({
 
       {/* Link preview when no image */}
       {!imageUrl && (() => {
-        const urlMatch = content.match(/https?:\/\/[^\s]+/);
-        return urlMatch ? <LinkPreview url={urlMatch[0]} /> : null;
+        const previewUrl = extractFirstUrl(content);
+        return previewUrl ? <LinkPreview url={previewUrl} /> : null;
       })()}
 
       {/* Caption AFTER image */}

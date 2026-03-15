@@ -440,8 +440,8 @@ export const CommentSection = ({ postId, postOwnerId, highlightCommentId }: Comm
                     <HashtagText text={comment.content} />
                   </p>
                   {(() => {
-                    const urlMatch = comment.content.match(/https?:\/\/[^\s]+/);
-                    return urlMatch ? <LinkPreview url={urlMatch[0]} /> : null;
+                    const previewUrl = extractFirstUrl(comment.content);
+                    return previewUrl ? <LinkPreview url={previewUrl} /> : null;
                   })()}
                 </>
               )}
