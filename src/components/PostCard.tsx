@@ -19,6 +19,7 @@ import { VerificationBadge } from "@/utils/verificationBadge";
 // Caption component with "See more" truncation
 import { HashtagText } from "@/components/HashtagText";
 import { LinkPreview } from "@/components/LinkPreview";
+import { extractFirstUrl } from "@/lib/urlPreview";
 
 const CaptionWithSeeMore = ({ streamerName, streamerId, content, hasImage }: { streamerName: string; streamerId: string; content: string; hasImage?: boolean }) => {
   const [expanded, setExpanded] = useState(false);

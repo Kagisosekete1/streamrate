@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { LinkPreview } from "@/components/LinkPreview";
 import { MentionInput } from "@/components/MentionInput";
 import { HashtagText } from "@/components/HashtagText";
+import { extractFirstUrl } from "@/lib/urlPreview";
 import {
   AlertDialog,
   AlertDialogAction,
