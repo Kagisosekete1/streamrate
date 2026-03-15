@@ -82,7 +82,7 @@ export const getSocialThumbnailUrl = (url: string): string | null => {
       return `https://i.ytimg.com/vi/${youtubeVideoId}/hqdefault.jpg`;
     }
 
-    return null;
+    return `https://image.thum.io/get/ogImage/noanimate/${normalized}`;
   } catch {
     return null;
   }

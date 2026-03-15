@@ -236,10 +236,11 @@ serve(async (req) => {
     const titleMeta = extractMetaTagContent(html, ["og:title", "twitter:title"]);
     const siteMeta = extractMetaTagContent(html, ["og:site_name"]);
     const resolvedImage = resolveAbsoluteUrl(imageMeta, resolvedPageUrl);
+    const fallbackThumbnail = `https://image.thum.io/get/ogImage/noanimate/${normalizedUrl}`;
 
     return new Response(
       JSON.stringify({
-        thumbnailUrl: resolvedImage,
+        thumbnailUrl: resolvedImage || fallbackThumbnail,
         title: titleMeta,
         siteName: siteMeta,
         resolvedUrl: resolvedPageUrl,
