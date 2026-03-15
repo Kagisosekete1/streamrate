@@ -625,12 +625,15 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                   style={{ WebkitAppearance: 'none' } as React.CSSProperties}
                   onLoadedData={(e) => {
                     const vid = e.currentTarget;
+                    stalledChecksRef.current = 0;
+                    lastVideoTimeRef.current = vid.currentTime;
                     if (isPlaying && !showComments) {
                       vid.play().catch(() => {});
                     }
                   }}
                   onCanPlay={(e) => {
                     const vid = e.currentTarget;
+                    stalledChecksRef.current = 0;
                     if (isPlaying && !showComments && vid.paused) {
                       vid.play().catch(() => {});
                     }
@@ -648,7 +651,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                     if (waitingRetryTimeoutRef.current) {
                       clearTimeout(waitingRetryTimeoutRef.current);
                     }
-                    waitingRetryTimeoutRef.current = setTimeout(resumePlay, 450);
+                    waitingRetryTimeoutRef.current = setTimeout(resumePlay, 600);
                   }}
                   onError={(e) => {
                     const vid = e.currentTarget;
@@ -677,7 +680,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                       vid.addEventListener("loadedmetadata", resumePlayback, { once: true });
                       vid.src = sourceUrl;
                       vid.load();
-                    }, 500);
+                    }, 700);
                   }}
                 />
 
