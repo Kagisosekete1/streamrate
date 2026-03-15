@@ -578,26 +578,55 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                       vid.play().catch(() => {});
                     }
                   }}
+                  onCanPlay={(e) => {
+                    const vid = e.currentTarget;
+                    if (isPlaying && !showComments && vid.paused) {
+                      vid.play().catch(() => {});
+                    }
+                  }}
                   onWaiting={(e) => {
-                    // Video buffering - resume when ready
                     const vid = e.currentTarget;
                     const resumePlay = () => {
-                      if (isPlaying && !showComments) {
+                      if (isPlaying && !showComments && vid.paused) {
                         vid.play().catch(() => {});
                       }
-                      vid.removeEventListener('canplaythrough', resumePlay);
                     };
-                    vid.addEventListener('canplaythrough', resumePlay);
+
+                    vid.addEventListener("canplay", resumePlay, { once: true });
+
+                    if (waitingRetryTimeoutRef.current) {
+                      clearTimeout(waitingRetryTimeoutRef.current);
+                    }
+                    waitingRetryTimeoutRef.current = setTimeout(resumePlay, 450);
                   }}
                   onError={(e) => {
-                    // Only reload on actual errors, not stalls
                     const vid = e.currentTarget;
-                    const currentTime = vid.currentTime;
-                    setTimeout(() => {
-                      vid.src = currentReel.video_url;
-                      vid.currentTime = currentTime;
-                      vid.play().catch(() => {});
-                    }, 1000);
+                    const resumeFrom = Number.isFinite(vid.currentTime) ? vid.currentTime : 0;
+
+                    if (playbackRetryTimeoutRef.current) {
+                      clearTimeout(playbackRetryTimeoutRef.current);
+                    }
+
+                    playbackRetryTimeoutRef.current = setTimeout(() => {
+                      const sourceUrl = currentReel.video_url;
+                      const resumePlayback = () => {
+                        if (resumeFrom > 0) {
+                          try {
+                            vid.currentTime = Math.max(0, resumeFrom - 0.1);
+                          } catch {
+                            // Ignore seek errors
+                          }
+                        }
+
+                        if (isPlaying && !showComments) {
+                          vid.play().catch(() => {});
+                        }
+                      };
+
+                      vid.addEventListener("loadedmetadata", resumePlayback, { once: true });
+                      vid.src = sourceUrl;
+                      vid.load();
+                    }, 500);
                   }}
                 />
 
