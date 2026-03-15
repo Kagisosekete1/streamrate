@@ -60,7 +60,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   const [viewsCount, setViewsCount] = useState<Record<string, number>>({});
   const [viewRecorded, setViewRecorded] = useState<Record<string, boolean>>({});
   const [showDuetStitch, setShowDuetStitch] = useState(false);
-  const [preloadedVideos, setPreloadedVideos] = useState<Record<string, HTMLVideoElement>>({});
   const [showDoubleTapHeart, setShowDoubleTapHeart] = useState(false);
   const [doubleTapPosition, setDoubleTapPosition] = useState({ x: 0, y: 0 });
   const [showAvatarView, setShowAvatarView] = useState(false);
@@ -68,8 +67,12 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   const [captionExpanded, setCaptionExpanded] = useState(false);
   const lastTapTime = useRef<number>(0);
   const viewStartTime = useRef<number>(0);
+  const preloadedVideosRef = useRef<Record<string, HTMLVideoElement>>({});
   const playbackRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const waitingRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const playbackWatchdogRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastVideoTimeRef = useRef(0);
+  const stalledChecksRef = useRef(0);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -81,6 +84,9 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
       }
       if (waitingRetryTimeoutRef.current) {
         clearTimeout(waitingRetryTimeoutRef.current);
+      }
+      if (playbackWatchdogRef.current) {
+        clearInterval(playbackWatchdogRef.current);
       }
     };
   }, []);
@@ -158,25 +164,19 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     if (!isOpen || reels.length === 0) return;
 
     const preloadVideo = (url: string, reelId: string) => {
-      if (preloadedVideos[reelId]) return; // Already preloaded
+      if (preloadedVideosRef.current[reelId]) return; // Already preloaded
       
-      const video = document.createElement('video');
+      const video = document.createElement("video");
       video.src = url;
-      video.preload = 'auto';
+      video.preload = "auto";
       video.muted = true;
       video.playsInline = true;
-      // Remove default controls and poster to prevent grey play button
       video.controls = false;
-      video.setAttribute('webkit-playsinline', 'true');
-      video.setAttribute('x-webkit-airplay', 'allow');
-      
-      // Start loading
+      video.setAttribute("webkit-playsinline", "true");
+      video.setAttribute("x-webkit-airplay", "allow");
       video.load();
-      
-      setPreloadedVideos(prev => ({
-        ...prev,
-        [reelId]: video
-      }));
+
+      preloadedVideosRef.current[reelId] = video;
     };
 
     // Preload next 2 reels
@@ -191,17 +191,18 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     if (currentIndex > 0) {
       preloadVideo(reels[currentIndex - 1].video_url, reels[currentIndex - 1].id);
     }
-  }, [currentIndex, isOpen, reels, preloadedVideos]);
+  }, [currentIndex, isOpen, reels]);
 
   // Cleanup preloaded videos on unmount
   useEffect(() => {
     return () => {
-      Object.values(preloadedVideos).forEach(video => {
-        video.src = '';
+      Object.values(preloadedVideosRef.current).forEach((video) => {
+        video.src = "";
         video.load();
       });
+      preloadedVideosRef.current = {};
     };
-  }, [preloadedVideos]);
+  }, []);
 
   useEffect(() => {
     if (isOpen && currentReel) {
@@ -265,13 +266,63 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     if (!video || !isOpen || !currentReel) return;
 
     const handleTimeUpdate = () => {
+      if (!video.duration || Number.isNaN(video.duration)) return;
       const progress = (video.currentTime / video.duration) * 100;
       setVideoProgress(progress);
+      lastVideoTimeRef.current = video.currentTime;
+      stalledChecksRef.current = 0;
     };
 
     video.addEventListener("timeupdate", handleTimeUpdate);
     return () => video.removeEventListener("timeupdate", handleTimeUpdate);
   }, [currentIndex, isOpen, currentReel]);
+
+  // Playback watchdog to recover from stalled reels
+  useEffect(() => {
+    if (!isOpen || !currentReel) return;
+
+    if (playbackWatchdogRef.current) {
+      clearInterval(playbackWatchdogRef.current);
+    }
+
+    playbackWatchdogRef.current = setInterval(() => {
+      const video = videoRef.current;
+      if (!video || !isPlaying || showComments) return;
+
+      if (video.paused) {
+        video.play().catch(() => {});
+        return;
+      }
+
+      if (video.seeking || video.ended || video.readyState < 2) return;
+
+      const delta = Math.abs(video.currentTime - lastVideoTimeRef.current);
+      if (delta < 0.02) {
+        stalledChecksRef.current += 1;
+      } else {
+        stalledChecksRef.current = 0;
+        lastVideoTimeRef.current = video.currentTime;
+      }
+
+      if (stalledChecksRef.current >= 2) {
+        const resumeFrom = video.currentTime;
+        try {
+          video.currentTime = Math.max(0, resumeFrom - 0.1);
+        } catch {
+          // Ignore seek failures and just replay
+        }
+        video.play().catch(() => {});
+        stalledChecksRef.current = 0;
+      }
+    }, 1300);
+
+    return () => {
+      if (playbackWatchdogRef.current) {
+        clearInterval(playbackWatchdogRef.current);
+        playbackWatchdogRef.current = null;
+      }
+    };
+  }, [currentReel?.id, isOpen, isPlaying, showComments]);
 
   // Haptic feedback helper
   const triggerHaptic = useCallback(() => {
@@ -574,12 +625,15 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                   style={{ WebkitAppearance: 'none' } as React.CSSProperties}
                   onLoadedData={(e) => {
                     const vid = e.currentTarget;
+                    stalledChecksRef.current = 0;
+                    lastVideoTimeRef.current = vid.currentTime;
                     if (isPlaying && !showComments) {
                       vid.play().catch(() => {});
                     }
                   }}
                   onCanPlay={(e) => {
                     const vid = e.currentTarget;
+                    stalledChecksRef.current = 0;
                     if (isPlaying && !showComments && vid.paused) {
                       vid.play().catch(() => {});
                     }
@@ -597,7 +651,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                     if (waitingRetryTimeoutRef.current) {
                       clearTimeout(waitingRetryTimeoutRef.current);
                     }
-                    waitingRetryTimeoutRef.current = setTimeout(resumePlay, 450);
+                    waitingRetryTimeoutRef.current = setTimeout(resumePlay, 600);
                   }}
                   onError={(e) => {
                     const vid = e.currentTarget;
@@ -626,7 +680,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                       vid.addEventListener("loadedmetadata", resumePlayback, { once: true });
                       vid.src = sourceUrl;
                       vid.load();
-                    }, 500);
+                    }, 700);
                   }}
                 />
 
