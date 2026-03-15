@@ -19,6 +19,7 @@ import { VerificationBadge } from "@/utils/verificationBadge";
 // Caption component with "See more" truncation
 import { HashtagText } from "@/components/HashtagText";
 import { LinkPreview } from "@/components/LinkPreview";
+import { extractFirstUrl } from "@/lib/urlPreview";
 
 const CaptionWithSeeMore = ({ streamerName, streamerId, content, hasImage }: { streamerName: string; streamerId: string; content: string; hasImage?: boolean }) => {
   const [expanded, setExpanded] = useState(false);
@@ -416,8 +417,8 @@ export const PostCard = ({
 
       {/* Link preview when no image */}
       {!imageUrl && (() => {
-        const urlMatch = content.match(/https?:\/\/[^\s]+/);
-        return urlMatch ? <LinkPreview url={urlMatch[0]} /> : null;
+        const previewUrl = extractFirstUrl(content);
+        return previewUrl ? <LinkPreview url={previewUrl} /> : null;
       })()}
 
       {/* Caption AFTER image */}

@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { LinkPreview } from "@/components/LinkPreview";
 import { MentionInput } from "@/components/MentionInput";
 import { HashtagText } from "@/components/HashtagText";
+import { extractFirstUrl } from "@/lib/urlPreview";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -439,8 +440,8 @@ export const CommentSection = ({ postId, postOwnerId, highlightCommentId }: Comm
                     <HashtagText text={comment.content} />
                   </p>
                   {(() => {
-                    const urlMatch = comment.content.match(/https?:\/\/[^\s]+/);
-                    return urlMatch ? <LinkPreview url={urlMatch[0]} /> : null;
+                    const previewUrl = extractFirstUrl(comment.content);
+                    return previewUrl ? <LinkPreview url={previewUrl} /> : null;
                   })()}
                 </>
               )}

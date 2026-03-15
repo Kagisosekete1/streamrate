@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { HashtagText } from "@/components/HashtagText";
 import { LinkPreview } from "@/components/LinkPreview";
+import { extractFirstUrl } from "@/lib/urlPreview";
 import { useForYouAlgorithm } from "@/hooks/useForYouAlgorithm";
 import { DuetStitchModal } from "@/components/DuetStitchModal";
 import { ReelComments } from "@/components/ReelComments";
@@ -67,9 +68,22 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   const [captionExpanded, setCaptionExpanded] = useState(false);
   const lastTapTime = useRef<number>(0);
   const viewStartTime = useRef<number>(0);
+  const playbackRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const waitingRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    return () => {
+      if (playbackRetryTimeoutRef.current) {
+        clearTimeout(playbackRetryTimeoutRef.current);
+      }
+      if (waitingRetryTimeoutRef.current) {
+        clearTimeout(waitingRetryTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Get current reel safely
   const currentReel = reels[currentIndex] || null;
@@ -221,13 +235,22 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
 
   // Play/pause video
   useEffect(() => {
+    if (waitingRetryTimeoutRef.current) {
+      clearTimeout(waitingRetryTimeoutRef.current);
+    }
+    if (playbackRetryTimeoutRef.current) {
+      clearTimeout(playbackRetryTimeoutRef.current);
+    }
+
     if (videoRef.current && isOpen && currentReel) {
       if (isPlaying && !showComments) {
         const playPromise = videoRef.current.play();
         if (playPromise !== undefined) {
-          playPromise.catch(() => {
-            // Auto-play was prevented, user needs to interact
-            setIsPlaying(false);
+          playPromise.catch((error: DOMException) => {
+            // AbortError can happen when quickly switching reels; only stop on autoplay policy blocks
+            if (error?.name === "NotAllowedError") {
+              setIsPlaying(false);
+            }
           });
         }
       } else {
@@ -555,26 +578,55 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                       vid.play().catch(() => {});
                     }
                   }}
+                  onCanPlay={(e) => {
+                    const vid = e.currentTarget;
+                    if (isPlaying && !showComments && vid.paused) {
+                      vid.play().catch(() => {});
+                    }
+                  }}
                   onWaiting={(e) => {
-                    // Video buffering - resume when ready
                     const vid = e.currentTarget;
                     const resumePlay = () => {
-                      if (isPlaying && !showComments) {
+                      if (isPlaying && !showComments && vid.paused) {
                         vid.play().catch(() => {});
                       }
-                      vid.removeEventListener('canplaythrough', resumePlay);
                     };
-                    vid.addEventListener('canplaythrough', resumePlay);
+
+                    vid.addEventListener("canplay", resumePlay, { once: true });
+
+                    if (waitingRetryTimeoutRef.current) {
+                      clearTimeout(waitingRetryTimeoutRef.current);
+                    }
+                    waitingRetryTimeoutRef.current = setTimeout(resumePlay, 450);
                   }}
                   onError={(e) => {
-                    // Only reload on actual errors, not stalls
                     const vid = e.currentTarget;
-                    const currentTime = vid.currentTime;
-                    setTimeout(() => {
-                      vid.src = currentReel.video_url;
-                      vid.currentTime = currentTime;
-                      vid.play().catch(() => {});
-                    }, 1000);
+                    const resumeFrom = Number.isFinite(vid.currentTime) ? vid.currentTime : 0;
+
+                    if (playbackRetryTimeoutRef.current) {
+                      clearTimeout(playbackRetryTimeoutRef.current);
+                    }
+
+                    playbackRetryTimeoutRef.current = setTimeout(() => {
+                      const sourceUrl = currentReel.video_url;
+                      const resumePlayback = () => {
+                        if (resumeFrom > 0) {
+                          try {
+                            vid.currentTime = Math.max(0, resumeFrom - 0.1);
+                          } catch {
+                            // Ignore seek errors
+                          }
+                        }
+
+                        if (isPlaying && !showComments) {
+                          vid.play().catch(() => {});
+                        }
+                      };
+
+                      vid.addEventListener("loadedmetadata", resumePlayback, { once: true });
+                      vid.src = sourceUrl;
+                      vid.load();
+                    }, 500);
                   }}
                 />
 
@@ -779,8 +831,8 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                       </button>
                     )}
                     {(() => {
-                      const urlMatch = currentReel.caption!.match(/https?:\/\/[^\s]+/);
-                      return urlMatch ? <LinkPreview url={urlMatch[0]} /> : null;
+                      const previewUrl = extractFirstUrl(currentReel.caption || "");
+                      return previewUrl ? <LinkPreview url={previewUrl} /> : null;
                     })()}
                   </>
                 );
