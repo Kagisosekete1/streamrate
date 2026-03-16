@@ -57,15 +57,26 @@ export const BottomNav = () => {
                 whileTap={{ scale: 0.9 }}
                 className="relative flex items-center justify-center"
               >
-                <Icon 
-                  className={cn(
-                    "w-6 h-6 transition-all",
-                    isActive ? "text-foreground" : "text-muted-foreground",
-                    item.path === "/create-post" && "w-7 h-7"
-                  )}
-                  strokeWidth={isActive ? 2.5 : 1.5}
-                  fill={isActive && item.path !== "/create-post" ? "currentColor" : "none"}
-                />
+                {item.path === "/profile" ? (
+                  <img
+                    src={profile?.avatar_url || getDefaultAvatar()}
+                    alt="Profile"
+                    className={cn(
+                      "w-7 h-7 rounded-full object-cover transition-all",
+                      isActive ? "ring-2 ring-primary" : "opacity-70"
+                    )}
+                  />
+                ) : (
+                  <Icon 
+                    className={cn(
+                      "w-6 h-6 transition-all",
+                      isActive ? "text-foreground" : "text-muted-foreground",
+                      item.path === "/create-post" && "w-7 h-7"
+                    )}
+                    strokeWidth={isActive ? 2.5 : 1.5}
+                    fill={isActive && item.path !== "/create-post" ? "currentColor" : "none"}
+                  />
+                )}
                 {isActive && (
                   <motion.div
                     layoutId="activeTab"
