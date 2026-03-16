@@ -631,27 +631,15 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                       vid.play().catch(() => {});
                     }
                   }}
-                  onCanPlay={(e) => {
+                  onCanPlayThrough={(e) => {
                     const vid = e.currentTarget;
                     stalledChecksRef.current = 0;
                     if (isPlaying && !showComments && vid.paused) {
                       vid.play().catch(() => {});
                     }
                   }}
-                  onWaiting={(e) => {
-                    const vid = e.currentTarget;
-                    const resumePlay = () => {
-                      if (isPlaying && !showComments && vid.paused) {
-                        vid.play().catch(() => {});
-                      }
-                    };
-
-                    vid.addEventListener("canplay", resumePlay, { once: true });
-
-                    if (waitingRetryTimeoutRef.current) {
-                      clearTimeout(waitingRetryTimeoutRef.current);
-                    }
-                    waitingRetryTimeoutRef.current = setTimeout(resumePlay, 600);
+                  onWaiting={() => {
+                    // Handled by watchdog – no aggressive retries here
                   }}
                   onError={(e) => {
                     const vid = e.currentTarget;
@@ -671,16 +659,15 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                             // Ignore seek errors
                           }
                         }
-
                         if (isPlaying && !showComments) {
                           vid.play().catch(() => {});
                         }
                       };
 
-                      vid.addEventListener("loadedmetadata", resumePlayback, { once: true });
+                      vid.addEventListener("canplaythrough", resumePlayback, { once: true });
                       vid.src = sourceUrl;
                       vid.load();
-                    }, 700);
+                    }, 1000);
                   }}
                 />
 
