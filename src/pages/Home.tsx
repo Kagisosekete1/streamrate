@@ -8,10 +8,10 @@ import { PostCard } from "@/components/PostCard";
 import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 import { NewPostsBanner } from "@/components/NewPostsBanner";
 
-
 import { StreamiiAi } from "@/components/StreamiiAi";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useSmartFeed } from "@/hooks/useSmartFeed";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
