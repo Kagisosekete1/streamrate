@@ -267,80 +267,8 @@ const Home = () => {
     postIds: string[] | null = null,
     offset: number = 0
   ) => {
-    let query = supabase
-      .from("posts")
-      .select("id, content, image_url, created_at, updated_at, user_id, is_private")
-      .order("created_at", { ascending: false })
-      .range(offset, offset + POSTS_PER_PAGE - 1);
-
-    if (postIds) {
-      if (postIds.length === 0) return [];
-      query = query.in("id", postIds);
-    }
-
-    const { data: postsData } = await query;
-
-    if (!postsData || postsData.length === 0) return [];
-
-    // Filter out blocked users' posts
-    const filteredPosts = postsData.filter(p => !blockedUserIds.includes(p.user_id));
-
-    const userIds = [...new Set(filteredPosts.map((p) => p.user_id))];
-    const { data: profilesData } = await supabase
-      .from("profiles")
-      .select("id, username, avatar_url, email, signup_number")
-      .in("id", userIds);
-
-    const profilesMap = new Map((profilesData || []).map((p) => [p.id, p]));
-
-    const postsWithCounts = await Promise.all(
-      filteredPosts.map(async (post) => {
-        const { count: likesCount } = await supabase
-          .from("post_likes")
-          .select("*", { count: "exact", head: true })
-          .eq("post_id", post.id);
-
-        const { count: commentsCount } = await supabase
-          .from("comments")
-          .select("*", { count: "exact", head: true })
-          .eq("post_id", post.id);
-
-        let isLiked = false;
-        let isBookmarked = false;
-        if (user) {
-          const { data: likeData } = await supabase
-            .from("post_likes")
-            .select("id")
-            .eq("post_id", post.id)
-            .eq("user_id", user.id)
-            .maybeSingle();
-          isLiked = !!likeData;
-
-          const { data: bookmarkData } = await supabase
-            .from("bookmarks")
-            .select("id")
-            .eq("post_id", post.id)
-            .eq("user_id", user.id)
-            .maybeSingle();
-          isBookmarked = !!bookmarkData;
-        }
-
-        const profile = profilesMap.get(post.user_id);
-
-        return {
-          ...post,
-          profiles: profile
-            ? { username: profile.username, avatar_url: profile.avatar_url, email: profile.email, signup_number: profile.signup_number }
-            : null,
-          likes_count: likesCount || 0,
-          comments_count: commentsCount || 0,
-          is_liked: isLiked,
-          is_bookmarked: isBookmarked,
-        };
-      })
-    );
-
-    return postsWithCounts;
+    // Use smart feed algorithm
+    return fetchSmartFeed(blockedUserIds, offset);
   };
 
   const fetchPosts = async () => {
