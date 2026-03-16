@@ -957,6 +957,10 @@ const Settings = () => {
           </Modal>
         )}
 
+        {activeModal === "appLock" && (
+          <AppLockModal onClose={() => setActiveModal(null)} />
+        )}
+
         {activeModal === "email" && (
           <Modal title="Email Address">
             <div className="space-y-4">
