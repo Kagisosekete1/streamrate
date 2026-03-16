@@ -55,29 +55,30 @@ function AppContent() {
       <AuthProvider>
         <AuthenticatedFeatures />
         <AppLockGate>
-          <Route path="/" element={<Auth />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/streamers" element={<Streamers />} />
-          <Route path="/streamer/:id" element={<StreamerProfile />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/create-post" element={<CreatePost />} />
-          <Route path="/create-reel" element={<CreateReel />} />
-          <Route path="/post/:id" element={<PostDetail />} />
-          <Route path="/reels" element={<Reels />} />
-          <Route path="/reel/:id" element={<Reels />} />
-          <Route path="/hashtags" element={<Hashtags />} />
-          <Route path="/hashtags/:tag" element={<Hashtags />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/analytics/reels" element={<ReelAnalytics />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/live" element={<Live />} />
-          <Route path="/store" element={<Store />} />
-          <Route path="/streaming-analytics" element={<StreamingAnalytics />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+          <Routes>
+            <Route path="/" element={<Auth />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/streamers" element={<Streamers />} />
+            <Route path="/streamer/:id" element={<StreamerProfile />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/create-post" element={<CreatePost />} />
+            <Route path="/create-reel" element={<CreateReel />} />
+            <Route path="/post/:id" element={<PostDetail />} />
+            <Route path="/reels" element={<Reels />} />
+            <Route path="/reel/:id" element={<Reels />} />
+            <Route path="/hashtags" element={<Hashtags />} />
+            <Route path="/hashtags/:tag" element={<Hashtags />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/analytics/reels" element={<ReelAnalytics />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/live" element={<Live />} />
+            <Route path="/store" element={<Store />} />
+            <Route path="/streaming-analytics" element={<StreamingAnalytics />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </AppLockGate>
         <CookieConsent />
         <PWAInstallBanner />
