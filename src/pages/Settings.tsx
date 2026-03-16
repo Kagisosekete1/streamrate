@@ -46,6 +46,7 @@ import { CommunityGuidelinesModal } from "@/components/settings/CommunityGuideli
 import { PrivacyPolicyModal } from "@/components/settings/PrivacyPolicyModal";
 import { TermsOfServiceModal } from "@/components/settings/TermsOfServiceModal";
 import { ReportProblemModal } from "@/components/settings/ReportProblemModal";
+import { AppLockModal } from "@/components/settings/AppLockModal";
 
 // Detect Median.co native webview
 const isMedianApp = () => !!(window as any).median || !!(window as any).gonative;
