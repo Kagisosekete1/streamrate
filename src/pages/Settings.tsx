@@ -258,6 +258,7 @@ type ModalType =
   | "deleteAccount"
   | "deactivateAccount"
   | "appUpdate"
+  | "appLock"
   | "lastSeenVisibility"
   | null;
 
