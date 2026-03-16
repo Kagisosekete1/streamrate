@@ -671,6 +671,12 @@ const Settings = () => {
             onClick={() => setActiveModal("changePassword")}
           />
           <SettingItem
+            icon={Shield}
+            title="App Lock (PIN)"
+            subtitle="Set a PIN to lock your app"
+            onClick={() => setActiveModal("appLock")}
+          />
+          <SettingItem
             icon={Mail}
             title="Email Address"
             subtitle={profile?.email || "Not set"}
