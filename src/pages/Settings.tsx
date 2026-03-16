@@ -46,6 +46,7 @@ import { CommunityGuidelinesModal } from "@/components/settings/CommunityGuideli
 import { PrivacyPolicyModal } from "@/components/settings/PrivacyPolicyModal";
 import { TermsOfServiceModal } from "@/components/settings/TermsOfServiceModal";
 import { ReportProblemModal } from "@/components/settings/ReportProblemModal";
+import { AppLockModal } from "@/components/settings/AppLockModal";
 
 // Detect Median.co native webview
 const isMedianApp = () => !!(window as any).median || !!(window as any).gonative;
@@ -258,6 +259,7 @@ type ModalType =
   | "deleteAccount"
   | "deactivateAccount"
   | "appUpdate"
+  | "appLock"
   | "lastSeenVisibility"
   | null;
 
@@ -670,6 +672,12 @@ const Settings = () => {
             onClick={() => setActiveModal("changePassword")}
           />
           <SettingItem
+            icon={Shield}
+            title="App Lock (PIN)"
+            subtitle="Set a PIN to lock your app"
+            onClick={() => setActiveModal("appLock")}
+          />
+          <SettingItem
             icon={Mail}
             title="Email Address"
             subtitle={profile?.email || "Not set"}
@@ -948,6 +956,10 @@ const Settings = () => {
               <p className="text-xs text-muted-foreground">Password must be at least 8 characters</p>
             </div>
           </Modal>
+        )}
+
+        {activeModal === "appLock" && (
+          <AppLockModal onClose={() => setActiveModal(null)} />
         )}
 
         {activeModal === "email" && (

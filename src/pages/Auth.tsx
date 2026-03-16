@@ -168,9 +168,7 @@ const Auth = () => {
           animate={{ y: 0, opacity: 1 }}
           className="flex items-center justify-center gap-3 mb-8"
         >
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <Gamepad2 className="w-6 h-6 text-primary-foreground" />
-          </div>
+          <img src="/logo.png" alt="StreamRate" className="h-12 w-auto" />
           <span className="text-2xl font-bold gradient-text">StreamRate</span>
         </motion.div>
 
