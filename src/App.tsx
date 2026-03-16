@@ -78,6 +78,7 @@ function AppContent() {
           <Route path="/streaming-analytics" element={<StreamingAnalytics />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </AppLockGate>
         <CookieConsent />
         <PWAInstallBanner />
         <IOSInstallBanner />
