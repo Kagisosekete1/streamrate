@@ -11,6 +11,7 @@ import { useNativePushNotifications } from "@/hooks/useNativePushNotifications";
 import { CookieConsent } from "@/components/CookieConsent";
 import { PWAInstallBanner } from "@/components/PWAInstallBanner";
 import { IOSInstallBanner } from "@/components/IOSInstallBanner";
+import { AppLockGate } from "@/components/AppLockGate";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
