@@ -50,6 +50,7 @@ const POSTS_PER_PAGE = 10;
 
 const Home = () => {
   const { user, profile } = useAuth();
+  const { fetchSmartFeed, markPostsAsViewed } = useSmartFeed();
   const navigate = useNavigate();
   const [trendingStreamers, setTrendingStreamers] = useState<Streamer[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
