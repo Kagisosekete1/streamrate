@@ -54,7 +54,7 @@ function AppContent() {
     <BrowserRouter>
       <AuthProvider>
         <AuthenticatedFeatures />
-        <Routes>
+        <AppLockGate>
           <Route path="/" element={<Auth />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/home" element={<Home />} />
