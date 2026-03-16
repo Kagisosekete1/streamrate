@@ -1,20 +1,23 @@
 import { useState, useEffect } from "react";
-import { Home, Compass, Plus, UserCircle2, Clapperboard } from "lucide-react";
+import { Home, Compass, Plus, Clapperboard } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
 const navItems = [
   { icon: Home, label: "Home", path: "/home" },
   { icon: Compass, label: "Discover", path: "/streamers" },
   { icon: Plus, label: "Create", path: "/create-post" },
   { icon: Clapperboard, label: "Reels", path: "/reels" },
-  { icon: UserCircle2, label: "Profile", path: "/profile" },
+  { icon: null, label: "Profile", path: "/profile" },
 ];
 
 export const BottomNav = () => {
   const location = useLocation();
+  const { profile } = useAuth();
   const [hasNewReels, setHasNewReels] = useState(false);
 
   useEffect(() => {
