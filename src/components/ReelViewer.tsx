@@ -594,7 +594,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
             onDragEnd={handleDragEnd}
             className="relative w-full h-full"
           >
-            <AnimatePresence mode="popLayout" initial={false} custom={slideDirection}>
+            <AnimatePresence mode="sync" initial={false} custom={slideDirection}>
               <motion.div
                 key={currentReel.id}
                 custom={slideDirection}
