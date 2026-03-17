@@ -16,6 +16,8 @@ import {
   Radio,
   ShoppingBag,
   BarChart3,
+  Target,
+  Rocket,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
