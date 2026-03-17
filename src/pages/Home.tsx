@@ -309,6 +309,7 @@ const Home = () => {
         </header>
 
         <TrendingStreamersSection trendingStreamers={trendingStreamers} />
+        <UnderratedCreators />
 
         <main className="max-w-xl mx-auto">
           {loading ? (

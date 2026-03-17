@@ -77,6 +77,9 @@ function AppContent() {
             <Route path="/live" element={<Live />} />
             <Route path="/store" element={<Store />} />
             <Route path="/streaming-analytics" element={<StreamingAnalytics />} />
+            <Route path="/missions" element={<Missions />} />
+            <Route path="/boost-profile" element={<BoostProfile />} />
+            <Route path="/creator-dashboard" element={<CreatorDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLockGate>
