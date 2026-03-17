@@ -31,6 +31,9 @@ import About from "./pages/About";
 import Live from "./pages/Live";
 import Store from "./pages/Store";
 import StreamingAnalytics from "./pages/StreamingAnalytics";
+import Missions from "./pages/Missions";
+import BoostProfile from "./pages/BoostProfile";
+import CreatorDashboard from "./pages/CreatorDashboard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
