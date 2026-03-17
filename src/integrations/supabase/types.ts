@@ -86,6 +86,33 @@ export type Database = {
         }
         Relationships: []
       }
+      coin_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       comment_likes: {
         Row: {
           comment_id: string
@@ -193,6 +220,45 @@ export type Database = {
           platform_username?: string | null
           refresh_token?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      daily_missions: {
+        Row: {
+          action_type: string
+          coin_reward: number
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          is_active: boolean
+          target_count: number
+          title: string
+          xp_reward: number
+        }
+        Insert: {
+          action_type: string
+          coin_reward?: number
+          created_at?: string
+          description: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          target_count?: number
+          title: string
+          xp_reward?: number
+        }
+        Update: {
+          action_type?: string
+          coin_reward?: number
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          target_count?: number
+          title?: string
+          xp_reward?: number
         }
         Relationships: []
       }
@@ -428,6 +494,39 @@ export type Database = {
           image_url?: string | null
           is_private?: boolean
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profile_boosts: {
+        Row: {
+          boost_type: string
+          coin_cost: number
+          created_at: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          boost_type?: string
+          coin_cost?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          boost_type?: string
+          coin_cost?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          started_at?: string
           user_id?: string
         }
         Relationships: []
@@ -805,6 +904,36 @@ export type Database = {
         }
         Relationships: []
       }
+      seller_verifications: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_verified: boolean
+          payment_amount: number
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_verified?: boolean
+          payment_amount?: number
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_verified?: boolean
+          payment_amount?: number
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       store_products: {
         Row: {
           category: string
@@ -901,6 +1030,95 @@ export type Database = {
         }
         Relationships: []
       }
+      user_badges: {
+        Row: {
+          badge_icon: string
+          badge_name: string
+          badge_type: string
+          earned_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_icon?: string
+          badge_name: string
+          badge_type: string
+          earned_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_icon?: string
+          badge_name?: string
+          badge_type?: string
+          earned_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_coins: {
+        Row: {
+          balance: number
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_daily_missions: {
+        Row: {
+          claimed: boolean
+          completed: boolean
+          created_at: string
+          id: string
+          mission_date: string
+          mission_id: string
+          progress: number
+          user_id: string
+        }
+        Insert: {
+          claimed?: boolean
+          completed?: boolean
+          created_at?: string
+          id?: string
+          mission_date?: string
+          mission_id: string
+          progress?: number
+          user_id: string
+        }
+        Update: {
+          claimed?: boolean
+          completed?: boolean
+          created_at?: string
+          id?: string
+          mission_date?: string
+          mission_id?: string
+          progress?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_daily_missions_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "daily_missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_interests: {
         Row: {
           created_at: string
@@ -957,11 +1175,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_xp: {
+        Row: {
+          created_at: string
+          id: string
+          last_streak_date: string | null
+          level: number
+          streak_days: number
+          total_xp: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_streak_date?: string | null
+          level?: number
+          streak_days?: number
+          total_xp?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_streak_date?: string | null
+          level?: number
+          streak_days?: number
+          total_xp?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      calculate_level: { Args: { xp: number }; Returns: number }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -973,6 +1225,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      xp_for_level: { Args: { lvl: number }; Returns: number }
     }
     Enums: {
       app_role: "fan" | "streamer" | "seller"
