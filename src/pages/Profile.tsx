@@ -47,6 +47,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, profile, userRole, loading, signOut, updateProfile } = useAuth();
+  const { xp, coins } = useGamification();
   const [posts, setPosts] = useState<Post[]>([]);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
