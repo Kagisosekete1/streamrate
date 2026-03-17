@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings, LogOut, Edit2, Users, Star, MessageCircle, Camera, X, ImageIcon, Eye, MapPin, ToggleLeft, ToggleRight } from "lucide-react";
 import { VerificationBadge } from "@/utils/verificationBadge";
+import { XPLevelBadge } from "@/components/XPLevelBadge";
+import { SellerVerificationBadge, SellerVerificationApply } from "@/components/SellerVerificationBadge";
+import { useGamification } from "@/hooks/useGamification";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +47,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, profile, userRole, loading, signOut, updateProfile } = useAuth();
+  const { xp, coins } = useGamification();
   const [posts, setPosts] = useState<Post[]>([]);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
@@ -788,6 +792,18 @@ const Profile = () => {
               <p className="text-muted-foreground text-sm text-center mt-1 max-w-xs line-clamp-2">
                 {profile.bio.length > 75 ? profile.bio.substring(0, 75) + "..." : profile.bio}
               </p>
+            )}
+            
+            {/* XP Level Badge */}
+            <div className="w-full max-w-xs mt-3">
+              <XPLevelBadge level={xp.level} totalXP={xp.total_xp} streakDays={xp.streak_days} compact />
+            </div>
+
+            {/* Seller Verification */}
+            {userRole === "seller" && user && (
+              <div className="w-full max-w-xs mt-2">
+                <SellerVerificationApply userId={user.id} userRole={userRole} />
+              </div>
             )}
             
             {/* Social Links */}

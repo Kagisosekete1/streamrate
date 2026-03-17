@@ -16,6 +16,8 @@ import {
   Radio,
   ShoppingBag,
   BarChart3,
+  Target,
+  Rocket,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,9 +40,11 @@ const mainNavItems: NavItem[] = [
 ];
 
 const bottomNavItems: NavItem[] = [
+  { icon: Target, label: "Missions", path: "/missions" },
   { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
   { icon: ShoppingBag, label: "Market", path: "/store" },
-  { icon: BarChart3, label: "Analytics", path: "/streaming-analytics" },
+  { icon: Rocket, label: "Boost", path: "/boost-profile" },
+  { icon: BarChart3, label: "Dashboard", path: "/creator-dashboard" },
   { icon: SlidersHorizontal, label: "Settings", path: "/settings" },
 ];
 

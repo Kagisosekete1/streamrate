@@ -18,6 +18,7 @@ import { getDefaultAvatar } from "@/utils/defaultAvatar";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useOnAppRefresh } from "@/hooks/useAppVisibility";
 import { IOSInstallBanner } from "@/components/IOSInstallBanner";
+import { UnderratedCreators } from "@/components/UnderratedCreators";
 
 interface Streamer {
   id: string;
@@ -308,6 +309,7 @@ const Home = () => {
         </header>
 
         <TrendingStreamersSection trendingStreamers={trendingStreamers} />
+        <UnderratedCreators />
 
         <main className="max-w-xl mx-auto">
           {loading ? (
