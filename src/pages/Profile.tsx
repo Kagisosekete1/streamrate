@@ -794,6 +794,18 @@ const Profile = () => {
               </p>
             )}
             
+            {/* XP Level Badge */}
+            <div className="w-full max-w-xs mt-3">
+              <XPLevelBadge level={xp.level} totalXP={xp.total_xp} streakDays={xp.streak_days} compact />
+            </div>
+
+            {/* Seller Verification */}
+            {userRole === "seller" && user && (
+              <div className="w-full max-w-xs mt-2">
+                <SellerVerificationApply userId={user.id} userRole={userRole} />
+              </div>
+            )}
+            
             {/* Social Links */}
             <SocialLinks
               twitchUrl={socialLinks.twitch_url}
