@@ -102,6 +102,7 @@ export const UnderratedCreators = () => {
             <p className="text-[10px] text-muted-foreground">
               {creator.followers_count} followers
             </p>
+            </Link>
           </motion.div>
         ))}
       </div>
