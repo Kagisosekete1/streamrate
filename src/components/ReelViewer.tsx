@@ -229,14 +229,13 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
 
         // Award XP for watching reel
         if (user && completed) {
-          try {
-            const { data: xpData } = await supabase.from("user_xp").select("total_xp, level").eq("user_id", user.id).single();
+          supabase.from("user_xp").select("total_xp, level").eq("user_id", user.id).single().then(({ data: xpData }) => {
             if (xpData) {
               const newXp = xpData.total_xp + 10;
               const newLevel = Math.max(1, Math.floor(Math.sqrt(newXp / 100)) + 1);
-              await supabase.from("user_xp").update({ total_xp: newXp, level: newLevel }).eq("user_id", user.id);
+              supabase.from("user_xp").update({ total_xp: newXp, level: newLevel }).eq("user_id", user.id);
             }
-          } catch {}
+          });
         }
       }
     };
