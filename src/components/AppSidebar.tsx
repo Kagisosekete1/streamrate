@@ -18,6 +18,7 @@ import {
   BarChart3,
   Target,
   Rocket,
+  MoreHorizontal,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,7 +40,7 @@ const mainNavItems: NavItem[] = [
   { icon: UserCircle2, label: "Profile", path: "/profile" },
 ];
 
-const bottomNavItems: NavItem[] = [
+const moreNavItems: NavItem[] = [
   { icon: Target, label: "Missions", path: "/missions" },
   { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
   { icon: ShoppingBag, label: "Market", path: "/store" },
@@ -54,8 +55,8 @@ export const AppSidebar = () => {
   const { user, profile, signOut } = useAuth();
   const [isExpanded, setIsExpanded] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showMore, setShowMore] = useState(false);
 
-  // Fetch unread notification count (excluding reel_view)
   useEffect(() => {
     if (!user) return;
 
@@ -95,6 +96,13 @@ export const AppSidebar = () => {
       supabase.removeChannel(channel);
     };
   }, [user]);
+
+  // Auto-open More if current route is in moreNavItems
+  useEffect(() => {
+    if (moreNavItems.some(item => isActive(item.path))) {
+      setShowMore(true);
+    }
+  }, [location.pathname]);
 
   const isActive = (path: string) => {
     if (path.includes("?")) {
@@ -187,37 +195,75 @@ export const AppSidebar = () => {
         ))}
       </nav>
 
-      {/* Bottom Section */}
+      {/* Bottom Section - More Menu */}
       <div className="border-t border-border py-4 px-2 space-y-1">
-        {bottomNavItems.map((item) => (
-          <Link
-            key={item.path + item.label}
-            to={item.path}
-            className={cn(
-              "flex items-center gap-4 px-3 py-3 rounded-xl transition-all duration-200 group",
-              isActive(item.path)
-                ? "bg-primary/10 text-primary font-semibold"
-                : "text-foreground hover:bg-secondary"
+        {/* More Toggle */}
+        <button
+          onClick={() => setShowMore(!showMore)}
+          className={cn(
+            "w-full flex items-center gap-4 px-3 py-3 rounded-xl transition-all duration-200 group",
+            showMore ? "bg-primary/10 text-primary font-semibold" : "text-foreground hover:bg-secondary"
+          )}
+        >
+          <MoreHorizontal
+            className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-110"
+            strokeWidth={showMore ? 2.5 : 1.5}
+          />
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                exit={{ opacity: 0, width: 0 }}
+                className="overflow-hidden whitespace-nowrap"
+              >
+                More
+              </motion.span>
             )}
-          >
-            <item.icon 
-              className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-110" 
-              strokeWidth={isActive(item.path) ? 2.5 : 1.5}
-            />
-            <AnimatePresence>
-              {isExpanded && (
-                <motion.span
-                  initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: "auto" }}
-                  exit={{ opacity: 0, width: 0 }}
-                  className="overflow-hidden whitespace-nowrap"
+          </AnimatePresence>
+        </button>
+
+        {/* More Items */}
+        <AnimatePresence>
+          {showMore && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden space-y-1 pl-2"
+            >
+              {moreNavItems.map((item) => (
+                <Link
+                  key={item.path + item.label}
+                  to={item.path}
+                  className={cn(
+                    "flex items-center gap-4 px-3 py-2.5 rounded-xl transition-all duration-200 group",
+                    isActive(item.path)
+                      ? "bg-primary/10 text-primary font-semibold"
+                      : "text-foreground hover:bg-secondary"
+                  )}
                 >
-                  {item.label}
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </Link>
-        ))}
+                  <item.icon
+                    className="w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110"
+                    strokeWidth={isActive(item.path) ? 2.5 : 1.5}
+                  />
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.span
+                        initial={{ opacity: 0, width: 0 }}
+                        animate={{ opacity: 1, width: "auto" }}
+                        exit={{ opacity: 0, width: 0 }}
+                        className="overflow-hidden whitespace-nowrap text-sm"
+                      >
+                        {item.label}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </Link>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* User Profile */}
         <div className="mt-4 pt-4 border-t border-border">

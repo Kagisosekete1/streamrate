@@ -33,10 +33,6 @@ export const TrendingStreamersSection = ({ trendingStreamers }: TrendingStreamer
             >
               <Link to={`/streamer/${streamer.id}`} className="block">
                 <div className="relative">
-                  {/* Rank badge */}
-                  <div className="absolute -top-1 -left-1 z-10 w-6 h-6 rounded-lg bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shadow-lg">
-                    #{index + 1}
-                  </div>
                   {/* Square rounded avatar */}
                   <div className="p-[3px] rounded-2xl story-ring">
                     <div className="p-[2px] rounded-[14px] bg-background">
