@@ -226,6 +226,17 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
         const completed = duration ? watchDuration >= duration * 0.8 : false; // 80% watched
         recordView(reelId, watchDuration, completed);
         setViewRecorded(prev => ({ ...prev, [reelId]: true }));
+
+        // Award XP for watching reel
+        if (user && completed) {
+          supabase.from("user_xp").select("total_xp, level").eq("user_id", user.id).single().then(({ data: xpData }) => {
+            if (xpData) {
+              const newXp = xpData.total_xp + 10;
+              const newLevel = Math.max(1, Math.floor(Math.sqrt(newXp / 100)) + 1);
+              supabase.from("user_xp").update({ total_xp: newXp, level: newLevel }).eq("user_id", user.id);
+            }
+          });
+        }
       }
     };
   }, [currentReel?.id, currentReel?.duration, recordView, viewRecorded]);

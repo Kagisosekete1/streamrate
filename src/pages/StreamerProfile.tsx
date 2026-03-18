@@ -329,9 +329,19 @@ const StreamerProfile = () => {
       return;
     }
 
+    // Award XP for rating
+    try {
+      const { data: xpData } = await supabase.from("user_xp").select("total_xp, level").eq("user_id", user.id).single();
+      if (xpData) {
+        const newXp = xpData.total_xp + 15;
+        const newLevel = Math.max(1, Math.floor(Math.sqrt(newXp / 100)) + 1);
+        await supabase.from("user_xp").update({ total_xp: newXp, level: newLevel }).eq("user_id", user.id);
+      }
+    } catch {}
+
     toast({
       title: "Review submitted!",
-      description: "Thanks for your feedback!",
+      description: "Thanks for your feedback! +15 XP",
     });
     setShowReviewForm(false);
     setRating(0);

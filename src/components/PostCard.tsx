@@ -247,6 +247,16 @@ export const PostCard = ({
       });
       setIsLiked(true);
       setLikes(likes + 1);
+
+      // Award XP for liking
+      try {
+        const { data: xpData } = await supabase.from("user_xp").select("total_xp, level").eq("user_id", user.id).single();
+        if (xpData) {
+          const newXp = xpData.total_xp + 5;
+          const newLevel = Math.max(1, Math.floor(Math.sqrt(newXp / 100)) + 1);
+          await supabase.from("user_xp").update({ total_xp: newXp, level: newLevel }).eq("user_id", user.id);
+        }
+      } catch {}
     }
   };
 
