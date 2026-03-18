@@ -77,9 +77,12 @@ export const UnderratedCreators = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.1 }}
-            onClick={() => navigate(`/streamer/${creator.id}`)}
-            className="flex-shrink-0 w-24 bg-card border border-border rounded-xl p-3 text-center cursor-pointer hover:border-accent/50 transition-colors"
+            className="flex-shrink-0 w-24"
           >
+            <Link
+              to={`/streamer/${creator.id}`}
+              className="block bg-card border border-border rounded-xl p-3 text-center cursor-pointer hover:border-accent/50 transition-colors"
+            >
             <div className="w-14 h-14 rounded-full mx-auto mb-2 overflow-hidden border-2 border-accent/30">
               <img
                 src={creator.avatar_url || getDefaultAvatar()}
