@@ -15,7 +15,6 @@ interface Creator {
 
 export const UnderratedCreators = () => {
   const [creators, setCreators] = useState<Creator[]>([]);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetch = async () => {
