@@ -365,18 +365,30 @@ const Streamers = () => {
             </section>
           )}
 
-          {/* Market Link - Mobile Only */}
-          <section className="md:hidden">
+          {/* Quick Links - Market & Leaderboard */}
+          <section className="grid grid-cols-2 gap-3">
             <Link
               to="/store"
-              className="w-full flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 hover:border-primary/40 transition-all"
+              className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 hover:border-primary/40 transition-all"
             >
               <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                 <ShoppingBag className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left flex-1">
-                <p className="font-medium text-foreground">Market</p>
-                <p className="text-xs text-muted-foreground">Browse gaming gear and accessories</p>
+                <p className="font-medium text-foreground text-sm">Market</p>
+                <p className="text-[10px] text-muted-foreground">Gear & accessories</p>
+              </div>
+            </Link>
+            <Link
+              to="/leaderboard"
+              className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-500/20 hover:border-yellow-500/40 transition-all"
+            >
+              <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                <Trophy className="w-5 h-5 text-yellow-500" />
+              </div>
+              <div className="text-left flex-1">
+                <p className="font-medium text-foreground text-sm">Leaderboard</p>
+                <p className="text-[10px] text-muted-foreground">Top streamers</p>
               </div>
             </Link>
           </section>
