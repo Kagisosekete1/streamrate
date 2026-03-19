@@ -5,7 +5,7 @@ import { Search, Filter, Hash, Users, MapPin, TrendingUp, Trophy, Contact, Crown
 import { Input } from "@/components/ui/input";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 interface Streamer {
@@ -30,7 +30,6 @@ interface Hashtag {
 }
 
 const Streamers = () => {
-  const navigate = useNavigate();
   const [streamers, setStreamers] = useState<Streamer[]>([]);
   const [filteredStreamers, setFilteredStreamers] = useState<Streamer[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
