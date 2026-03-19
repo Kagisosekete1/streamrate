@@ -5,7 +5,7 @@ import { Search, Filter, Hash, Users, MapPin, TrendingUp, Trophy, Contact, Crown
 import { Input } from "@/components/ui/input";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 interface Streamer {
@@ -30,7 +30,6 @@ interface Hashtag {
 }
 
 const Streamers = () => {
-  const navigate = useNavigate();
   const [streamers, setStreamers] = useState<Streamer[]>([]);
   const [filteredStreamers, setFilteredStreamers] = useState<Streamer[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -340,7 +339,13 @@ const Streamers = () => {
                 <h2 className="font-semibold text-foreground group-hover:text-primary transition-colors">
                   Leaderboard
                 </h2>
-                <span className="text-xs text-muted-foreground cursor-pointer" onClick={(e) => { e.stopPropagation(); navigate("/leaderboard"); }}>• View Full Rankings →</span>
+                <Link
+                  to="/leaderboard"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  • View Full Rankings →
+                </Link>
                 <ChevronDown className={cn("w-4 h-4 ml-auto text-muted-foreground transition-transform", expandedSections.leaderboard && "rotate-180")} />
               </button>
               {expandedSections.leaderboard && (
