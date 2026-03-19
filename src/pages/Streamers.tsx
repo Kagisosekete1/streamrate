@@ -521,7 +521,6 @@ const Streamers = () => {
                       averageRating={streamer.average_rating}
                       totalReviews={streamer.total_reviews}
                       index={index}
-                      rank={index + 1}
                     />
                   ))}
                 </div>

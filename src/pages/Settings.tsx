@@ -660,12 +660,6 @@ const Settings = () => {
         <SectionTitle>Account</SectionTitle>
         <div className="space-y-2">
           <SettingItem
-            icon={User}
-            title="Edit Profile"
-            subtitle="Update username, bio, and photo"
-            onClick={() => setActiveModal("editProfile")}
-          />
-          <SettingItem
             icon={Lock}
             title="Change Password"
             subtitle="Update your password"
