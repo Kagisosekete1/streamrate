@@ -339,7 +339,13 @@ const Streamers = () => {
                 <h2 className="font-semibold text-foreground group-hover:text-primary transition-colors">
                   Leaderboard
                 </h2>
-                <span className="text-xs text-muted-foreground cursor-pointer" onClick={(e) => { e.stopPropagation(); navigate("/leaderboard"); }}>• View Full Rankings →</span>
+                <Link
+                  to="/leaderboard"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  • View Full Rankings →
+                </Link>
                 <ChevronDown className={cn("w-4 h-4 ml-auto text-muted-foreground transition-transform", expandedSections.leaderboard && "rotate-180")} />
               </button>
               {expandedSections.leaderboard && (
