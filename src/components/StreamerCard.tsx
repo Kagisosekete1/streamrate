@@ -1,6 +1,6 @@
 import React, { forwardRef } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Trophy, Star, Crown, Medal, Award } from "lucide-react";
+import { MapPin, Star, Crown, Medal, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 import { StarRating } from "./StarRating";
 
@@ -13,6 +13,7 @@ interface StreamerCardProps {
   totalReviews: number;
   index?: number;
   rank?: number;
+  showRank?: boolean;
   hasStreamingPlatform?: boolean;
 }
 
@@ -25,6 +26,7 @@ export const StreamerCard = forwardRef<HTMLDivElement, StreamerCardProps>(({
   totalReviews,
   index = 0,
   rank,
+  showRank = false,
   hasStreamingPlatform = false,
 }, ref) => {
   const displayRank = rank ?? index + 1;
@@ -76,16 +78,18 @@ export const StreamerCard = forwardRef<HTMLDivElement, StreamerCardProps>(({
       <Link to={`/streamer/${id}`}>
         <div className="bg-card rounded-xl p-4 card-glow card-glow-hover transition-all duration-300 hover:translate-y-[-2px] border border-border/50">
           <div className="flex items-center gap-4">
-            {/* Rank Badge */}
-            <div
-              className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm ${rankStyles.bg} ${rankStyles.text} ${rankStyles.glow}`}
-            >
-              {RankIcon ? (
-                <RankIcon className="w-5 h-5" />
-              ) : (
-                <span className="text-xs font-bold">#{displayRank}</span>
-              )}
-            </div>
+            {/* Rank Badge - only shown when showRank is true */}
+            {showRank && (
+              <div
+                className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm ${rankStyles.bg} ${rankStyles.text} ${rankStyles.glow}`}
+              >
+                {RankIcon ? (
+                  <RankIcon className="w-5 h-5" />
+                ) : (
+                  <span className="text-xs font-bold">#{displayRank}</span>
+                )}
+              </div>
+            )}
 
             <div className="relative">
               <img

@@ -356,6 +356,7 @@ const Streamers = () => {
                       totalReviews={streamer.total_reviews}
                       index={index}
                       rank={index + 1}
+                      showRank={true}
                       hasStreamingPlatform={!!(streamer.twitch_url || streamer.kick_url || streamer.youtube_gaming_url)}
                     />
                   ))}
@@ -520,7 +521,6 @@ const Streamers = () => {
                       averageRating={streamer.average_rating}
                       totalReviews={streamer.total_reviews}
                       index={index}
-                      rank={index + 1}
                     />
                   ))}
                 </div>

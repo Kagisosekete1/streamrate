@@ -42,11 +42,8 @@ const mainNavItems: NavItem[] = [
 
 const moreNavItems: NavItem[] = [
   { icon: Target, label: "Missions", path: "/missions" },
-  { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
-  { icon: ShoppingBag, label: "Market", path: "/store" },
   { icon: Rocket, label: "Boost", path: "/boost-profile" },
   { icon: BarChart3, label: "Dashboard", path: "/creator-dashboard" },
-  { icon: SlidersHorizontal, label: "Settings", path: "/settings" },
 ];
 
 export const AppSidebar = () => {

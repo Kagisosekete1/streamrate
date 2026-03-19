@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Home, Compass, Plus, Clapperboard, MoreHorizontal, Target, Trophy, ShoppingBag, Rocket, BarChart3, SlidersHorizontal, X } from "lucide-react";
+import { Home, Compass, Plus, Clapperboard, MoreHorizontal, Target, Rocket, BarChart3, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,11 +17,8 @@ const navItems = [
 
 const moreItems = [
   { icon: Target, label: "Missions", path: "/missions" },
-  { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
-  { icon: ShoppingBag, label: "Market", path: "/store" },
   { icon: Rocket, label: "Boost", path: "/boost-profile" },
   { icon: BarChart3, label: "Dashboard", path: "/creator-dashboard" },
-  { icon: SlidersHorizontal, label: "Settings", path: "/settings" },
 ];
 
 export const BottomNav = () => {
