@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Grid3X3, Image, Film, Bookmark, Hash, Trash2, Play, Heart, MessageCircle, Eye, MoreVertical } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Grid3X3, Image, Film, Bookmark, Hash, Trash2, Play, Heart, MessageCircle, Eye, MoreVertical, MoreHorizontal, Target, Rocket, BarChart3 } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,7 +54,7 @@ interface Reel {
   created_at: string;
 }
 
-type TabType = "posts" | "photos" | "reels" | "saved";
+type TabType = "posts" | "photos" | "reels" | "saved" | "more";
 
 interface ProfileContentGridProps {
   posts: Post[];
@@ -96,6 +96,7 @@ export const ProfileContentGrid = ({
     { id: "photos", icon: Image, label: "Photos" },
     { id: "reels", icon: Film, label: "Reels" },
     { id: "saved", icon: Bookmark, label: "Saved" },
+    ...(isOwnProfile && isMobile ? [{ id: "more" as TabType, icon: MoreHorizontal, label: "More" }] : []),
   ];
 
   const photos = posts.filter((p) => p.image_url);
@@ -185,7 +186,30 @@ export const ProfileContentGrid = ({
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
           >
-            {content.length === 0 ? (
+            {activeTab === "more" ? (
+              /* More Menu - Quick links */
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { icon: Target, label: "Missions", path: "/missions", color: "text-green-500", bg: "bg-green-500/10" },
+                  { icon: Rocket, label: "Boost", path: "/boost-profile", color: "text-blue-500", bg: "bg-blue-500/10" },
+                  { icon: BarChart3, label: "Dashboard", path: "/creator-dashboard", color: "text-purple-500", bg: "bg-purple-500/10" },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className="flex flex-col items-center gap-2 p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors"
+                    >
+                      <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", item.bg)}>
+                        <Icon className={cn("w-5 h-5", item.color)} />
+                      </div>
+                      <span className="text-xs font-medium text-foreground">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : content.length === 0 ? (
               <div className="text-center py-16">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-secondary/50 flex items-center justify-center">
                   {activeTab === "posts" && <Grid3X3 className="w-8 h-8 text-muted-foreground" />}
