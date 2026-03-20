@@ -96,6 +96,7 @@ export const ProfileContentGrid = ({
     { id: "photos", icon: Image, label: "Photos" },
     { id: "reels", icon: Film, label: "Reels" },
     { id: "saved", icon: Bookmark, label: "Saved" },
+    ...(isOwnProfile && isMobile ? [{ id: "more" as TabType, icon: MoreHorizontal, label: "More" }] : []),
   ];
 
   const photos = posts.filter((p) => p.image_url);
