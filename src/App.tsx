@@ -12,6 +12,7 @@ import { CookieConsent } from "@/components/CookieConsent";
 import { PWAInstallBanner } from "@/components/PWAInstallBanner";
 import { IOSInstallBanner } from "@/components/IOSInstallBanner";
 import { AppLockGate } from "@/components/AppLockGate";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
