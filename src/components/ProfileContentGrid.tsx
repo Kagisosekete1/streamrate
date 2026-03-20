@@ -196,16 +196,22 @@ export const ProfileContentGrid = ({
                 ].map((item) => {
                   const Icon = item.icon;
                   return (
-                    <Link
+                    <motion.div
                       key={item.path}
-                      to={item.path}
-                      className="flex flex-col items-center gap-2 p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors"
+                      whileTap={{ scale: 0.92 }}
+                      whileHover={{ scale: 1.05 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
                     >
-                      <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", item.bg)}>
-                        <Icon className={cn("w-5 h-5", item.color)} />
-                      </div>
-                      <span className="text-xs font-medium text-foreground">{item.label}</span>
-                    </Link>
+                      <Link
+                        to={item.path}
+                        className="flex flex-col items-center gap-2 p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors"
+                      >
+                        <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", item.bg)}>
+                          <Icon className={cn("w-5 h-5", item.color)} />
+                        </div>
+                        <span className="text-xs font-medium text-foreground">{item.label}</span>
+                      </Link>
+                    </motion.div>
                   );
                 })}
               </div>
