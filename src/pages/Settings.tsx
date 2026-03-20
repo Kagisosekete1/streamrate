@@ -680,7 +680,7 @@ const Settings = () => {
           <SettingItem
             icon={Shield}
             title="Role"
-            subtitle={userRole === "streamer" ? "Streamer" : "Fan"}
+            subtitle={userRole === "streamer" ? "Streamer" : userRole === "seller" ? "Seller" : "Fan"}
             onClick={() => toast({ title: "Your role cannot be changed after signup." })}
           />
         </div>

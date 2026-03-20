@@ -88,6 +88,7 @@ function AppContent() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLockGate>
+        </ErrorBoundary>
         <CookieConsent />
         <PWAInstallBanner />
         <IOSInstallBanner />
