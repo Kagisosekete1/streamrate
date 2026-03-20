@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Grid3X3, Image, Film, Bookmark, Hash, Trash2, Play, Heart, MessageCircle, Eye, MoreVertical } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Grid3X3, Image, Film, Bookmark, Hash, Trash2, Play, Heart, MessageCircle, Eye, MoreVertical, MoreHorizontal, Target, Rocket, BarChart3 } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
