@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { ImageUploadModal } from "@/components/ImageUploadModal";
+import { ImageCropper } from "@/components/ImageCropper";
 import { ProfilePreviewModal } from "@/components/ProfilePreviewModal";
 import { HeaderPositionModal } from "@/components/HeaderPositionModal";
 import { ReelViewer } from "@/components/ReelViewer";
@@ -103,6 +104,7 @@ const Profile = () => {
   const [newAvatarUrl, setNewAvatarUrl] = useState<string | null>(null);
   const [isUpdatingPosts, setIsUpdatingPosts] = useState(false);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
+  const [showCropper, setShowCropper] = useState(false);
 
 
   useEffect(() => {
@@ -339,16 +341,30 @@ const Profile = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Create preview URL
+    // Create preview URL and open cropper first
     const previewUrl = URL.createObjectURL(file);
     setPreviewImageSrc(previewUrl);
     setSelectedFile(file);
-    setShowImagePreview(true);
+    setShowCropper(true);
     
     // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    setShowCropper(false);
+    // Create a new preview from the cropped blob
+    const croppedUrl = URL.createObjectURL(croppedBlob);
+    if (previewImageSrc) {
+      URL.revokeObjectURL(previewImageSrc);
+    }
+    setPreviewImageSrc(croppedUrl);
+    // Convert blob to file for the upload modal
+    const croppedFile = new File([croppedBlob], "cropped-avatar.jpg", { type: "image/jpeg" });
+    setSelectedFile(croppedFile);
+    setShowImagePreview(true);
   };
 
   const handleSaveProfilePicture = async (fileOrBlob: File | Blob) => {
@@ -1084,6 +1100,22 @@ const Profile = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Image Cropper for profile picture */}
+      {previewImageSrc && (
+        <ImageCropper
+          isOpen={showCropper}
+          onClose={() => {
+            setShowCropper(false);
+            if (previewImageSrc) URL.revokeObjectURL(previewImageSrc);
+            setPreviewImageSrc(null);
+            setSelectedFile(null);
+          }}
+          imageSrc={previewImageSrc}
+          onCropComplete={handleCropComplete}
+          aspectRatio={1}
+        />
+      )}
 
       {/* Image Upload Modal with Compression */}
       {selectedFile && previewImageSrc && (
