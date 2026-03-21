@@ -252,19 +252,39 @@ const ListProductModal = ({
   isSubmitting,
 }: {
   onClose: () => void;
-  onSubmit: (form: { name: string; price: string; description: string; images: string[]; external_url: string; category: string }) => void;
+  onSubmit: (form: { name: string; price: string; description: string; imageFiles: File[]; external_url: string; category: string }) => void;
   isSubmitting: boolean;
 }) => {
   const [form, setForm] = useState({
     name: "",
     price: "",
     description: "",
-    images: ["", "", "", ""],
     external_url: "",
     category: "Gaming",
   });
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const filledImages = form.images.filter((u) => u.trim() !== "");
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const remaining = 5 - imageFiles.length;
+    const toAdd = files.slice(0, remaining);
+    
+    const newPreviews = toAdd.map(f => URL.createObjectURL(f));
+    setImageFiles(prev => [...prev, ...toAdd]);
+    setImagePreviews(prev => [...prev, ...newPreviews]);
+    
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeImage = (index: number) => {
+    URL.revokeObjectURL(imagePreviews[index]);
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
 
   return (
     <motion.div
@@ -307,31 +327,42 @@ const ListProductModal = ({
             />
           </div>
 
-          {/* Image URLs (up to 4) */}
+          {/* Image Uploads (up to 5) */}
           <div>
             <label className="text-sm font-medium text-foreground mb-2 block flex items-center gap-1">
-              <ImageIcon className="w-4 h-4" /> Product Images (up to 4)
+              <ImageIcon className="w-4 h-4" /> Product Images (up to 5)
             </label>
-            <div className="space-y-2">
-              {form.images.map((url, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <Input
-                    value={url}
-                    onChange={(e) => {
-                      const newImages = [...form.images];
-                      newImages[i] = e.target.value;
-                      setForm({ ...form, images: newImages });
-                    }}
-                    placeholder={`Image URL ${i + 1}${i === 0 ? " (required)" : " (optional)"}`}
-                    className="text-sm"
-                  />
-                  {url.trim() && (
-                    <img src={url} alt="" className="w-10 h-10 rounded-lg object-cover border border-border flex-shrink-0" onError={(e) => (e.currentTarget.style.display = "none")} />
-                  )}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {imagePreviews.map((preview, i) => (
+                <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-border">
+                  <img src={preview} alt="" className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => removeImage(i)}
+                    className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-destructive flex items-center justify-center"
+                  >
+                    <X className="w-3 h-3 text-white" />
+                  </button>
                 </div>
               ))}
+              {imageFiles.length < 5 && (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-16 h-16 rounded-lg border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center gap-0.5 transition-colors"
+                >
+                  <Upload className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-[9px] text-muted-foreground">Add</span>
+                </button>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Paste image URLs. Users will swipe through them.</p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageSelect}
+              className="hidden"
+            />
+            <p className="text-xs text-muted-foreground">Upload product photos. Buyers will swipe through them.</p>
           </div>
 
           <div>
@@ -366,10 +397,15 @@ const ListProductModal = ({
           <Button
             variant="gaming"
             className="w-full"
-            onClick={() => onSubmit({ ...form, images: filledImages.length > 0 ? filledImages : form.images })}
+            onClick={() => onSubmit({ ...form, imageFiles })}
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Listing..." : "List Product"}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Uploading & Listing...
+              </>
+            ) : "List Product"}
           </Button>
         </div>
       </motion.div>
