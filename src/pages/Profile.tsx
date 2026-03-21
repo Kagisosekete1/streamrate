@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { ImageUploadModal } from "@/components/ImageUploadModal";
+import { ImageCropper } from "@/components/ImageCropper";
 import { ProfilePreviewModal } from "@/components/ProfilePreviewModal";
 import { HeaderPositionModal } from "@/components/HeaderPositionModal";
 import { ReelViewer } from "@/components/ReelViewer";
