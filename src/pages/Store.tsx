@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ShoppingBag, Plus, Package, Tag, ExternalLink, Star, Crown, Sparkles,
   X, Shield, BarChart3, MessageCircle, Trash2, ChevronLeft, ChevronRight,
-  Image as ImageIcon, Link as LinkIcon,
+  Image as ImageIcon, Link as LinkIcon, Upload, Loader2,
 } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
