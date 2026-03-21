@@ -389,31 +389,9 @@ const Store = () => {
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [sellerPaid, setSellerPaid] = useState(false);
-  const [checkingSubscription, setCheckingSubscription] = useState(true);
+  const sellerPaid = true; // Market is free for now
+  const checkingSubscription = false;
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    fetchProducts();
-    if (isSeller && user) {
-      checkSellerSubscription();
-    } else {
-      setCheckingSubscription(false);
-    }
-  }, [isSeller, user]);
-
-  const checkSellerSubscription = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("seller_subscriptions" as any)
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .maybeSingle();
-
-    setSellerPaid(!!data);
-    setCheckingSubscription(false);
-  };
 
   const fetchProducts = async () => {
     setLoading(true);
