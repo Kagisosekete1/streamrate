@@ -67,8 +67,8 @@ export const UnderratedCreators = () => {
     <div className="px-4 py-3">
       <div className="flex items-center gap-2 mb-3">
         <Sparkles className="w-4 h-4 text-accent" />
-        <h3 className="font-semibold text-sm text-foreground">Underrated Creators</h3>
-        <span className="text-xs text-muted-foreground">Hidden gems 💎</span>
+        <h3 className="font-semibold text-sm text-foreground">Overrated Creators</h3>
+        <span className="text-xs text-muted-foreground">🔥 Most hyped</span>
       </div>
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
         {creators.map((creator, i) => (

@@ -7,6 +7,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { TrendingStreamersSection } from "@/components/TrendingStreamersSection";
 
 interface Streamer {
   id: string;
@@ -226,6 +227,20 @@ const Streamers = () => {
     [streamers]
   );
 
+  // Trending streamers for the TrendingStreamersSection
+  const trendingStreamers = useMemo(() => 
+    [...streamers]
+      .sort((a, b) => b.average_rating - a.average_rating)
+      .slice(0, 10)
+      .map(s => ({
+        id: s.id,
+        username: s.username || s.full_name,
+        avatar_url: s.avatar_url,
+        average_rating: s.average_rating,
+      })),
+    [streamers]
+  );
+
   return (
     <AppLayout showBottomNav={true}>
       <div className="min-h-screen bg-background pb-20 md:pb-8">
@@ -289,6 +304,9 @@ const Streamers = () => {
             )}
           </div>
         </header>
+
+        {/* Trending Streamers */}
+        {!searchQuery && <TrendingStreamersSection trendingStreamers={trendingStreamers} />}
 
         <main className="px-4 py-4 space-y-6">
           {/* New Members Section - ALL users */}
