@@ -390,7 +390,7 @@ const Store = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const sellerPaid = true; // Market is free for now
-  const checkingSubscription = false;
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchProducts = async () => {
     setLoading(true);
