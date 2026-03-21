@@ -104,6 +104,7 @@ const Profile = () => {
   const [newAvatarUrl, setNewAvatarUrl] = useState<string | null>(null);
   const [isUpdatingPosts, setIsUpdatingPosts] = useState(false);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
+  const [showCropper, setShowCropper] = useState(false);
 
 
   useEffect(() => {
