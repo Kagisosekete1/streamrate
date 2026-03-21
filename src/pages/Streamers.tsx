@@ -227,6 +227,20 @@ const Streamers = () => {
     [streamers]
   );
 
+  // Trending streamers for the TrendingStreamersSection
+  const trendingStreamers = useMemo(() => 
+    [...streamers]
+      .sort((a, b) => b.average_rating - a.average_rating)
+      .slice(0, 10)
+      .map(s => ({
+        id: s.id,
+        username: s.username || s.full_name,
+        avatar_url: s.avatar_url,
+        average_rating: s.average_rating,
+      })),
+    [streamers]
+  );
+
   return (
     <AppLayout showBottomNav={true}>
       <div className="min-h-screen bg-background pb-20 md:pb-8">
