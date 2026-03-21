@@ -7,6 +7,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { TrendingStreamersSection } from "@/components/TrendingStreamersSection";
 
 interface Streamer {
   id: string;
