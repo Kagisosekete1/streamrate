@@ -341,16 +341,30 @@ const Profile = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Create preview URL
+    // Create preview URL and open cropper first
     const previewUrl = URL.createObjectURL(file);
     setPreviewImageSrc(previewUrl);
     setSelectedFile(file);
-    setShowImagePreview(true);
+    setShowCropper(true);
     
     // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    setShowCropper(false);
+    // Create a new preview from the cropped blob
+    const croppedUrl = URL.createObjectURL(croppedBlob);
+    if (previewImageSrc) {
+      URL.revokeObjectURL(previewImageSrc);
+    }
+    setPreviewImageSrc(croppedUrl);
+    // Convert blob to file for the upload modal
+    const croppedFile = new File([croppedBlob], "cropped-avatar.jpg", { type: "image/jpeg" });
+    setSelectedFile(croppedFile);
+    setShowImagePreview(true);
   };
 
   const handleSaveProfilePicture = async (fileOrBlob: File | Blob) => {

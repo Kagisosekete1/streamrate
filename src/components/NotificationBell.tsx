@@ -19,6 +19,7 @@ interface Notification {
   title: string;
   message: string;
   post_id: string | null;
+  reel_id: string | null;
   from_user_id: string | null;
   is_read: boolean;
   created_at: string;
