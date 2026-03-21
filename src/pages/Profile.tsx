@@ -1101,6 +1101,22 @@ const Profile = () => {
         )}
       </AnimatePresence>
 
+      {/* Image Cropper for profile picture */}
+      {previewImageSrc && (
+        <ImageCropper
+          isOpen={showCropper}
+          onClose={() => {
+            setShowCropper(false);
+            if (previewImageSrc) URL.revokeObjectURL(previewImageSrc);
+            setPreviewImageSrc(null);
+            setSelectedFile(null);
+          }}
+          imageSrc={previewImageSrc}
+          onCropComplete={handleCropComplete}
+          aspectRatio={1}
+        />
+      )}
+
       {/* Image Upload Modal with Compression */}
       {selectedFile && previewImageSrc && (
         <ImageUploadModal
