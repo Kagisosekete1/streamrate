@@ -305,6 +305,9 @@ const Streamers = () => {
           </div>
         </header>
 
+        {/* Trending Streamers */}
+        {!searchQuery && <TrendingStreamersSection trendingStreamers={trendingStreamers} />}
+
         <main className="px-4 py-4 space-y-6">
           {/* New Members Section - ALL users */}
           {!searchQuery && newMembers.length > 0 && (
