@@ -464,7 +464,7 @@ const Store = () => {
     name: string;
     price: string;
     description: string;
-    images: string[];
+    imageFiles: File[];
     external_url: string;
     category: string;
   }) => {
@@ -474,20 +474,38 @@ const Store = () => {
       return;
     }
 
-    const validImages = form.images.filter((u) => u.trim() !== "");
-    if (validImages.length === 0) {
+    if (form.imageFiles.length === 0) {
       toast({ title: "At least one product image is required", variant: "destructive" });
       return;
     }
 
     setIsSubmitting(true);
+
+    // Upload images to product-images bucket
+    const uploadedUrls: string[] = [];
+    for (const file of form.imageFiles) {
+      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${file.name.split('.').pop() || 'jpg'}`;
+      const { error: uploadError } = await supabase.storage
+        .from("product-images")
+        .upload(fileName, file);
+
+      if (uploadError) {
+        toast({ title: "Image upload failed", description: uploadError.message, variant: "destructive" });
+        setIsSubmitting(false);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(fileName);
+      uploadedUrls.push(urlData.publicUrl);
+    }
+
     const { error } = await supabase.from("store_products" as any).insert({
       seller_id: user.id,
       name: form.name.trim(),
       price: parseFloat(form.price),
       description: form.description.trim(),
-      image_url: validImages[0],
-      images: validImages,
+      image_url: uploadedUrls[0],
+      images: uploadedUrls,
       external_url: form.external_url.trim() || null,
       category: form.category,
     } as any);
