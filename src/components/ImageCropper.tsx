@@ -73,8 +73,8 @@ export const ImageCropper = ({
     const cos = Math.abs(Math.cos(rotRad));
     const sin = Math.abs(Math.sin(rotRad));
 
-    canvas.width = cropW;
-    canvas.height = cropH;
+    canvas.width = 1000;
+    canvas.height = 1000;
 
     ctx.translate(canvas.width / 2, canvas.height / 2);
     ctx.rotate(rotRad);
