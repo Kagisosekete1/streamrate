@@ -2,8 +2,9 @@ import { useState, useRef, useCallback } from "react";
 import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, RotateCcw } from "lucide-react";
+import { X, Check, RotateCcw, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 
 interface ImageCropperProps {
   isOpen: boolean;
@@ -20,10 +21,7 @@ function centerAspectCrop(
 ) {
   return centerCrop(
     makeAspectCrop(
-      {
-        unit: "%",
-        width: 90,
-      },
+      { unit: "%", width: 90 },
       aspect,
       mediaWidth,
       mediaHeight
@@ -43,6 +41,8 @@ export const ImageCropper = ({
   const imgRef = useRef<HTMLImageElement>(null);
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
 
   const onImageLoad = useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -58,25 +58,33 @@ export const ImageCropper = ({
     const image = imgRef.current;
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
-
     if (!ctx) return;
 
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
 
-    canvas.width = completedCrop.width * scaleX;
-    canvas.height = completedCrop.height * scaleY;
+    const cropX = completedCrop.x * scaleX;
+    const cropY = completedCrop.y * scaleY;
+    const cropW = completedCrop.width * scaleX;
+    const cropH = completedCrop.height * scaleY;
+
+    // Handle rotation
+    const rotRad = (rotation * Math.PI) / 180;
+    const cos = Math.abs(Math.cos(rotRad));
+    const sin = Math.abs(Math.sin(rotRad));
+
+    canvas.width = cropW;
+    canvas.height = cropH;
+
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(rotRad);
+    ctx.scale(zoom, zoom);
+    ctx.translate(-canvas.width / 2, -canvas.height / 2);
 
     ctx.drawImage(
       image,
-      completedCrop.x * scaleX,
-      completedCrop.y * scaleY,
-      completedCrop.width * scaleX,
-      completedCrop.height * scaleY,
-      0,
-      0,
-      canvas.width,
-      canvas.height
+      cropX, cropY, cropW, cropH,
+      0, 0, canvas.width, canvas.height
     );
 
     canvas.toBlob(
@@ -92,10 +100,16 @@ export const ImageCropper = ({
   };
 
   const resetCrop = () => {
+    setZoom(1);
+    setRotation(0);
     if (imgRef.current) {
       const { width, height } = imgRef.current;
       setCrop(centerAspectCrop(width, height, aspectRatio));
     }
+  };
+
+  const rotateImage = () => {
+    setRotation((prev) => (prev + 90) % 360);
   };
 
   return (
@@ -130,9 +144,39 @@ export const ImageCropper = ({
                 src={imageSrc}
                 alt="Crop preview"
                 onLoad={onImageLoad}
-                className="max-h-[60vh] max-w-full object-contain"
+                className="max-h-[50vh] max-w-full object-contain"
+                style={{
+                  transform: `scale(${zoom}) rotate(${rotation}deg)`,
+                  transition: "transform 0.2s ease",
+                }}
               />
             </ReactCrop>
+          </div>
+
+          {/* Zoom & Rotate Controls */}
+          <div className="px-4 py-3 border-t border-border space-y-3">
+            <div className="flex items-center gap-3">
+              <ZoomOut className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <Slider
+                value={[zoom]}
+                min={0.5}
+                max={3}
+                step={0.1}
+                onValueChange={(v) => setZoom(v[0])}
+                className="flex-1"
+              />
+              <ZoomIn className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <button
+                onClick={rotateImage}
+                className="ml-2 p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
+              >
+                <RotateCw className="w-4 h-4 text-foreground" />
+              </button>
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Zoom: {zoom.toFixed(1)}x</span>
+              <span>Rotation: {rotation}°</span>
+            </div>
           </div>
 
           <div className="p-4 border-t border-border">
