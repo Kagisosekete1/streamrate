@@ -625,7 +625,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                   muted={isMuted}
                   autoPlay
                   controls={false}
-                  preload="auto"
+                  preload="metadata"
                   poster=""
                   disablePictureInPicture
                   disableRemotePlayback

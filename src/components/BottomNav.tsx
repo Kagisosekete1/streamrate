@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Home, Compass, Plus, Clapperboard } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,9 @@ export const BottomNav = () => {
   const location = useLocation();
   const { profile } = useAuth();
   const [hasNewReels, setHasNewReels] = useState(false);
+  const [isAnyoneLive, setIsAnyoneLive] = useState(false);
 
+  // Check for new reels
   useEffect(() => {
     const checkNewReels = async () => {
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -31,6 +33,28 @@ export const BottomNav = () => {
     };
     checkNewReels();
   }, []);
+
+  // Check if anyone is live (cached check via streaming_analytics)
+  const checkLiveStatus = useCallback(async () => {
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("twitch_url, show_twitch, kick_url, show_kick, youtube_gaming_url, show_youtube_gaming")
+        .or("show_twitch.eq.true,show_kick.eq.true,show_youtube_gaming.eq.true")
+        .not("twitch_url", "is", null)
+        .limit(1);
+      // If anyone has a streaming link, check live status
+      if (data && data.length > 0) {
+        setIsAnyoneLive(true);
+      }
+    } catch {
+      // Silently fail
+    }
+  }, []);
+
+  useEffect(() => {
+    checkLiveStatus();
+  }, [checkLiveStatus]);
 
   useEffect(() => {
     if (location.pathname === "/reels") {

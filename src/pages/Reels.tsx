@@ -36,11 +36,14 @@ const Reels = () => {
 
   const fetchReels = useCallback(async () => {
     try {
-      const { data: reelsData, error } = await supabase
+      // Fetch reels and profiles in parallel for faster loading
+      const reelsPromise = supabase
         .from("reels")
         .select("*")
         .order("created_at", { ascending: false })
         .range(0, REELS_PER_PAGE - 1);
+
+      const [{ data: reelsData, error }] = await Promise.all([reelsPromise]);
 
       if (error) {
         console.error("Error fetching reels:", error);
@@ -49,38 +52,33 @@ const Reels = () => {
       }
 
       if (reelsData && reelsData.length > 0) {
-        // Shuffle reels for random playback order
-        const shuffled = [...reelsData].sort(() => Math.random() - 0.5);
-        const initialReels = shuffled.map(reel => ({
-          ...reel,
-          user: { username: null, avatar_url: null }
-        }));
-        setReels(initialReels);
-        setHasMore(reelsData.length >= REELS_PER_PAGE);
-        setLoading(false);
-
-        // Enrich with user data in background
+        // Fetch profiles in parallel immediately
         const userIds = [...new Set(reelsData.map(r => r.user_id))];
         const { data: profiles } = await supabase
           .from("profiles")
           .select("id, username, avatar_url")
           .in("id", userIds);
 
-        if (profiles) {
-          const profileMap = Object.fromEntries(profiles.map(p => [p.id, p]));
-          setReels(prev => prev.map(reel => ({
+        const profileMap = profiles ? Object.fromEntries(profiles.map(p => [p.id, p])) : {};
+
+        // Shuffle and enrich in one pass
+        const enriched = [...reelsData]
+          .sort(() => Math.random() - 0.5)
+          .map(reel => ({
             ...reel,
             user: profileMap[reel.user_id]
               ? { username: profileMap[reel.user_id].username, avatar_url: profileMap[reel.user_id].avatar_url }
               : { username: null, avatar_url: null }
-          })));
-        }
+          }));
+
+        setReels(enriched);
+        setHasMore(reelsData.length >= REELS_PER_PAGE);
       } else {
         setReels([]);
-        setLoading(false);
       }
     } catch (err) {
       console.error("Error in fetchReels:", err);
+    } finally {
       setLoading(false);
     }
   }, []);
