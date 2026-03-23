@@ -141,16 +141,24 @@ const Live = () => {
     };
   }, [fetchLiveStreamers]);
 
+  const ensureFullUrl = (url: string): string => {
+    const trimmed = url.trim();
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+      return trimmed;
+    }
+    return `https://${trimmed}`;
+  };
+
   const getPlatformLinks = (streamer: LiveStreamer) => {
     const links: { name: string; url: string; color: string; bg: string }[] = [];
     if (streamer.twitch_url && streamer.show_twitch) {
-      links.push({ name: "Twitch", url: streamer.twitch_url, color: "text-purple-400", bg: "bg-purple-500/20" });
+      links.push({ name: "Twitch", url: ensureFullUrl(streamer.twitch_url), color: "text-purple-400", bg: "bg-purple-500/20" });
     }
     if (streamer.kick_url && streamer.show_kick) {
-      links.push({ name: "Kick", url: streamer.kick_url, color: "text-green-400", bg: "bg-green-500/20" });
+      links.push({ name: "Kick", url: ensureFullUrl(streamer.kick_url), color: "text-green-400", bg: "bg-green-500/20" });
     }
     if (streamer.youtube_gaming_url && streamer.show_youtube_gaming) {
-      links.push({ name: "YouTube", url: streamer.youtube_gaming_url, color: "text-red-400", bg: "bg-red-500/20" });
+      links.push({ name: "YouTube", url: ensureFullUrl(streamer.youtube_gaming_url), color: "text-red-400", bg: "bg-red-500/20" });
     }
     return links;
   };

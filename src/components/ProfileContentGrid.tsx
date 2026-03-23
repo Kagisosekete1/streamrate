@@ -54,7 +54,7 @@ interface Reel {
   created_at: string;
 }
 
-type TabType = "posts" | "photos" | "reels" | "saved" | "more";
+type TabType = "posts" | "photos" | "reels" | "saved" | "live" | "more";
 
 interface ProfileContentGridProps {
   posts: Post[];

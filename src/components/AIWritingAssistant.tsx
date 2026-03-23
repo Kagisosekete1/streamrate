@@ -109,7 +109,7 @@ export const AIWritingAssistant = ({ text, onApply }: AIWritingAssistantProps) =
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] bg-card border-t border-border rounded-t-2xl shadow-2xl overflow-y-auto sm:hidden"
+              className="fixed inset-x-0 bottom-16 z-50 max-h-[70vh] bg-card border-t border-border rounded-t-2xl shadow-2xl overflow-y-auto sm:hidden"
             >
               {/* Header */}
               <div className="flex items-center justify-between p-3 border-b border-border/50 bg-secondary/30 sticky top-0 z-10">
