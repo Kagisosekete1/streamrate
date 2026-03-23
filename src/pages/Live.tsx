@@ -131,7 +131,15 @@ const Live = () => {
 
     setStreamers(liveResults);
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchLiveStreamers();
+    intervalRef.current = setInterval(() => fetchLiveStreamers(true), 120000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [fetchLiveStreamers]);
 
   const getPlatformLinks = (streamer: LiveStreamer) => {
     const links: { name: string; url: string; color: string; bg: string }[] = [];
