@@ -42,10 +42,10 @@ const Live = () => {
   const { user } = useAuth();
   const [streamers, setStreamers] = useState<LiveStreamer[]>([]);
   const [loading, setLoading] = useState(true);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    fetchLiveStreamers();
-  }, []);
+  const fetchLiveStreamers = useCallback(async (isRefresh = false) => {
+    if (!isRefresh) setLoading(true);
 
   const fetchLiveStreamers = async () => {
     const { data } = await supabase
