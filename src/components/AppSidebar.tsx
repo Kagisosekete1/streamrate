@@ -193,6 +193,9 @@ export const AppSidebar = () => {
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
+              {item.label === "Live" && isAnyoneLive && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
+              )}
             </div>
             <AnimatePresence>
               {isExpanded && (
