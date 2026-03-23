@@ -77,7 +77,7 @@ const StreamerProfile = () => {
   const [canViewProfile, setCanViewProfile] = useState(true);
   const [profilePosts, setProfilePosts] = useState<any[]>([]);
   const [profileReels, setProfileReels] = useState<any[]>([]);
-  const [profileActiveTab, setProfileActiveTab] = useState<"posts" | "photos" | "reels" | "saved" | "more">("posts");
+  const [profileActiveTab, setProfileActiveTab] = useState<"posts" | "photos" | "reels" | "saved" | "live" | "more">("posts");
   const [showReelViewer, setShowReelViewer] = useState(false);
   const [reelViewerIndex, setReelViewerIndex] = useState(0);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
