@@ -53,6 +53,24 @@ export const AppSidebar = () => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showMore, setShowMore] = useState(false);
+  const [isAnyoneLive, setIsAnyoneLive] = useState(false);
+
+  // Check if anyone has streaming links (lightweight live indicator)
+  const checkLiveStatus = useCallback(async () => {
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("twitch_url, show_twitch")
+        .eq("show_twitch", true)
+        .not("twitch_url", "is", null)
+        .limit(1);
+      setIsAnyoneLive(!!(data && data.length > 0));
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => {
+    checkLiveStatus();
+  }, [checkLiveStatus]);
 
   useEffect(() => {
     if (!user) return;
