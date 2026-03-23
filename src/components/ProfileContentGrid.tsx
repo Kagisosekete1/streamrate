@@ -188,7 +188,9 @@ export const ProfileContentGrid = ({
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
           >
-            {activeTab === "more" ? (
+            {activeTab === "live" ? (
+              <ProfileLiveTab authorId={authorId} />
+            ) : activeTab === "more" ? (
               /* More Menu - Quick links */
               <div className="grid grid-cols-3 gap-3">
                 {[
