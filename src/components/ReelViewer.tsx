@@ -487,15 +487,16 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     }
   };
 
-  // Handle share
+  // Handle share - use OG preview URL for social platforms
   const handleShare = async () => {
+    const ogUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reel-og-preview?id=${currentReel.id}`;
     try {
       await navigator.share({
-        title: currentReel.caption || "Check out this reel!",
-        url: window.location.origin + `/reel/${currentReel.id}`
+        title: currentReel.caption || "Check out this reel on StreamRate!",
+        url: ogUrl
       });
     } catch {
-      navigator.clipboard.writeText(window.location.origin + `/reel/${currentReel.id}`);
+      navigator.clipboard.writeText(ogUrl);
       toast({ title: "Link copied!" });
     }
   };
@@ -625,7 +626,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                   muted={isMuted}
                   autoPlay
                   controls={false}
-                  preload="auto"
+                  preload="metadata"
                   poster=""
                   disablePictureInPicture
                   disableRemotePlayback
@@ -891,14 +892,12 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
               })()}
 
 
-              {/* View count & counter */}
+              {/* View count */}
               <div className="flex items-center gap-2 text-white/60 text-[10px]">
                 <div className="flex items-center gap-1">
                   <Eye className="w-3 h-3" />
                   <span>{formatCount(viewCount)} views</span>
                 </div>
-                <span>•</span>
-                <span>{currentIndex + 1}/{reels.length}</span>
                 <span>•</span>
                 <span>{formatDistanceToNow(new Date(currentReel.created_at), { addSuffix: true })}</span>
               </div>

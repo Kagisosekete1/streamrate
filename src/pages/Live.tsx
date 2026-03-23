@@ -65,9 +65,9 @@ const Live = () => {
         (p.youtube_gaming_url && p.show_youtube_gaming)
     );
 
-    // Check Twitch live status for users with Twitch links
     const liveResults: LiveStreamer[] = [];
 
+    // Check Twitch live status
     const twitchChecks = withLinks
       .filter((p) => p.twitch_url && p.show_twitch)
       .map(async (p) => {
@@ -94,12 +94,40 @@ const Live = () => {
         return null;
       });
 
-    const results = await Promise.all(twitchChecks);
-    results.forEach((r) => {
+    const twitchResults = await Promise.all(twitchChecks);
+    twitchResults.forEach((r) => {
       if (r) liveResults.push(r);
     });
 
-    // Sort by viewer count descending
+    // Add Kick streamers (no API check available, show as "possibly live")
+    const kickStreamers = withLinks.filter(
+      (p) => p.kick_url && p.show_kick && !liveResults.some((lr) => lr.id === p.id)
+    );
+    kickStreamers.forEach((p) => {
+      liveResults.push({
+        ...p,
+        is_live: true,
+        stream_title: "Streaming on Kick",
+        viewer_count: undefined,
+        game_name: undefined,
+      });
+    });
+
+    // Add YouTube Gaming streamers
+    const ytStreamers = withLinks.filter(
+      (p) => p.youtube_gaming_url && p.show_youtube_gaming && !liveResults.some((lr) => lr.id === p.id)
+    );
+    ytStreamers.forEach((p) => {
+      liveResults.push({
+        ...p,
+        is_live: true,
+        stream_title: "Streaming on YouTube",
+        viewer_count: undefined,
+        game_name: undefined,
+      });
+    });
+
+    // Sort: Twitch live (with viewers) first, then others
     liveResults.sort((a, b) => (b.viewer_count || 0) - (a.viewer_count || 0));
 
     setStreamers(liveResults);

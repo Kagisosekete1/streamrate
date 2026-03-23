@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -53,6 +53,24 @@ export const AppSidebar = () => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showMore, setShowMore] = useState(false);
+  const [isAnyoneLive, setIsAnyoneLive] = useState(false);
+
+  // Check if anyone has streaming links (lightweight live indicator)
+  const checkLiveStatus = useCallback(async () => {
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("twitch_url, show_twitch")
+        .eq("show_twitch", true)
+        .not("twitch_url", "is", null)
+        .limit(1);
+      setIsAnyoneLive(!!(data && data.length > 0));
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => {
+    checkLiveStatus();
+  }, [checkLiveStatus]);
 
   useEffect(() => {
     if (!user) return;
@@ -174,6 +192,9 @@ export const AppSidebar = () => {
                 <span className="absolute -top-2 -right-2 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
+              )}
+              {item.label === "Live" && isAnyoneLive && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
               )}
             </div>
             <AnimatePresence>
