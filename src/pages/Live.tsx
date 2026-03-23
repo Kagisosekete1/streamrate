@@ -47,7 +47,6 @@ const Live = () => {
   const fetchLiveStreamers = useCallback(async (isRefresh = false) => {
     if (!isRefresh) setLoading(true);
 
-  const fetchLiveStreamers = async () => {
     const { data } = await supabase
       .from("profiles")
       .select("id, username, full_name, avatar_url, twitch_url, kick_url, youtube_gaming_url, discord_url, show_twitch, show_kick, show_youtube_gaming, show_discord");
