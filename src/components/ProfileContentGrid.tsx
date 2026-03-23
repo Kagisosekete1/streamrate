@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Grid3X3, Image, Film, Bookmark, Hash, Trash2, Play, Heart, MessageCircle, Eye, MoreVertical, MoreHorizontal, Target, Rocket, BarChart3 } from "lucide-react";
+import { Grid3X3, Image, Film, Bookmark, Hash, Trash2, Play, Heart, MessageCircle, Eye, MoreVertical, MoreHorizontal, Target, Rocket, BarChart3, Radio } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { HashtagText } from "./HashtagText";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PhotoViewerModal } from "./PhotoViewerModal";
@@ -54,7 +55,7 @@ interface Reel {
   created_at: string;
 }
 
-type TabType = "posts" | "photos" | "reels" | "saved" | "more";
+type TabType = "posts" | "photos" | "reels" | "saved" | "live" | "more";
 
 interface ProfileContentGridProps {
   posts: Post[];
@@ -70,6 +71,110 @@ interface ProfileContentGridProps {
   authorAvatar?: string;
   authorId?: string;
 }
+
+const extractTwitchUsername = (url: string): string | null => {
+  try {
+    const parsed = new URL(url);
+    const parts = parsed.pathname.split("/").filter(Boolean);
+    return parts[0] || null;
+  } catch {
+    return url.replace(/^@/, "").trim() || null;
+  }
+};
+
+const ProfileLiveTab = ({ authorId }: { authorId: string }) => {
+  const [isLive, setIsLive] = useState(false);
+  const [streamData, setStreamData] = useState<{ title?: string; game?: string; viewers?: number } | null>(null);
+  const [twitchUsername, setTwitchUsername] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [profileLinks, setProfileLinks] = useState<{ twitch?: string; kick?: string; youtube?: string }>({});
+
+  useEffect(() => {
+    if (!authorId) return;
+    const checkLive = async () => {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("twitch_url, kick_url, youtube_gaming_url, show_twitch, show_kick, show_youtube_gaming")
+        .eq("id", authorId)
+        .maybeSingle();
+
+      if (!profile) { setLoading(false); return; }
+
+      const links: typeof profileLinks = {};
+      if (profile.twitch_url && profile.show_twitch) links.twitch = profile.twitch_url;
+      if (profile.kick_url && profile.show_kick) links.kick = profile.kick_url;
+      if (profile.youtube_gaming_url && profile.show_youtube_gaming) links.youtube = profile.youtube_gaming_url;
+      setProfileLinks(links);
+
+      if (profile.twitch_url && profile.show_twitch) {
+        const username = extractTwitchUsername(profile.twitch_url);
+        if (username) {
+          setTwitchUsername(username);
+          try {
+            const { data: liveData } = await supabase.functions.invoke("check-twitch-live", {
+              body: { username },
+            });
+            if (liveData?.is_live) {
+              setIsLive(true);
+              setStreamData({ title: liveData.stream_title, game: liveData.game_name, viewers: liveData.viewer_count });
+            }
+          } catch (e) {
+            console.error("Live check failed", e);
+          }
+        }
+      }
+      setLoading(false);
+    };
+    checkLive();
+    const interval = setInterval(checkLive, 120000);
+    return () => clearInterval(interval);
+  }, [authorId]);
+
+  if (loading) {
+    return <div className="h-48 bg-secondary/50 rounded-xl animate-pulse" />;
+  }
+
+  if (!isLive) {
+    return (
+      <div className="text-center py-16">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-secondary/50 flex items-center justify-center">
+          <Radio className="w-8 h-8 text-muted-foreground" />
+        </div>
+        <p className="text-muted-foreground font-medium">Not live right now</p>
+        <p className="text-xs text-muted-foreground mt-1">Check back later!</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {twitchUsername && (
+        <div className="rounded-xl overflow-hidden border border-red-500/30 bg-card">
+          <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border-b border-red-500/20">
+            <Radio className="w-4 h-4 text-red-500 animate-pulse" />
+            <span className="text-sm font-semibold text-red-400">LIVE</span>
+            {streamData?.viewers != null && (
+              <span className="text-xs text-muted-foreground ml-auto">{streamData.viewers.toLocaleString()} viewers</span>
+            )}
+          </div>
+          <div className="aspect-video">
+            <iframe
+              src={`https://player.twitch.tv/?channel=${twitchUsername}&parent=${window.location.hostname}`}
+              className="w-full h-full"
+              allowFullScreen
+            />
+          </div>
+          {streamData?.title && (
+            <div className="px-3 py-2">
+              <p className="text-sm font-medium text-foreground truncate">{streamData.title}</p>
+              {streamData.game && <p className="text-xs text-muted-foreground">{streamData.game}</p>}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const ProfileContentGrid = ({
   posts,
@@ -96,6 +201,7 @@ export const ProfileContentGrid = ({
     { id: "photos", icon: Image, label: "Photos" },
     { id: "reels", icon: Film, label: "Reels" },
     { id: "saved", icon: Bookmark, label: "Saved" },
+    { id: "live", icon: Radio, label: "Live" },
     ...(isOwnProfile && isMobile ? [{ id: "more" as TabType, icon: MoreHorizontal, label: "More" }] : []),
   ];
 
@@ -186,7 +292,9 @@ export const ProfileContentGrid = ({
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
           >
-            {activeTab === "more" ? (
+            {activeTab === "live" ? (
+              <ProfileLiveTab authorId={authorId} />
+            ) : activeTab === "more" ? (
               /* More Menu - Quick links */
               <div className="grid grid-cols-3 gap-3">
                 {[

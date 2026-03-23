@@ -42,7 +42,7 @@ interface SavedPost extends Post {
   };
 }
 
-type ProfileTab = "posts" | "photos" | "reels" | "saved" | "more";
+type ProfileTab = "posts" | "photos" | "reels" | "saved" | "live" | "more";
 
 const Profile = () => {
   const navigate = useNavigate();

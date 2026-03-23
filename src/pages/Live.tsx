@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { Tv, ExternalLink, Radio, Users, Gamepad2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -42,12 +42,11 @@ const Live = () => {
   const { user } = useAuth();
   const [streamers, setStreamers] = useState<LiveStreamer[]>([]);
   const [loading, setLoading] = useState(true);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    fetchLiveStreamers();
-  }, []);
+  const fetchLiveStreamers = useCallback(async (isRefresh = false) => {
+    if (!isRefresh) setLoading(true);
 
-  const fetchLiveStreamers = async () => {
     const { data } = await supabase
       .from("profiles")
       .select("id, username, full_name, avatar_url, twitch_url, kick_url, youtube_gaming_url, discord_url, show_twitch, show_kick, show_youtube_gaming, show_discord");
@@ -132,18 +131,34 @@ const Live = () => {
 
     setStreamers(liveResults);
     setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchLiveStreamers();
+    intervalRef.current = setInterval(() => fetchLiveStreamers(true), 120000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [fetchLiveStreamers]);
+
+  const ensureFullUrl = (url: string): string => {
+    const trimmed = url.trim();
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+      return trimmed;
+    }
+    return `https://${trimmed}`;
   };
 
   const getPlatformLinks = (streamer: LiveStreamer) => {
     const links: { name: string; url: string; color: string; bg: string }[] = [];
     if (streamer.twitch_url && streamer.show_twitch) {
-      links.push({ name: "Twitch", url: streamer.twitch_url, color: "text-purple-400", bg: "bg-purple-500/20" });
+      links.push({ name: "Twitch", url: ensureFullUrl(streamer.twitch_url), color: "text-purple-400", bg: "bg-purple-500/20" });
     }
     if (streamer.kick_url && streamer.show_kick) {
-      links.push({ name: "Kick", url: streamer.kick_url, color: "text-green-400", bg: "bg-green-500/20" });
+      links.push({ name: "Kick", url: ensureFullUrl(streamer.kick_url), color: "text-green-400", bg: "bg-green-500/20" });
     }
     if (streamer.youtube_gaming_url && streamer.show_youtube_gaming) {
-      links.push({ name: "YouTube", url: streamer.youtube_gaming_url, color: "text-red-400", bg: "bg-red-500/20" });
+      links.push({ name: "YouTube", url: ensureFullUrl(streamer.youtube_gaming_url), color: "text-red-400", bg: "bg-red-500/20" });
     }
     return links;
   };
