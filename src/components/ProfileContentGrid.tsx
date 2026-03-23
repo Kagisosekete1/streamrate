@@ -176,7 +176,7 @@ const ProfileLiveTab = ({ authorId }: { authorId: string }) => {
   );
 };
 
-
+export const ProfileContentGrid = ({
   posts,
   savedPosts,
   reels,
