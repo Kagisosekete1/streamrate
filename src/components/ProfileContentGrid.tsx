@@ -6,6 +6,7 @@ import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { HashtagText } from "./HashtagText";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PhotoViewerModal } from "./PhotoViewerModal";
