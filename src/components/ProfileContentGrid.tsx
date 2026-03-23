@@ -96,6 +96,7 @@ export const ProfileContentGrid = ({
     { id: "photos", icon: Image, label: "Photos" },
     { id: "reels", icon: Film, label: "Reels" },
     { id: "saved", icon: Bookmark, label: "Saved" },
+    { id: "live", icon: Radio, label: "Live" },
     ...(isOwnProfile && isMobile ? [{ id: "more" as TabType, icon: MoreHorizontal, label: "More" }] : []),
   ];
 
