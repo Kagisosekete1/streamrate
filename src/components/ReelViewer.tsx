@@ -487,15 +487,16 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     }
   };
 
-  // Handle share
+  // Handle share - use OG preview URL for social platforms
   const handleShare = async () => {
+    const ogUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reel-og-preview?id=${currentReel.id}`;
     try {
       await navigator.share({
-        title: currentReel.caption || "Check out this reel!",
-        url: window.location.origin + `/reel/${currentReel.id}`
+        title: currentReel.caption || "Check out this reel on StreamRate!",
+        url: ogUrl
       });
     } catch {
-      navigator.clipboard.writeText(window.location.origin + `/reel/${currentReel.id}`);
+      navigator.clipboard.writeText(ogUrl);
       toast({ title: "Link copied!" });
     }
   };
