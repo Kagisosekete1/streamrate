@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { Tv, ExternalLink, Radio, Users, Gamepad2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
