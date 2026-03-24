@@ -211,6 +211,7 @@ const NotificationsModal = ({
             { key: "comments", label: "New comments" },
             { key: "likes", label: "Likes on posts" },
             { key: "followers", label: "New followers" },
+            { key: "goLive", label: "Go-live alerts" },
           ].map((item) => (
             <div key={item.key} className="flex items-center justify-between">
               <span className="text-foreground">{item.label}</span>
