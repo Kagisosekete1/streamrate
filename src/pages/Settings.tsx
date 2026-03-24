@@ -317,7 +317,7 @@ const Settings = () => {
     language: "English",
     showTrending: true,
     darkMode: "system",
-    dataSaver: false,
+    dataSaver: localStorage.getItem("data_saver") === "true",
     lastSeenVisibility: "everyone",
   });
 
