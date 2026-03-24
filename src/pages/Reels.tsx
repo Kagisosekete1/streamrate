@@ -34,6 +34,25 @@ const Reels = () => {
   const REELS_PER_PAGE = 20;
   const { getForYouFeed } = useForYouAlgorithm();
 
+  useEffect(() => {
+    const clearReelRelatedCaches = async () => {
+      if (!("caches" in window)) return;
+      const cacheKeys = await caches.keys();
+      const targetCaches = cacheKeys.filter(
+        (key) =>
+          key.includes("supabase-api") ||
+          key.includes("workbox-runtime") ||
+          key.toLowerCase().includes("reel")
+      );
+
+      await Promise.all(targetCaches.map((key) => caches.delete(key)));
+    };
+
+    clearReelRelatedCaches().catch(() => {
+      // Ignore cache API failures (unsupported contexts)
+    });
+  }, []);
+
   const fetchReels = useCallback(async () => {
     try {
       // Fetch reels and profiles in parallel for faster loading
