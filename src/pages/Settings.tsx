@@ -295,13 +295,21 @@ const Settings = () => {
     type: "Bug",
     message: "",
   });
-  const [notifications, setNotifications] = useState({
-    ratings: true,
-    reviews: true,
-    comments: true,
-    likes: true,
-    followers: true,
+  const [notifications, setNotifications] = useState(() => {
+    const saved = localStorage.getItem("notification_prefs");
+    return saved ? JSON.parse(saved) : {
+      ratings: true,
+      reviews: true,
+      comments: true,
+      likes: true,
+      followers: true,
+      goLive: true,
+    };
   });
+
+  useEffect(() => {
+    localStorage.setItem("notification_prefs", JSON.stringify(notifications));
+  }, [notifications]);
   const [settings, setSettings] = useState({
     profileVisibility: "public",
     whoCanComment: "everyone",

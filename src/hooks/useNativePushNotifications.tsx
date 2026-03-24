@@ -78,6 +78,12 @@ export const useNativePushNotifications = () => {
             from_user_id?: string;
           };
 
+          // Check if go-live notifications are disabled
+          const notifPrefs = JSON.parse(localStorage.getItem("notification_prefs") || "{}");
+          if (notification.type === "go_live" && notifPrefs.goLive === false) {
+            return;
+          }
+
           if (document.hasFocus()) {
             if (notification.type === "go_live" && !shownLiveToastIds.current.has(notification.id)) {
               shownLiveToastIds.current.add(notification.id);
