@@ -211,6 +211,7 @@ const NotificationsModal = ({
             { key: "comments", label: "New comments" },
             { key: "likes", label: "Likes on posts" },
             { key: "followers", label: "New followers" },
+            { key: "goLive", label: "Go-live alerts" },
           ].map((item) => (
             <div key={item.key} className="flex items-center justify-between">
               <span className="text-foreground">{item.label}</span>
@@ -294,13 +295,21 @@ const Settings = () => {
     type: "Bug",
     message: "",
   });
-  const [notifications, setNotifications] = useState({
-    ratings: true,
-    reviews: true,
-    comments: true,
-    likes: true,
-    followers: true,
+  const [notifications, setNotifications] = useState(() => {
+    const saved = localStorage.getItem("notification_prefs");
+    return saved ? JSON.parse(saved) : {
+      ratings: true,
+      reviews: true,
+      comments: true,
+      likes: true,
+      followers: true,
+      goLive: true,
+    };
   });
+
+  useEffect(() => {
+    localStorage.setItem("notification_prefs", JSON.stringify(notifications));
+  }, [notifications]);
   const [settings, setSettings] = useState({
     profileVisibility: "public",
     whoCanComment: "everyone",
@@ -308,7 +317,7 @@ const Settings = () => {
     language: "English",
     showTrending: true,
     darkMode: "system",
-    dataSaver: false,
+    dataSaver: localStorage.getItem("data_saver") === "true",
     lastSeenVisibility: "everyone",
   });
 
@@ -1195,7 +1204,11 @@ const Settings = () => {
         )}
 
         {activeModal === "dataSaver" && (
-          <Modal title="Data Saver Mode" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
+          <Modal title="Data Saver Mode" showSave onSave={() => {
+            localStorage.setItem("data_saver", settings.dataSaver ? "true" : "false");
+            toast({ title: "Settings saved!" });
+            setActiveModal(null);
+          }}>
             <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-xl">
               <span className="text-foreground">Enable data saver</span>
               <Switch
@@ -1204,7 +1217,7 @@ const Settings = () => {
               />
             </div>
             <p className="text-sm text-muted-foreground mt-3">
-              Reduces image and media loading to save data.
+              Reduces video preloading and disables autoplay on slow connections to save data.
             </p>
           </Modal>
         )}

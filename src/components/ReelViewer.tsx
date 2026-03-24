@@ -149,8 +149,14 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     }));
   }, [user]);
 
-  // Reduce aggressive preloading on slower connections/devices
+  // Reduce aggressive preloading on slower connections/devices or when data saver is on
   useEffect(() => {
+    const dataSaverOn = localStorage.getItem("data_saver") === "true";
+    if (dataSaverOn) {
+      setAllowVideoPreload(false);
+      return;
+    }
+
     const connection = (navigator as any)?.connection;
     if (!connection) return;
 
