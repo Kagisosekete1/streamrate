@@ -1204,7 +1204,11 @@ const Settings = () => {
         )}
 
         {activeModal === "dataSaver" && (
-          <Modal title="Data Saver Mode" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
+          <Modal title="Data Saver Mode" showSave onSave={() => {
+            localStorage.setItem("data_saver", settings.dataSaver ? "true" : "false");
+            toast({ title: "Settings saved!" });
+            setActiveModal(null);
+          }}>
             <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-xl">
               <span className="text-foreground">Enable data saver</span>
               <Switch
@@ -1213,7 +1217,7 @@ const Settings = () => {
               />
             </div>
             <p className="text-sm text-muted-foreground mt-3">
-              Reduces image and media loading to save data.
+              Reduces video preloading and disables autoplay on slow connections to save data.
             </p>
           </Modal>
         )}
