@@ -1,11 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { toast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 
 export const useNativePushNotifications = () => {
   const { user } = useAuth();
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [isSupported, setIsSupported] = useState(false);
+  const shownLiveToastIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const supported = "Notification" in window && "serviceWorker" in navigator;
@@ -66,15 +69,36 @@ export const useNativePushNotifications = () => {
         },
         (payload) => {
           const notification = payload.new as {
+            id: string;
             title: string;
             message: string;
             type: string;
             post_id?: string;
             reel_id?: string;
+            from_user_id?: string;
           };
 
-          // Don't show if app is focused
-          if (document.hasFocus()) return;
+          if (document.hasFocus()) {
+            if (notification.type === "go_live" && !shownLiveToastIds.current.has(notification.id)) {
+              shownLiveToastIds.current.add(notification.id);
+              toast({
+                title: notification.title,
+                description: notification.message,
+                action: (
+                  <ToastAction
+                    altText="Watch now"
+                    onClick={() => {
+                      const targetPath = notification.from_user_id ? `/streamer/${notification.from_user_id}` : "/live";
+                      window.location.assign(targetPath);
+                    }}
+                  >
+                    Watch
+                  </ToastAction>
+                ),
+              });
+            }
+            return;
+          }
 
           showNotification(notification.title, {
             body: notification.message,

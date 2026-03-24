@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { normalizeStreamUrl } from "@/lib/streamLinks";
 
 interface StreamEmbedProps {
   twitchUrl?: string | null;
@@ -14,19 +15,13 @@ interface StreamEmbedProps {
 }
 
 function extractTwitchChannel(url: string): string | null {
-  const match = url.match(/twitch\.tv\/([a-zA-Z0-9_]+)/);
-  return match ? match[1] : null;
-}
-
-function extractYouTubeChannel(url: string): string | null {
-  // Support youtube.com/c/name, youtube.com/@name, youtube.com/channel/id
-  const channelMatch = url.match(/youtube\.com\/(?:c\/|@|channel\/)([a-zA-Z0-9_-]+)/);
-  return channelMatch ? channelMatch[1] : null;
-}
-
-function extractKickChannel(url: string): string | null {
-  const match = url.match(/kick\.com\/([a-zA-Z0-9_]+)/);
-  return match ? match[1] : null;
+  try {
+    const parsed = new URL(url);
+    const pathParts = parsed.pathname.split("/").filter(Boolean);
+    return pathParts[0] ? pathParts[0].replace(/^@/, "") : null;
+  } catch {
+    return null;
+  }
 }
 
 export const StreamEmbed = ({ twitchUrl, youtubeGamingUrl, kickUrl, streamerId }: StreamEmbedProps) => {
@@ -51,15 +46,16 @@ export const StreamEmbed = ({ twitchUrl, youtubeGamingUrl, kickUrl, streamerId }
     setNotifying(false);
   };
 
-  const twitchChannel = twitchUrl ? extractTwitchChannel(twitchUrl) : null;
-  const youtubeChannel = youtubeGamingUrl ? extractYouTubeChannel(youtubeGamingUrl) : null;
-  const kickChannel = kickUrl ? extractKickChannel(kickUrl) : null;
+  const twitchLink = twitchUrl ? normalizeStreamUrl("twitch", twitchUrl) : "";
+  const youtubeLink = youtubeGamingUrl ? normalizeStreamUrl("youtube", youtubeGamingUrl) : "";
+  const kickLink = kickUrl ? normalizeStreamUrl("kick", kickUrl) : "";
+  const twitchChannel = twitchLink ? extractTwitchChannel(twitchLink) : null;
 
   const available = [
-    twitchChannel && { id: "twitch" as const, label: "Twitch", channel: twitchChannel },
-    youtubeChannel && { id: "youtube" as const, label: "YouTube", channel: youtubeChannel },
-    kickChannel && { id: "kick" as const, label: "Kick", channel: kickChannel },
-  ].filter(Boolean) as { id: "twitch" | "youtube" | "kick"; label: string; channel: string }[];
+    twitchChannel && { id: "twitch" as const, label: "Twitch", channel: twitchChannel, url: twitchLink },
+    youtubeLink && { id: "youtube" as const, label: "YouTube", url: youtubeLink },
+    kickLink && { id: "kick" as const, label: "Kick", url: kickLink },
+  ].filter(Boolean) as { id: "twitch" | "youtube" | "kick"; label: string; url: string; channel?: string }[];
 
   if (available.length === 0) {
     return null;
@@ -116,10 +112,10 @@ export const StreamEmbed = ({ twitchUrl, youtubeGamingUrl, kickUrl, streamerId }
             {selected.id === "twitch" && (
               <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
                 <iframe
-                  src={`https://player.twitch.tv/?channel=${selected.channel}&parent=${window.location.hostname}&muted=true`}
+                  src={`https://player.twitch.tv/?channel=${selected.channel || ""}&parent=${window.location.hostname}&muted=true`}
                   className="absolute inset-0 w-full h-full"
                   allowFullScreen
-                  title={`${selected.channel} Twitch stream`}
+                  title={`${selected.channel || "Streamer"} Twitch stream`}
                 />
               </div>
             )}
@@ -131,7 +127,7 @@ export const StreamEmbed = ({ twitchUrl, youtubeGamingUrl, kickUrl, streamerId }
                   variant="gaming"
                   size="sm"
                   className="gap-2"
-                  onClick={() => window.open(kickUrl!, "_blank")}
+                  onClick={() => window.open(selected.url, "_blank", "noopener,noreferrer")}
                 >
                   <ExternalLink className="w-4 h-4" />
                   Watch on Kick
@@ -146,7 +142,7 @@ export const StreamEmbed = ({ twitchUrl, youtubeGamingUrl, kickUrl, streamerId }
                   variant="gaming"
                   size="sm"
                   className="gap-2"
-                  onClick={() => window.open(youtubeGamingUrl!, "_blank")}
+                  onClick={() => window.open(selected.url, "_blank", "noopener,noreferrer")}
                 >
                   <ExternalLink className="w-4 h-4" />
                   Watch on YouTube
