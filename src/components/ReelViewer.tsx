@@ -65,6 +65,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   const [showAvatarView, setShowAvatarView] = useState(false);
   const [showReportBlock, setShowReportBlock] = useState(false);
   const [captionExpanded, setCaptionExpanded] = useState(false);
+  const [allowVideoPreload, setAllowVideoPreload] = useState(true);
   const lastTapTime = useRef<number>(0);
   const viewStartTime = useRef<number>(0);
   const preloadedVideosRef = useRef<Record<string, HTMLVideoElement>>({});
@@ -97,50 +98,74 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   // Fetch likes, comments, and views data
   const fetchReelData = useCallback(async (reelId: string) => {
     if (!reelId) return;
-    
-    const { count: likesCount } = await supabase
+
+    const likesPromise = supabase
       .from("reel_likes")
       .select("*", { count: "exact", head: true })
       .eq("reel_id", reelId);
 
-    let isLiked = false;
-    if (user) {
-      const { data: likeData } = await supabase
-        .from("reel_likes")
-        .select("id")
-        .eq("reel_id", reelId)
-        .eq("user_id", user.id)
-        .maybeSingle();
-      isLiked = !!likeData;
-    }
+    const commentsPromise = supabase
+      .from("reel_comments")
+      .select("*", { count: "exact", head: true })
+      .eq("reel_id", reelId);
+
+    const viewsPromise = supabase
+      .from("reels")
+      .select("view_count")
+      .eq("id", reelId)
+      .maybeSingle();
+
+    const likeStatePromise = user
+      ? supabase
+          .from("reel_likes")
+          .select("id")
+          .eq("reel_id", reelId)
+          .eq("user_id", user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null });
+
+    const [{ count: likesCount }, { count: commCount }, { data: reelData }, { data: likeData }] = await Promise.all([
+      likesPromise,
+      commentsPromise,
+      viewsPromise,
+      likeStatePromise,
+    ]);
+
+    const isLiked = !!likeData;
 
     setLikesData(prev => ({
       ...prev,
       [reelId]: { count: likesCount || 0, isLiked }
     }));
 
-    const { count: commCount } = await supabase
-      .from("reel_comments")
-      .select("*", { count: "exact", head: true })
-      .eq("reel_id", reelId);
-
     setCommentsCount(prev => ({
       ...prev,
       [reelId]: commCount || 0
     }));
-
-    // Fetch view count from reels table
-    const { data: reelData } = await supabase
-      .from("reels")
-      .select("view_count")
-      .eq("id", reelId)
-      .maybeSingle();
 
     setViewsCount(prev => ({
       ...prev,
       [reelId]: reelData?.view_count || 0
     }));
   }, [user]);
+
+  // Reduce aggressive preloading on slower connections/devices
+  useEffect(() => {
+    const connection = (navigator as any)?.connection;
+    if (!connection) return;
+
+    const syncPreloadPreference = () => {
+      const slowConnection = ["slow-2g", "2g", "3g"].includes(connection.effectiveType);
+      setAllowVideoPreload(!(connection.saveData || slowConnection));
+    };
+
+    syncPreloadPreference();
+    connection.addEventListener?.("change", syncPreloadPreference);
+
+    return () => {
+      connection.removeEventListener?.("change", syncPreloadPreference);
+    };
+  }, []);
 
   // Check if following user
   const checkFollowing = useCallback(async (userId: string) => {
@@ -163,12 +188,22 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   useEffect(() => {
     if (!isOpen || reels.length === 0) return;
 
+    if (!allowVideoPreload) {
+      Object.values(preloadedVideosRef.current).forEach((video) => {
+        video.pause();
+        video.src = "";
+        video.load();
+      });
+      preloadedVideosRef.current = {};
+      return;
+    }
+
     const preloadVideo = (url: string, reelId: string) => {
       if (preloadedVideosRef.current[reelId]) return; // Already preloaded
       
       const video = document.createElement("video");
       video.src = url;
-      video.preload = "auto";
+      video.preload = "metadata";
       video.muted = true;
       video.playsInline = true;
       video.controls = false;
@@ -179,19 +214,28 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
       preloadedVideosRef.current[reelId] = video;
     };
 
-    // Preload next 2 reels
-    for (let i = 1; i <= 2; i++) {
+    const keepIds = new Set<string>();
+
+    // Preload next reel only (lighter on mobile/PWA bandwidth)
+    for (let i = 1; i <= 1; i++) {
       const nextIndex = currentIndex + i;
       if (nextIndex < reels.length) {
-        preloadVideo(reels[nextIndex].video_url, reels[nextIndex].id);
+        const nextReel = reels[nextIndex];
+        preloadVideo(nextReel.video_url, nextReel.id);
+        keepIds.add(nextReel.id);
       }
     }
 
-    // Also preload previous reel for going back
-    if (currentIndex > 0) {
-      preloadVideo(reels[currentIndex - 1].video_url, reels[currentIndex - 1].id);
-    }
-  }, [currentIndex, isOpen, reels]);
+    // Cleanup stale preloaded videos to avoid memory/network pressure
+    Object.entries(preloadedVideosRef.current).forEach(([reelId, video]) => {
+      if (!keepIds.has(reelId)) {
+        video.pause();
+        video.src = "";
+        video.load();
+        delete preloadedVideosRef.current[reelId];
+      }
+    });
+  }, [allowVideoPreload, currentIndex, isOpen, reels]);
 
   // Cleanup preloaded videos on unmount
   useEffect(() => {
@@ -626,7 +670,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                   muted={isMuted}
                   autoPlay
                   controls={false}
-                  preload="metadata"
+                  preload={allowVideoPreload ? "metadata" : "none"}
                   poster=""
                   disablePictureInPicture
                   disableRemotePlayback
