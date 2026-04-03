@@ -164,11 +164,11 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     
     if (curIdx > prevIdx && prevIdx >= 0) {
       if (connectionQuality === "offline") {
-        toast.error("You're offline", { description: "Reel playback may be interrupted" });
+        sonnerToast.error("You're offline", { description: "Reel playback may be interrupted" });
       } else if (connectionQuality === "poor") {
-        toast.warning("Poor connection", { description: "Video quality may be reduced" });
-      } else if (connectionQuality === "fair" && prev === "excellent" || prev === "good") {
-        toast("Connection slowed down", { description: "Playback may buffer briefly" });
+        sonnerToast.warning("Poor connection", { description: "Video quality may be reduced" });
+      } else if (connectionQuality === "fair" && (prev === "excellent" || prev === "good")) {
+        sonnerToast("Connection slowed down", { description: "Playback may buffer briefly" });
       }
     }
   }, [connectionQuality]);
