@@ -4,6 +4,7 @@ import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Music2, Flag, 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -149,6 +150,28 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
       [reelId]: reelData?.view_count || 0
     }));
   }, [user]);
+
+  const prevQualityRef = useRef(connectionQuality);
+
+  // Show toast when connection quality drops
+  useEffect(() => {
+    const prev = prevQualityRef.current;
+    prevQualityRef.current = connectionQuality;
+    
+    const levels = ["excellent", "good", "fair", "poor", "offline"];
+    const prevIdx = levels.indexOf(prev);
+    const curIdx = levels.indexOf(connectionQuality);
+    
+    if (curIdx > prevIdx && prevIdx >= 0) {
+      if (connectionQuality === "offline") {
+        sonnerToast.error("You're offline", { description: "Reel playback may be interrupted" });
+      } else if (connectionQuality === "poor") {
+        sonnerToast.warning("Poor connection", { description: "Video quality may be reduced" });
+      } else if (connectionQuality === "fair" && (prev === "excellent" || prev === "good")) {
+        sonnerToast("Connection slowed down", { description: "Playback may buffer briefly" });
+      }
+    }
+  }, [connectionQuality]);
 
   // Reduce aggressive preloading on slower connections/devices or when data saver is on
   useEffect(() => {
