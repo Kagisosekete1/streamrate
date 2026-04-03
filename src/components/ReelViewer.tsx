@@ -155,22 +155,49 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     const dataSaverOn = localStorage.getItem("data_saver") === "true";
     if (dataSaverOn) {
       setAllowVideoPreload(false);
+      setConnectionQuality("fair");
+      return;
+    }
+
+    if (!navigator.onLine) {
+      setConnectionQuality("offline");
+      setAllowVideoPreload(false);
       return;
     }
 
     const connection = (navigator as any)?.connection;
-    if (!connection) return;
+    if (!connection) {
+      setConnectionQuality("good");
+      return;
+    }
 
     const syncPreloadPreference = () => {
-      const slowConnection = ["slow-2g", "2g", "3g"].includes(connection.effectiveType);
+      const type = connection.effectiveType;
+      if (type === "4g" && (connection.downlink ?? 10) >= 5) {
+        setConnectionQuality("excellent");
+      } else if (type === "4g") {
+        setConnectionQuality("good");
+      } else if (type === "3g") {
+        setConnectionQuality("fair");
+      } else {
+        setConnectionQuality("poor");
+      }
+      const slowConnection = ["slow-2g", "2g", "3g"].includes(type);
       setAllowVideoPreload(!(connection.saveData || slowConnection));
     };
 
     syncPreloadPreference();
     connection.addEventListener?.("change", syncPreloadPreference);
 
+    const handleOnline = () => syncPreloadPreference();
+    const handleOffline = () => { setConnectionQuality("offline"); setAllowVideoPreload(false); };
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
     return () => {
       connection.removeEventListener?.("change", syncPreloadPreference);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
