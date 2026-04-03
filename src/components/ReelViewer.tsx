@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Music2, Flag, UserPlus, Eye, Layers, BarChart3 } from "lucide-react";
+import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Music2, Flag, UserPlus, Eye, Layers, BarChart3, Wifi, WifiOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -66,6 +66,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   const [showReportBlock, setShowReportBlock] = useState(false);
   const [captionExpanded, setCaptionExpanded] = useState(false);
   const [allowVideoPreload, setAllowVideoPreload] = useState(true);
+  const [connectionQuality, setConnectionQuality] = useState<"excellent" | "good" | "fair" | "poor" | "offline">("good");
   const lastTapTime = useRef<number>(0);
   const viewStartTime = useRef<number>(0);
   const preloadedVideosRef = useRef<Record<string, HTMLVideoElement>>({});
@@ -154,22 +155,49 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     const dataSaverOn = localStorage.getItem("data_saver") === "true";
     if (dataSaverOn) {
       setAllowVideoPreload(false);
+      setConnectionQuality("fair");
+      return;
+    }
+
+    if (!navigator.onLine) {
+      setConnectionQuality("offline");
+      setAllowVideoPreload(false);
       return;
     }
 
     const connection = (navigator as any)?.connection;
-    if (!connection) return;
+    if (!connection) {
+      setConnectionQuality("good");
+      return;
+    }
 
     const syncPreloadPreference = () => {
-      const slowConnection = ["slow-2g", "2g", "3g"].includes(connection.effectiveType);
+      const type = connection.effectiveType;
+      if (type === "4g" && (connection.downlink ?? 10) >= 5) {
+        setConnectionQuality("excellent");
+      } else if (type === "4g") {
+        setConnectionQuality("good");
+      } else if (type === "3g") {
+        setConnectionQuality("fair");
+      } else {
+        setConnectionQuality("poor");
+      }
+      const slowConnection = ["slow-2g", "2g", "3g"].includes(type);
       setAllowVideoPreload(!(connection.saveData || slowConnection));
     };
 
     syncPreloadPreference();
     connection.addEventListener?.("change", syncPreloadPreference);
 
+    const handleOnline = () => syncPreloadPreference();
+    const handleOffline = () => { setConnectionQuality("offline"); setAllowVideoPreload(false); };
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
     return () => {
       connection.removeEventListener?.("change", syncPreloadPreference);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
@@ -648,7 +676,41 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
             </div>
           )}
 
-          {/* Video container with swipe */}
+          {/* Connection quality indicator */}
+          <div className="absolute top-4 right-3 z-50 flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-full px-2 py-1">
+            {connectionQuality === "offline" ? (
+              <WifiOff className="w-3 h-3 text-red-400" />
+            ) : (
+              <Wifi className={cn("w-3 h-3", {
+                "text-green-400": connectionQuality === "excellent",
+                "text-green-300": connectionQuality === "good",
+                "text-yellow-400": connectionQuality === "fair",
+                "text-red-400": connectionQuality === "poor",
+              })} />
+            )}
+            <div className="flex gap-[2px] items-end h-3">
+              {[1, 2, 3, 4].map((bar) => {
+                const filled = connectionQuality === "excellent" ? 4
+                  : connectionQuality === "good" ? 3
+                  : connectionQuality === "fair" ? 2
+                  : connectionQuality === "poor" ? 1 : 0;
+                return (
+                  <div
+                    key={bar}
+                    className={cn("w-[3px] rounded-sm transition-colors", {
+                      "bg-green-400": bar <= filled && (connectionQuality === "excellent" || connectionQuality === "good"),
+                      "bg-yellow-400": bar <= filled && connectionQuality === "fair",
+                      "bg-red-400": bar <= filled && (connectionQuality === "poor" || connectionQuality === "offline"),
+                      "bg-white/20": bar > filled,
+                    })}
+                    style={{ height: `${bar * 3}px` }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
+
           <motion.div
             drag={showComments ? false : "y"}
             dragConstraints={{ top: 0, bottom: 0 }}
