@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Music2, Flag, UserPlus, Eye, Layers, BarChart3 } from "lucide-react";
+import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Music2, Flag, UserPlus, Eye, Layers, BarChart3, Wifi, WifiOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
