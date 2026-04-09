@@ -252,6 +252,7 @@ const Live = () => {
                               href={link.url}
                               target="_blank"
                               rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
                               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${link.bg} ${link.color} text-xs font-medium hover:opacity-80 transition-opacity`}
                             >
                               <ExternalLink className="w-3 h-3" />
