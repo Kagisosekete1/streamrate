@@ -212,7 +212,8 @@ const Live = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="bg-card rounded-xl p-4 border border-border/50"
+                    className="bg-card rounded-xl p-4 border border-border/50 cursor-pointer hover:border-primary/30 transition-colors"
+                    onClick={() => navigate(`/streamer/${streamer.id}`)}
                   >
                     <div className="flex items-center gap-3">
                       <div className="relative">
