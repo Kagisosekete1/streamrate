@@ -123,30 +123,24 @@ export const StreamEmbed = ({ twitchUrl, youtubeGamingUrl, kickUrl, streamerId }
             {selected.id === "kick" && (
               <div className="p-4 text-center space-y-3">
                 <p className="text-muted-foreground text-sm">Kick streams open in a new tab</p>
-                <Button
-                  variant="gaming"
-                  size="sm"
-                  className="gap-2"
-                  onClick={() => window.open(selected.url, "_blank", "noopener,noreferrer")}
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Watch on Kick
-                </Button>
+                <a href={selected.url} target="_blank" rel="noopener noreferrer">
+                  <Button variant="gaming" size="sm" className="gap-2">
+                    <ExternalLink className="w-4 h-4" />
+                    Watch on Kick
+                  </Button>
+                </a>
               </div>
             )}
 
             {selected.id === "youtube" && (
               <div className="p-4 text-center space-y-3">
                 <p className="text-muted-foreground text-sm">YouTube streams open in a new tab</p>
-                <Button
-                  variant="gaming"
-                  size="sm"
-                  className="gap-2"
-                  onClick={() => window.open(selected.url, "_blank", "noopener,noreferrer")}
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Watch on YouTube
-                </Button>
+                <a href={selected.url} target="_blank" rel="noopener noreferrer">
+                  <Button variant="gaming" size="sm" className="gap-2">
+                    <ExternalLink className="w-4 h-4" />
+                    Watch on YouTube
+                  </Button>
+                </a>
               </div>
             )}
           </motion.div>
