@@ -6,6 +6,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { normalizeStreamUrl } from "@/lib/streamLinks";
+import { ClipItButton } from "@/components/ClipItButton";
 
 interface LiveStreamer {
   id: string;
@@ -259,6 +260,16 @@ const Live = () => {
                               Watch on {link.name}
                             </a>
                           ))}
+                          {platformLinks[0] && (
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <ClipItButton
+                                platform={platformLinks[0].name.toLowerCase()}
+                                streamUrl={platformLinks[0].url}
+                                streamerId={streamer.id}
+                                streamerName={streamer.username || streamer.full_name || undefined}
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
