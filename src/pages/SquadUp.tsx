@@ -4,6 +4,7 @@ import { Gamepad2, Plus, MapPin, Trophy, MessageCircle } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useGamification } from "@/hooks/useGamification";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ interface SquadRequest {
 
 const SquadUp = () => {
   const { user } = useAuth();
+  const { updateMissionProgress } = useGamification();
   const navigate = useNavigate();
   const [requests, setRequests] = useState<SquadRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +69,7 @@ const SquadUp = () => {
       user_id: user.id, game, rank: rank || null, region, playstyle, message: message || null,
     });
     if (error) { toast.error("Failed to post"); return; }
+    updateMissionProgress("post_lfg");
     toast.success("Squad request posted!");
     setOpen(false);
     setMessage("");
