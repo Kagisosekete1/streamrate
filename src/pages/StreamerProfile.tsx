@@ -449,6 +449,8 @@ const StreamerProfile = () => {
               twitchUrl={streamer.twitch_url}
               showTwitch={streamer.show_twitch}
             />
+
+            <StreamPolls streamerId={streamer.id} />
           </motion.div>
 
             <div className="flex items-center justify-center gap-6 mt-6">
