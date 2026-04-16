@@ -20,6 +20,7 @@ import { ProfileContentGrid } from "@/components/ProfileContentGrid";
 import { ReelViewer } from "@/components/ReelViewer";
 import { ReviewsModal } from "@/components/ReviewsModal";
 import { TwitchLiveEmbed } from "@/components/TwitchLiveEmbed";
+import { StreamPolls } from "@/components/StreamPolls";
 
 interface StreamerData {
   id: string;
@@ -448,6 +449,8 @@ const StreamerProfile = () => {
               twitchUrl={streamer.twitch_url}
               showTwitch={streamer.show_twitch}
             />
+
+            <StreamPolls streamerId={streamer.id} />
           </motion.div>
 
             <div className="flex items-center justify-center gap-6 mt-6">

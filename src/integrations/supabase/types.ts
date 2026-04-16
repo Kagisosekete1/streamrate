@@ -410,6 +410,41 @@ export type Database = {
           },
         ]
       }
+      poll_votes: {
+        Row: {
+          coins_spent: number
+          created_at: string
+          id: string
+          option_index: number
+          poll_id: string
+          user_id: string
+        }
+        Insert: {
+          coins_spent?: number
+          created_at?: string
+          id?: string
+          option_index: number
+          poll_id: string
+          user_id: string
+        }
+        Update: {
+          coins_spent?: number
+          created_at?: string
+          id?: string
+          option_index?: number
+          poll_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_votes_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "stream_polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_likes: {
         Row: {
           created_at: string | null
@@ -562,6 +597,7 @@ export type Database = {
           discord_url: string | null
           email: string | null
           full_name: string | null
+          games: string[] | null
           gender: string | null
           header_url: string | null
           id: string
@@ -569,7 +605,11 @@ export type Database = {
           kick_url: string | null
           last_seen: string | null
           last_seen_visibility: string | null
+          looking_for_squad: boolean | null
+          playstyle: string | null
           profile_visibility: string
+          rank: string | null
+          region: string | null
           scheduled_deletion_at: string | null
           show_discord: boolean | null
           show_kick: boolean | null
@@ -591,6 +631,7 @@ export type Database = {
           discord_url?: string | null
           email?: string | null
           full_name?: string | null
+          games?: string[] | null
           gender?: string | null
           header_url?: string | null
           id: string
@@ -598,7 +639,11 @@ export type Database = {
           kick_url?: string | null
           last_seen?: string | null
           last_seen_visibility?: string | null
+          looking_for_squad?: boolean | null
+          playstyle?: string | null
           profile_visibility?: string
+          rank?: string | null
+          region?: string | null
           scheduled_deletion_at?: string | null
           show_discord?: boolean | null
           show_kick?: boolean | null
@@ -620,6 +665,7 @@ export type Database = {
           discord_url?: string | null
           email?: string | null
           full_name?: string | null
+          games?: string[] | null
           gender?: string | null
           header_url?: string | null
           id?: string
@@ -627,7 +673,11 @@ export type Database = {
           kick_url?: string | null
           last_seen?: string | null
           last_seen_visibility?: string | null
+          looking_for_squad?: boolean | null
+          playstyle?: string | null
           profile_visibility?: string
+          rank?: string | null
+          region?: string | null
           scheduled_deletion_at?: string | null
           show_discord?: boolean | null
           show_kick?: boolean | null
@@ -934,6 +984,45 @@ export type Database = {
         }
         Relationships: []
       }
+      squad_requests: {
+        Row: {
+          created_at: string
+          expires_at: string
+          game: string
+          id: string
+          is_active: boolean
+          message: string | null
+          playstyle: string | null
+          rank: string | null
+          region: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          game: string
+          id?: string
+          is_active?: boolean
+          message?: string | null
+          playstyle?: string | null
+          rank?: string | null
+          region?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          game?: string
+          id?: string
+          is_active?: boolean
+          message?: string | null
+          playstyle?: string | null
+          rank?: string | null
+          region?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       store_products: {
         Row: {
           category: string
@@ -976,6 +1065,78 @@ export type Database = {
           price?: number
           seller_id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      stream_clips: {
+        Row: {
+          clipper_id: string
+          created_at: string
+          id: string
+          platform: string
+          reel_id: string | null
+          source_streamer_id: string | null
+          source_streamer_name: string | null
+          stream_url: string
+          title: string | null
+        }
+        Insert: {
+          clipper_id: string
+          created_at?: string
+          id?: string
+          platform: string
+          reel_id?: string | null
+          source_streamer_id?: string | null
+          source_streamer_name?: string | null
+          stream_url: string
+          title?: string | null
+        }
+        Update: {
+          clipper_id?: string
+          created_at?: string
+          id?: string
+          platform?: string
+          reel_id?: string | null
+          source_streamer_id?: string | null
+          source_streamer_name?: string | null
+          stream_url?: string
+          title?: string | null
+        }
+        Relationships: []
+      }
+      stream_polls: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          id: string
+          options: Json
+          question: string
+          status: string
+          streamer_id: string
+          total_coins_pool: number
+          winning_option_index: number | null
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          options?: Json
+          question: string
+          status?: string
+          streamer_id: string
+          total_coins_pool?: number
+          winning_option_index?: number | null
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          options?: Json
+          question?: string
+          status?: string
+          streamer_id?: string
+          total_coins_pool?: number
+          winning_option_index?: number | null
         }
         Relationships: []
       }
@@ -1207,6 +1368,103 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      watch_parties: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          host_id: string
+          id: string
+          is_active: boolean
+          platform: string
+          stream_url: string
+          streamer_channel: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          host_id: string
+          id?: string
+          is_active?: boolean
+          platform: string
+          stream_url: string
+          streamer_channel?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          host_id?: string
+          id?: string
+          is_active?: boolean
+          platform?: string
+          stream_url?: string
+          streamer_channel?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      watch_party_members: {
+        Row: {
+          id: string
+          joined_at: string
+          party_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          party_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          party_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watch_party_members_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "watch_parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      watch_party_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          party_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          party_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          party_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watch_party_reactions_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "watch_parties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

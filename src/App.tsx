@@ -35,6 +35,10 @@ import StreamingAnalytics from "./pages/StreamingAnalytics";
 import Missions from "./pages/Missions";
 import BoostProfile from "./pages/BoostProfile";
 import CreatorDashboard from "./pages/CreatorDashboard";
+import WatchParties from "./pages/WatchParties";
+import WatchPartyRoom from "./pages/WatchPartyRoom";
+import SquadUp from "./pages/SquadUp";
+import Clips from "./pages/Clips";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -85,6 +89,10 @@ function AppContent() {
             <Route path="/missions" element={<Missions />} />
             <Route path="/boost-profile" element={<BoostProfile />} />
             <Route path="/creator-dashboard" element={<CreatorDashboard />} />
+            <Route path="/watch-parties" element={<WatchParties />} />
+            <Route path="/watch-party/:id" element={<WatchPartyRoom />} />
+            <Route path="/squad-up" element={<SquadUp />} />
+            <Route path="/clips" element={<Clips />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLockGate>
