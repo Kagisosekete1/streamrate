@@ -41,6 +41,30 @@ export type Database = {
         }
         Relationships: []
       }
+      app_versions: {
+        Row: {
+          id: string
+          is_required: boolean
+          release_notes: string | null
+          released_at: string
+          version: string
+        }
+        Insert: {
+          id?: string
+          is_required?: boolean
+          release_notes?: string | null
+          released_at?: string
+          version: string
+        }
+        Update: {
+          id?: string
+          is_required?: boolean
+          release_notes?: string | null
+          released_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       blocked_users: {
         Row: {
           blocked_id: string
