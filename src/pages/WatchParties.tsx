@@ -5,6 +5,7 @@ import { Users, Plus, Tv, Radio } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useGamification } from "@/hooks/useGamification";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ interface Party {
 
 const WatchParties = () => {
   const { user } = useAuth();
+  const { updateMissionProgress } = useGamification();
   const navigate = useNavigate();
   const [parties, setParties] = useState<Party[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,6 +88,7 @@ const WatchParties = () => {
       return;
     }
     await supabase.from("watch_party_members").insert({ party_id: data.id, user_id: user.id });
+    updateMissionProgress("host_party");
     toast.success("Party created!");
     setOpen(false);
     setTitle("");

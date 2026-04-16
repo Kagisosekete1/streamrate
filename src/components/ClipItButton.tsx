@@ -3,6 +3,7 @@ import { Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useGamification } from "@/hooks/useGamification";
 import { toast } from "sonner";
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
 
 export const ClipItButton = ({ platform, streamUrl, streamerId, streamerName }: Props) => {
   const { user } = useAuth();
+  const { updateMissionProgress } = useGamification();
   const [clipping, setClipping] = useState(false);
 
   const handleClip = async () => {
@@ -35,6 +37,7 @@ export const ClipItButton = ({ platform, streamUrl, streamerId, streamerName }: 
       const { data: bal } = await supabase.from("user_coins").select("balance").eq("user_id", user.id).maybeSingle();
       await supabase.from("user_coins").upsert({ user_id: user.id, balance: (bal?.balance || 0) + 2 }, { onConflict: "user_id" });
       await supabase.from("coin_transactions").insert({ user_id: user.id, amount: 2, type: "earn", description: "Clipped a stream moment" });
+      updateMissionProgress("clip_stream");
 
       toast.success("🎬 Clip saved! +2 coins");
     } catch (e) {

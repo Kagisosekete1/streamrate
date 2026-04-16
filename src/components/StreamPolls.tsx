@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { BarChart3, Plus, Coins, Trophy, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useGamification } from "@/hooks/useGamification";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ interface Props {
 
 export const StreamPolls = ({ streamerId }: Props) => {
   const { user } = useAuth();
+  const { updateMissionProgress } = useGamification();
   const isOwner = user?.id === streamerId;
   const [polls, setPolls] = useState<Poll[]>([]);
   const [voteCounts, setVoteCounts] = useState<Record<string, Record<number, number>>>({});
@@ -114,6 +116,7 @@ export const StreamPolls = ({ streamerId }: Props) => {
     const poll = polls.find((p) => p.id === pollId);
     if (poll) await supabase.from("stream_polls").update({ total_coins_pool: poll.total_coins_pool + coins }).eq("id", pollId);
 
+    updateMissionProgress("vote_poll");
     toast.success(`Voted with ${coins} coins!`);
   };
 

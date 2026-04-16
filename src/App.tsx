@@ -11,6 +11,7 @@ import { useNativePushNotifications } from "@/hooks/useNativePushNotifications";
 import { CookieConsent } from "@/components/CookieConsent";
 import { PWAInstallBanner } from "@/components/PWAInstallBanner";
 import { IOSInstallBanner } from "@/components/IOSInstallBanner";
+import { UpdateBanner } from "@/components/UpdateBanner";
 import { AppLockGate } from "@/components/AppLockGate";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "./pages/NotFound";
@@ -97,6 +98,7 @@ function AppContent() {
           </Routes>
         </AppLockGate>
         </ErrorBoundary>
+        <UpdateBanner />
         <CookieConsent />
         <PWAInstallBanner />
         <IOSInstallBanner />
