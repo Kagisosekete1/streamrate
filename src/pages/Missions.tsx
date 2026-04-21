@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 const Missions = () => {
-  const { xp, coins, missions, badges, loading, claimMission } = useGamification();
+  const { xp, coins, missions, weeklyMissions, badges, loading, claimMission, claimWeeklyMission } = useGamification();
   const navigate = useNavigate();
 
   const completedCount = missions.filter((m) => m.completed).length;
@@ -89,7 +89,7 @@ const Missions = () => {
           <div className="space-y-3">
             <h2 className="font-semibold text-foreground flex items-center gap-2">
               <Flame className="w-4 h-4 text-accent" />
-              Missions
+              Daily Missions
             </h2>
             <AnimatePresence>
               {missions.map((mission, i) => (
@@ -152,6 +152,77 @@ const Missions = () => {
               ))}
             </AnimatePresence>
           </div>
+
+          {/* Weekly Mega-Missions */}
+          {weeklyMissions.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="font-semibold text-foreground flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-yellow-500" />
+                Weekly Mega-Missions
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-500 font-bold">
+                  BIG REWARDS
+                </span>
+              </h2>
+              <AnimatePresence>
+                {weeklyMissions.map((mission, i) => (
+                  <motion.div
+                    key={mission.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className={`bg-gradient-to-br rounded-xl p-4 border ${
+                      mission.claimed
+                        ? "border-green-500/30 from-green-500/10 to-card"
+                        : mission.completed
+                        ? "border-yellow-500/40 from-yellow-500/10 to-card"
+                        : "border-yellow-500/20 from-yellow-500/5 to-card"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="text-3xl">{mission.icon}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-sm text-foreground">{mission.title}</p>
+                          {mission.claimed && <Check className="w-4 h-4 text-green-500" />}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{mission.description}</p>
+                        <div className="mt-2">
+                          <Progress
+                            value={(mission.progress / mission.target_count) * 100}
+                            className="h-1.5"
+                          />
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-xs text-muted-foreground">
+                              {mission.progress}/{mission.target_count}
+                            </span>
+                            <div className="flex items-center gap-2 text-xs font-bold">
+                              <span className="flex items-center gap-0.5 text-primary">
+                                <Zap className="w-3 h-3" />
+                                {mission.xp_reward}
+                              </span>
+                              <span className="flex items-center gap-0.5 text-yellow-500">
+                                <Coins className="w-3 h-3" />
+                                {mission.coin_reward}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      {mission.completed && !mission.claimed && (
+                        <Button
+                          size="sm"
+                          className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white"
+                          onClick={() => claimWeeklyMission(mission.id)}
+                        >
+                          Claim
+                        </Button>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
 
           {/* Badges Section */}
           {badges.length > 0 && (

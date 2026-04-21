@@ -36,6 +36,28 @@ interface DailyMission {
   claimed: boolean;
 }
 
+interface WeeklyMission {
+  id: string;
+  title: string;
+  description: string;
+  xp_reward: number;
+  coin_reward: number;
+  action_type: string;
+  target_count: number;
+  icon: string;
+  progress: number;
+  completed: boolean;
+  claimed: boolean;
+}
+
+const getWeekStart = (): string => {
+  const d = new Date();
+  const day = d.getDay(); // 0 (Sun) - 6 (Sat); week start = Monday
+  const diff = (day === 0 ? -6 : 1) - day;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().split("T")[0];
+};
+
 const LEVEL_TITLES: Record<number, string> = {
   1: "Newcomer",
   2: "Rookie",
@@ -69,6 +91,7 @@ export const useGamification = () => {
   const [coins, setCoins] = useState<UserCoins>({ balance: 0 });
   const [badges, setBadges] = useState<Badge[]>([]);
   const [missions, setMissions] = useState<DailyMission[]>([]);
+  const [weeklyMissions, setWeeklyMissions] = useState<WeeklyMission[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchAll = useCallback(async () => {
@@ -163,6 +186,42 @@ export const useGamification = () => {
     });
 
     setMissions(enrichedMissions);
+
+    // Fetch weekly missions
+    const weekStart = getWeekStart();
+    const { data: weeklyData } = await supabase
+      .from("weekly_missions")
+      .select("*")
+      .eq("is_active", true);
+
+    const { data: weeklyProgressData } = await supabase
+      .from("user_weekly_missions")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("week_start", weekStart);
+
+    const weeklyProgressMap = new Map(
+      (weeklyProgressData || []).map((p) => [p.mission_id, p])
+    );
+
+    const enrichedWeekly: WeeklyMission[] = (weeklyData || []).map((m) => {
+      const prog = weeklyProgressMap.get(m.id);
+      return {
+        id: m.id,
+        title: m.title,
+        description: m.description,
+        xp_reward: m.xp_reward,
+        coin_reward: m.coin_reward,
+        action_type: m.action_type,
+        target_count: m.target_count,
+        icon: m.icon,
+        progress: prog?.progress || 0,
+        completed: prog?.completed || false,
+        claimed: prog?.claimed || false,
+      };
+    });
+    setWeeklyMissions(enrichedWeekly);
+
     setLoading(false);
   }, [user]);
 
@@ -252,49 +311,123 @@ export const useGamification = () => {
       if (!user) return;
       const today = new Date().toISOString().split("T")[0];
       const mission = missions.find((m) => m.action_type === actionType);
-      if (!mission || mission.claimed) return;
 
-      // Upsert progress
-      const newProgress = Math.min(mission.progress + increment, mission.target_count);
-      const completed = newProgress >= mission.target_count;
+      // Daily mission progress
+      if (mission && !mission.claimed) {
+        const newProgress = Math.min(mission.progress + increment, mission.target_count);
+        const completed = newProgress >= mission.target_count;
 
-      const { data: existing } = await supabase
-        .from("user_daily_missions")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("mission_id", mission.id)
-        .eq("mission_date", today)
-        .single();
-
-      if (existing) {
-        await supabase
+        const { data: existing } = await supabase
           .from("user_daily_missions")
-          .update({ progress: newProgress, completed })
-          .eq("id", existing.id);
-      } else {
-        await supabase.from("user_daily_missions").insert({
-          user_id: user.id,
-          mission_id: mission.id,
-          progress: newProgress,
-          completed,
-          mission_date: today,
-        });
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("mission_id", mission.id)
+          .eq("mission_date", today)
+          .single();
+
+        if (existing) {
+          await supabase
+            .from("user_daily_missions")
+            .update({ progress: newProgress, completed })
+            .eq("id", existing.id);
+        } else {
+          await supabase.from("user_daily_missions").insert({
+            user_id: user.id,
+            mission_id: mission.id,
+            progress: newProgress,
+            completed,
+            mission_date: today,
+          });
+        }
+
+        setMissions((prev) =>
+          prev.map((m) =>
+            m.id === mission.id ? { ...m, progress: newProgress, completed } : m
+          )
+        );
+
+        if (completed && !mission.completed) {
+          toast({
+            title: `🎯 Mission Ready to Claim!`,
+            description: `"${mission.title}" — tap to claim rewards`,
+          });
+        }
       }
 
-      setMissions((prev) =>
-        prev.map((m) =>
-          m.id === mission.id ? { ...m, progress: newProgress, completed } : m
-        )
-      );
+      // Weekly mission progress
+      const weekly = weeklyMissions.find((m) => m.action_type === actionType);
+      if (weekly && !weekly.claimed) {
+        const weekStart = getWeekStart();
+        const newProgress = Math.min(weekly.progress + increment, weekly.target_count);
+        const completed = newProgress >= weekly.target_count;
 
-      if (completed && !mission.completed) {
-        toast({
-          title: `🎯 Mission Ready to Claim!`,
-          description: `"${mission.title}" — tap to claim rewards`,
-        });
+        const { data: existing } = await supabase
+          .from("user_weekly_missions")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("mission_id", weekly.id)
+          .eq("week_start", weekStart)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase
+            .from("user_weekly_missions")
+            .update({ progress: newProgress, completed })
+            .eq("id", existing.id);
+        } else {
+          await supabase.from("user_weekly_missions").insert({
+            user_id: user.id,
+            mission_id: weekly.id,
+            progress: newProgress,
+            completed,
+            week_start: weekStart,
+          });
+        }
+
+        setWeeklyMissions((prev) =>
+          prev.map((m) =>
+            m.id === weekly.id ? { ...m, progress: newProgress, completed } : m
+          )
+        );
+
+        if (completed && !weekly.completed) {
+          toast({
+            title: `🏆 Weekly Mega-Mission Ready!`,
+            description: `"${weekly.title}" — claim huge rewards!`,
+          });
+        }
       }
     },
-    [user, missions, toast]
+    [user, missions, weeklyMissions, toast]
+  );
+
+  const claimWeeklyMission = useCallback(
+    async (missionId: string) => {
+      if (!user) return;
+      const mission = weeklyMissions.find((m) => m.id === missionId);
+      if (!mission || !mission.completed || mission.claimed) return;
+
+      const weekStart = getWeekStart();
+      await supabase
+        .from("user_weekly_missions")
+        .update({ claimed: true })
+        .eq("user_id", user.id)
+        .eq("mission_id", missionId)
+        .eq("week_start", weekStart);
+
+      await addXP(mission.xp_reward, `Weekly: ${mission.title}`);
+      await addCoins(mission.coin_reward, `Weekly: ${mission.title}`);
+
+      setWeeklyMissions((prev) =>
+        prev.map((m) => (m.id === missionId ? { ...m, claimed: true } : m))
+      );
+
+      toast({
+        title: `🏆 Mega-Mission Complete!`,
+        description: `+${mission.xp_reward} XP, +${mission.coin_reward} Coins`,
+      });
+    },
+    [user, weeklyMissions, addXP, addCoins, toast]
   );
 
   return {
@@ -302,10 +435,12 @@ export const useGamification = () => {
     coins,
     badges,
     missions,
+    weeklyMissions,
     loading,
     addXP,
     addCoins,
     claimMission,
+    claimWeeklyMission,
     updateMissionProgress,
     refetch: fetchAll,
   };

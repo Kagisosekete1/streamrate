@@ -3,12 +3,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, X, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { WhatsNewModal } from "@/components/WhatsNewModal";
 
 const STORAGE_KEY = "streamrate_seen_version";
 
 export const UpdateBanner = () => {
   const [version, setVersion] = useState<{ version: string; release_notes: string | null } | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -27,6 +29,10 @@ export const UpdateBanner = () => {
   const dismiss = () => {
     if (version) localStorage.setItem(STORAGE_KEY, version.version);
     setVersion(null);
+  };
+
+  const openWhatsNew = () => {
+    setModalOpen(true);
   };
 
   const update = async () => {
@@ -48,6 +54,7 @@ export const UpdateBanner = () => {
   };
 
   return (
+    <>
     <AnimatePresence>
       {version && (
         <motion.div
@@ -69,7 +76,7 @@ export const UpdateBanner = () => {
             <Button
               size="sm"
               variant="secondary"
-              onClick={update}
+              onClick={openWhatsNew}
               disabled={updating}
               className="h-8 gap-1 text-xs"
             >
@@ -83,5 +90,15 @@ export const UpdateBanner = () => {
         </motion.div>
       )}
     </AnimatePresence>
+    {version && (
+      <WhatsNewModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        version={version.version}
+        onUpdate={update}
+        updating={updating}
+      />
+    )}
+    </>
   );
 };

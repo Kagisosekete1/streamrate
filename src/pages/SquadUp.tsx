@@ -63,6 +63,30 @@ const SquadUp = () => {
 
   useEffect(() => { fetchRequests(); }, [filter]);
 
+  const handleConnect = async (request: SquadRequest) => {
+    if (!user) {
+      toast.error("Sign in first");
+      return;
+    }
+    // Notify the request poster (don't notify self)
+    if (request.user_id !== user.id) {
+      const { data: me } = await supabase
+        .from("profiles")
+        .select("username, full_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      const myName = me?.username || me?.full_name || "Someone";
+      await supabase.from("notifications").insert({
+        user_id: request.user_id,
+        from_user_id: user.id,
+        title: "Squad Interest",
+        message: `${myName} wants to squad up for ${request.game}`,
+        type: "lfg_response",
+      });
+    }
+    navigate(`/streamer/${request.user_id}`);
+  };
+
   const createRequest = async () => {
     if (!user) { toast.error("Sign in first"); return; }
     const { error } = await supabase.from("squad_requests").insert({
@@ -170,7 +194,7 @@ const SquadUp = () => {
                         {r.playstyle && <span className="px-2 py-0.5 rounded-full bg-secondary text-foreground text-[10px]">{r.playstyle}</span>}
                       </div>
                       {r.message && <p className="text-sm text-muted-foreground mt-2">{r.message}</p>}
-                      <Button size="sm" variant="outline" className="mt-2 gap-1 h-7 text-xs" onClick={() => navigate(`/streamer/${r.user_id}`)}>
+                      <Button size="sm" variant="outline" className="mt-2 gap-1 h-7 text-xs" onClick={() => handleConnect(r)}>
                         <MessageCircle className="w-3 h-3" /> Connect
                       </Button>
                     </div>

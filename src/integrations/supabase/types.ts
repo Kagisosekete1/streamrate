@@ -1360,6 +1360,47 @@ export type Database = {
         }
         Relationships: []
       }
+      user_weekly_missions: {
+        Row: {
+          claimed: boolean
+          completed: boolean
+          created_at: string
+          id: string
+          mission_id: string
+          progress: number
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          claimed?: boolean
+          completed?: boolean
+          created_at?: string
+          id?: string
+          mission_id: string
+          progress?: number
+          user_id: string
+          week_start?: string
+        }
+        Update: {
+          claimed?: boolean
+          completed?: boolean
+          created_at?: string
+          id?: string
+          mission_id?: string
+          progress?: number
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_weekly_missions_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_xp: {
         Row: {
           created_at: string
@@ -1489,6 +1530,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      weekly_missions: {
+        Row: {
+          action_type: string
+          coin_reward: number
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          is_active: boolean
+          target_count: number
+          title: string
+          xp_reward: number
+        }
+        Insert: {
+          action_type: string
+          coin_reward?: number
+          created_at?: string
+          description: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          target_count?: number
+          title: string
+          xp_reward?: number
+        }
+        Update: {
+          action_type?: string
+          coin_reward?: number
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          target_count?: number
+          title?: string
+          xp_reward?: number
+        }
+        Relationships: []
       }
     }
     Views: {
