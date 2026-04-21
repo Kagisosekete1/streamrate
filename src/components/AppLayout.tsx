@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { AppSidebar } from "./AppSidebar";
 import { BottomNav } from "./BottomNav";
 import { RightSidebar } from "./RightSidebar";
+import { MobileMoreMenu } from "./MobileMoreMenu";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -27,6 +28,7 @@ export const AppLayout = ({ children, showBottomNav = true, showRightSidebar = t
       {showBottomNav && (
         <div className="md:hidden">
           <BottomNav />
+          <MobileMoreMenu />
         </div>
       )}
     </div>
