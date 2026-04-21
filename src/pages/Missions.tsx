@@ -216,6 +216,7 @@ const Missions = () => {
                 </motion.div>
               ))}
             </AnimatePresence>
+            )}
           </div>
 
           {/* Weekly Mega-Missions */}
