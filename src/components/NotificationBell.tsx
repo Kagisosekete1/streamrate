@@ -143,6 +143,19 @@ export const NotificationBell = () => {
       return;
     }
 
+    if (notification.type === "party_join") {
+      navigate("/watch-parties");
+      return;
+    }
+    if (notification.type === "poll_vote") {
+      navigate("/live");
+      return;
+    }
+    if (notification.type === "lfg_response") {
+      navigate(notification.from_user_id ? `/streamer/${notification.from_user_id}` : "/squad-up");
+      return;
+    }
+
     // Comment/mention notifications deep-link to the specific comment
     if (notification.post_id && (notification.type === "comment" || notification.type === "comment_reply" || notification.type === "comment_like" || notification.type === "mention")) {
       navigate(`/post/${notification.post_id}`);

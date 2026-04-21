@@ -3,22 +3,41 @@ import { Target, Gift, Flame, Check, Coins, Zap, ChevronRight, Trophy, RefreshCw
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { XPLevelBadge } from "@/components/XPLevelBadge";
 import { CoinBalance } from "@/components/CoinBalance";
 import { useGamification } from "@/hooks/useGamification";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 const Missions = () => {
   const { xp, coins, missions, weeklyMissions, badges, loading, claimMission, claimWeeklyMission, refetch } = useGamification();
   const navigate = useNavigate();
   const [refreshing, setRefreshing] = useState(false);
+  const [now, setNow] = useState(() => new Date());
+
+  // Recompute week range at midnight rollover and on remount
+  useEffect(() => {
+    const tick = () => {
+      const d = new Date();
+      const next = new Date(d);
+      next.setHours(24, 0, 5, 0); // 5s after midnight
+      const ms = Math.max(1000, next.getTime() - d.getTime());
+      const t = setTimeout(() => {
+        setNow(new Date());
+        refetch();
+      }, ms);
+      return t;
+    };
+    const t = tick();
+    return () => clearTimeout(t);
+  }, [now, refetch]);
 
   // Compute current ISO week start (Mon) and end (Sun)
   const weekRange = (() => {
-    const d = new Date();
+    const d = new Date(now);
     const day = d.getDay();
     const diffToMon = (day === 0 ? -6 : 1) - day;
     const start = new Date(d);
