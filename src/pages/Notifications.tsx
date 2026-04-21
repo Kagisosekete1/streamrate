@@ -150,6 +150,28 @@ const Notifications = () => {
       return;
     }
 
+    // Watch party join → go to watch parties page
+    if (notification.type === "party_join") {
+      navigate("/watch-parties");
+      return;
+    }
+
+    // Poll vote → go to live page
+    if (notification.type === "poll_vote") {
+      navigate("/live");
+      return;
+    }
+
+    // LFG response → go to squad up & open requester profile
+    if (notification.type === "lfg_response") {
+      if (notification.from_user_id) {
+        navigate(`/streamer/${notification.from_user_id}`);
+      } else {
+        navigate("/squad-up");
+      }
+      return;
+    }
+
     // Comment/mention notifications deep-link to the specific comment
     if (notification.post_id && (notification.type === "comment" || notification.type === "comment_reply" || notification.type === "comment_like" || notification.type === "mention")) {
       const commentParam = notification.comment_id ? `?commentId=${notification.comment_id}` : "";
