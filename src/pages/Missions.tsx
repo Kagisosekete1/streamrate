@@ -62,15 +62,7 @@ const Missions = () => {
   const claimedCount = missions.filter((m) => m.claimed).length;
   const totalMissions = missions.length;
 
-  if (loading) {
-    return (
-      <AppLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-        </div>
-      </AppLayout>
-    );
-  }
+  const showSkeleton = loading || refreshing;
 
   return (
     <AppLayout>
