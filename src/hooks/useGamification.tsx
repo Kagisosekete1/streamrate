@@ -36,6 +36,28 @@ interface DailyMission {
   claimed: boolean;
 }
 
+interface WeeklyMission {
+  id: string;
+  title: string;
+  description: string;
+  xp_reward: number;
+  coin_reward: number;
+  action_type: string;
+  target_count: number;
+  icon: string;
+  progress: number;
+  completed: boolean;
+  claimed: boolean;
+}
+
+const getWeekStart = (): string => {
+  const d = new Date();
+  const day = d.getDay(); // 0 (Sun) - 6 (Sat); week start = Monday
+  const diff = (day === 0 ? -6 : 1) - day;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().split("T")[0];
+};
+
 const LEVEL_TITLES: Record<number, string> = {
   1: "Newcomer",
   2: "Rookie",
@@ -69,6 +91,7 @@ export const useGamification = () => {
   const [coins, setCoins] = useState<UserCoins>({ balance: 0 });
   const [badges, setBadges] = useState<Badge[]>([]);
   const [missions, setMissions] = useState<DailyMission[]>([]);
+  const [weeklyMissions, setWeeklyMissions] = useState<WeeklyMission[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchAll = useCallback(async () => {
@@ -163,6 +186,42 @@ export const useGamification = () => {
     });
 
     setMissions(enrichedMissions);
+
+    // Fetch weekly missions
+    const weekStart = getWeekStart();
+    const { data: weeklyData } = await supabase
+      .from("weekly_missions")
+      .select("*")
+      .eq("is_active", true);
+
+    const { data: weeklyProgressData } = await supabase
+      .from("user_weekly_missions")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("week_start", weekStart);
+
+    const weeklyProgressMap = new Map(
+      (weeklyProgressData || []).map((p) => [p.mission_id, p])
+    );
+
+    const enrichedWeekly: WeeklyMission[] = (weeklyData || []).map((m) => {
+      const prog = weeklyProgressMap.get(m.id);
+      return {
+        id: m.id,
+        title: m.title,
+        description: m.description,
+        xp_reward: m.xp_reward,
+        coin_reward: m.coin_reward,
+        action_type: m.action_type,
+        target_count: m.target_count,
+        icon: m.icon,
+        progress: prog?.progress || 0,
+        completed: prog?.completed || false,
+        claimed: prog?.claimed || false,
+      };
+    });
+    setWeeklyMissions(enrichedWeekly);
+
     setLoading(false);
   }, [user]);
 
