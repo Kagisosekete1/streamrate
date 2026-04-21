@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Bell, Users, FileText, Star, TrendingUp, Check, Eye, X } from "lucide-react";
+import { ChevronLeft, Bell, Users, FileText, Star, TrendingUp, Check, Eye, X, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AppLayout } from "@/components/AppLayout";
@@ -206,6 +206,11 @@ const Notifications = () => {
         return <Bell className="w-4 h-4 text-blue-400" />;
       case "profile_view":
         return <Eye className="w-4 h-4 text-cyan-400" />;
+      case "lfg_response":
+        return <Gamepad2 className="w-4 h-4 text-blue-400" />;
+      case "party_join":
+      case "poll_vote":
+        return <Bell className="w-4 h-4 text-purple-400" />;
       default:
         return <Bell className="w-4 h-4 text-primary" />;
     }
@@ -426,7 +431,19 @@ const Notifications = () => {
                       )}
                     </div>
                     {!notification.is_read && (
-                      <span className="w-2.5 h-2.5 bg-primary rounded-full flex-shrink-0 mt-2" />
+                      <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                        <span className="w-2.5 h-2.5 bg-primary rounded-full mt-2" />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            markAsRead(notification.id);
+                          }}
+                          className="text-[10px] text-primary hover:underline font-medium"
+                          aria-label="Mark as read"
+                        >
+                          Mark read
+                        </button>
+                      </div>
                     )}
                   </div>
                 </motion.div>

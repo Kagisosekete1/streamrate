@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Target, Gift, Flame, Check, Coins, Zap, ChevronRight, Trophy } from "lucide-react";
+import { Target, Gift, Flame, Check, Coins, Zap, ChevronRight, Trophy, RefreshCw, Calendar } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -8,10 +8,36 @@ import { CoinBalance } from "@/components/CoinBalance";
 import { useGamification } from "@/hooks/useGamification";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 const Missions = () => {
-  const { xp, coins, missions, weeklyMissions, badges, loading, claimMission, claimWeeklyMission } = useGamification();
+  const { xp, coins, missions, weeklyMissions, badges, loading, claimMission, claimWeeklyMission, refetch } = useGamification();
   const navigate = useNavigate();
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Compute current ISO week start (Mon) and end (Sun)
+  const weekRange = (() => {
+    const d = new Date();
+    const day = d.getDay();
+    const diffToMon = (day === 0 ? -6 : 1) - day;
+    const start = new Date(d);
+    start.setDate(d.getDate() + diffToMon);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    const fmt = (dt: Date) => dt.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    return { start, end, label: `${fmt(start)} – ${fmt(end)}` };
+  })();
+
+  // Hide already-claimed weekly missions (they reset each week via week_start key)
+  const visibleWeekly = weeklyMissions.filter((m) => !m.claimed);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+    toast.success("Missions refreshed");
+  };
 
   const completedCount = missions.filter((m) => m.completed).length;
   const claimedCount = missions.filter((m) => m.claimed).length;
@@ -37,7 +63,19 @@ const Missions = () => {
               <Target className="w-5 h-5 text-primary" />
               <h1 className="font-bold text-lg text-foreground">Daily Missions</h1>
             </div>
-            <CoinBalance balance={coins.balance} compact />
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                aria-label="Refresh missions"
+                className="h-8 w-8"
+              >
+                <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+              </Button>
+              <CoinBalance balance={coins.balance} compact />
+            </div>
           </div>
         </header>
 
@@ -154,17 +192,23 @@ const Missions = () => {
           </div>
 
           {/* Weekly Mega-Missions */}
-          {weeklyMissions.length > 0 && (
+          {visibleWeekly.length > 0 && (
             <div className="space-y-3">
-              <h2 className="font-semibold text-foreground flex items-center gap-2">
-                <Trophy className="w-4 h-4 text-yellow-500" />
-                Weekly Mega-Missions
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-500 font-bold">
-                  BIG REWARDS
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h2 className="font-semibold text-foreground flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-yellow-500" />
+                  Weekly Mega-Missions
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-500 font-bold">
+                    BIG REWARDS
+                  </span>
+                </h2>
+                <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {weekRange.label}
                 </span>
-              </h2>
+              </div>
               <AnimatePresence>
-                {weeklyMissions.map((mission, i) => (
+                {visibleWeekly.map((mission, i) => (
                   <motion.div
                     key={mission.id}
                     initial={{ opacity: 0, y: 20 }}

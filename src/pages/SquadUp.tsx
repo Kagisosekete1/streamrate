@@ -76,13 +76,16 @@ const SquadUp = () => {
         .eq("id", user.id)
         .maybeSingle();
       const myName = me?.username || me?.full_name || "Someone";
-      await supabase.from("notifications").insert({
+      const { error } = await supabase.from("notifications").insert({
         user_id: request.user_id,
         from_user_id: user.id,
         title: "Squad Interest",
         message: `${myName} wants to squad up for ${request.game}`,
         type: "lfg_response",
       });
+      if (!error) {
+        toast.success(`${request.user_name || "Poster"} was notified you're interested!`);
+      }
     }
     navigate(`/streamer/${request.user_id}`);
   };
