@@ -431,7 +431,19 @@ const Notifications = () => {
                       )}
                     </div>
                     {!notification.is_read && (
-                      <span className="w-2.5 h-2.5 bg-primary rounded-full flex-shrink-0 mt-2" />
+                      <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                        <span className="w-2.5 h-2.5 bg-primary rounded-full mt-2" />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            markAsRead(notification.id);
+                          }}
+                          className="text-[10px] text-primary hover:underline font-medium"
+                          aria-label="Mark as read"
+                        >
+                          Mark read
+                        </button>
+                      </div>
                     )}
                   </div>
                 </motion.div>
