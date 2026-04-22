@@ -321,6 +321,87 @@ const Settings = () => {
   const profileUrl = user ? `${window.location.origin}/streamer/${user.id}` : "";
   const displayName = profile?.username || profile?.full_name || "StreamRate profile";
   const avatarUrl = profile?.avatar_url || getDefaultAvatar();
+
+  const generateProfileQr = async () => {
+    if (!profileUrl) return;
+
+    const qrCanvas = document.createElement("canvas");
+    await QRCode.toCanvas(qrCanvas, profileUrl, {
+      width: 960,
+      margin: 3,
+      color: {
+        dark: resolvedTheme === "dark" ? "#f8fafc" : "#0f172a",
+        light: resolvedTheme === "dark" ? "#020617" : "#ffffff",
+      },
+    });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080;
+    canvas.height = 1280;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const bg = resolvedTheme === "dark" ? "#020617" : "#ffffff";
+    const fg = resolvedTheme === "dark" ? "#f8fafc" : "#0f172a";
+    const muted = resolvedTheme === "dark" ? "#94a3b8" : "#64748b";
+    const primary = "#0066ff";
+
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = primary;
+    ctx.beginPath();
+    ctx.roundRect(80, 80, 920, 1120, 40);
+    ctx.fill();
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.roundRect(100, 100, 880, 1080, 32);
+    ctx.fill();
+
+    ctx.drawImage(qrCanvas, 110, 210, 860, 860);
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.arc(540, 640, 104, 0, Math.PI * 2);
+    ctx.fill();
+
+    await new Promise<void>((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(540, 640, 82, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(img, 458, 558, 164, 164);
+        ctx.restore();
+        ctx.strokeStyle = primary;
+        ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.arc(540, 640, 86, 0, Math.PI * 2);
+        ctx.stroke();
+        resolve();
+      };
+      img.onerror = () => resolve();
+      img.src = avatarUrl;
+    });
+
+    ctx.fillStyle = fg;
+    ctx.font = "700 54px Inter, system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("StreamRate", 540, 165);
+    ctx.font = "700 38px Inter, system-ui, sans-serif";
+    ctx.fillText(displayName, 540, 1110);
+    ctx.fillStyle = muted;
+    ctx.font = "500 24px Inter, system-ui, sans-serif";
+    ctx.fillText("Scan to view, sign up, and follow", 540, 1150);
+
+    setQrDataUrl(canvas.toDataURL("image/png"));
+  };
+
+  useEffect(() => {
+    if (activeModal === "qrCode") {
+      generateProfileQr();
+    }
+  }, [activeModal, profileUrl, avatarUrl, displayName, resolvedTheme]);
   const [settings, setSettings] = useState({
     profileVisibility: "public",
     whoCanComment: "everyone",
