@@ -83,6 +83,31 @@ const StreamerProfile = () => {
   const [reelViewerIndex, setReelViewerIndex] = useState(0);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
 
+  const resolveProfileId = async () => {
+    if (!id) return null;
+    if (id.startsWith("user-")) {
+      const signupNumber = Number(id.replace("user-", ""));
+      if (!Number.isNaN(signupNumber)) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("signup_number", signupNumber)
+          .maybeSingle();
+        return data?.id || null;
+      }
+    }
+
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (uuidPattern.test(id)) return id;
+
+    const { data } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("username", id.toLowerCase())
+      .maybeSingle();
+    return data?.id || null;
+  };
+
   useEffect(() => {
     if (id) {
       fetchStreamerData();
@@ -93,24 +118,31 @@ const StreamerProfile = () => {
 
   const trackProfileView = async () => {
     if (!id) return;
+    const profileId = await resolveProfileId();
+    if (!profileId) return;
     
     // Insert profile view (will trigger notification via database trigger)
     await supabase
       .from("profile_views")
       .insert({
-        profile_id: id,
+        profile_id: profileId,
         viewer_id: user?.id || null,
       });
   };
 
   const fetchStreamerData = async () => {
     if (!id) return;
+    const profileId = await resolveProfileId();
+    if (!profileId) {
+      setLoading(false);
+      return;
+    }
 
     // Fetch streamer profile
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("id, full_name, username, avatar_url, bio, country, signup_number, email, twitch_url, discord_url, kick_url, youtube_gaming_url, show_twitch, show_discord, show_kick, show_youtube_gaming, profile_visibility")
-      .eq("id", id)
+      .eq("id", profileId)
       .maybeSingle();
 
     if (profileError || !profileData) {
@@ -140,7 +172,7 @@ const StreamerProfile = () => {
 
     // Check profile visibility
     const visibility = (profileData as any).profile_visibility || "public";
-    if (visibility === "private" && user?.id !== id) {
+    if (visibility === "private" && user?.id !== profileId) {
       setIsPrivateProfile(true);
       // Check if current user follows this profile
       if (user) {
@@ -148,7 +180,7 @@ const StreamerProfile = () => {
           .from("follows")
           .select("id")
           .eq("follower_id", user.id)
-          .eq("following_id", id)
+          .eq("following_id", profileId)
           .maybeSingle();
         setCanViewProfile(!!followData);
       } else {
@@ -160,7 +192,7 @@ const StreamerProfile = () => {
     const { data: ratingsData } = await supabase
       .from("ratings")
       .select("id, stars, review_text, created_at, fan_id")
-      .eq("streamer_id", id)
+      .eq("streamer_id", profileId)
       .order("created_at", { ascending: false });
 
     if (ratingsData && ratingsData.length > 0) {
@@ -203,14 +235,14 @@ const StreamerProfile = () => {
     const { count } = await supabase
       .from("follows")
       .select("*", { count: "exact", head: true })
-      .eq("following_id", id);
+      .eq("following_id", profileId);
     setFollowersCount(count || 0);
 
     // Fetch following count
     const { count: followingCt } = await supabase
       .from("follows")
       .select("*", { count: "exact", head: true })
-      .eq("follower_id", id);
+      .eq("follower_id", profileId);
     setFollowingCount(followingCt || 0);
 
     // Check if user is following
@@ -219,7 +251,7 @@ const StreamerProfile = () => {
         .from("follows")
         .select("id")
         .eq("follower_id", user.id)
-        .eq("following_id", id)
+        .eq("following_id", profileId)
         .maybeSingle();
 
       setIsFollowing(!!followData);
@@ -231,7 +263,7 @@ const StreamerProfile = () => {
     const { data: postsData } = await supabase
       .from("posts")
       .select("id, content, image_url, created_at")
-      .eq("user_id", id)
+      .eq("user_id", profileId)
       .order("created_at", { ascending: false });
 
     const postsWithCounts = await Promise.all(
@@ -253,7 +285,7 @@ const StreamerProfile = () => {
     const { data: reelsData } = await supabase
       .from("reels")
       .select("*")
-      .eq("user_id", id)
+      .eq("user_id", profileId)
       .order("created_at", { ascending: false });
 
     const enrichedReels = (reelsData || []).map(reel => ({
@@ -269,10 +301,10 @@ const StreamerProfile = () => {
       return;
     }
 
-    if (!id) return;
+    if (!streamer?.id) return;
 
     // Prevent self-follow
-    if (user.id === id) {
+    if (user.id === streamer.id) {
       toast({ title: "You cannot follow yourself", variant: "destructive" });
       return;
     }
@@ -282,14 +314,14 @@ const StreamerProfile = () => {
         .from("follows")
         .delete()
         .eq("follower_id", user.id)
-        .eq("following_id", id);
+        .eq("following_id", streamer.id);
       setIsFollowing(false);
       setFollowersCount((prev) => prev - 1);
       toast({ title: "Unfollowed" });
     } else {
       await supabase.from("follows").insert({
         follower_id: user.id,
-        following_id: id,
+        following_id: streamer.id,
       });
       setIsFollowing(true);
       setFollowersCount((prev) => prev + 1);
@@ -308,13 +340,13 @@ const StreamerProfile = () => {
       return;
     }
 
-    if (!id) return;
+    if (!streamer?.id) return;
 
     setIsSubmitting(true);
 
     const { error } = await supabase.from("ratings").upsert(
       {
-        streamer_id: id,
+        streamer_id: streamer.id,
         fan_id: user.id,
         stars: rating,
         review_text: reviewText.trim() || null,
@@ -398,7 +430,7 @@ const StreamerProfile = () => {
               />
               {/* Online indicator */}
               <OnlineIndicator 
-                userId={id!} 
+                userId={streamer.id} 
                 className="absolute bottom-1 right-1"
                 size="lg"
               />
@@ -422,7 +454,7 @@ const StreamerProfile = () => {
             )}
             
             {/* Last Seen */}
-            <LastSeenDisplay userId={id!} className="mt-1" />
+            <LastSeenDisplay userId={streamer.id} className="mt-1" />
             
             {/* About/Bio under Last Seen */}
             {streamer.bio && (
@@ -606,10 +638,10 @@ const StreamerProfile = () => {
             onReelClick={(index) => { setReelViewerIndex(index); setShowReelViewer(true); }}
             onPostDelete={() => {}}
             onReelDelete={() => {}}
-            isOwnProfile={user?.id === id}
+            isOwnProfile={user?.id === streamer.id}
             authorName={streamer?.username || streamer?.full_name || "User"}
             authorAvatar={streamer?.avatar_url || ""}
-            authorId={id}
+            authorId={streamer.id}
           />
         </>
       )}
@@ -630,11 +662,11 @@ const StreamerProfile = () => {
       />
 
       {/* Followers/Following Modal */}
-      {showFollowersModal && id && (
+      {showFollowersModal && streamer.id && (
         <FollowersModal
           isOpen={showFollowersModal}
           onClose={() => setShowFollowersModal(false)}
-          userId={id}
+          userId={streamer.id}
           type={followersModalType}
         />
       )}
@@ -651,7 +683,7 @@ const StreamerProfile = () => {
       <ReviewsModal
         isOpen={showReviewsModal}
         onClose={() => setShowReviewsModal(false)}
-        userId={id!}
+        userId={streamer.id}
         userName={streamer?.username || streamer?.full_name || undefined}
       />
 
