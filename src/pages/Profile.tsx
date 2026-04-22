@@ -989,6 +989,20 @@ const Profile = () => {
 
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1 block">
+                    QR handle
+                  </label>
+                  <Input
+                    value={editForm.qrHandle}
+                    onChange={(e) => setEditForm({ ...editForm, qrHandle: sanitizeQrHandle(e.target.value) })}
+                    placeholder="stable_profile_link"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Used for streamrateapp.com/u/{editForm.qrHandle || "your_handle"}; old QR links keep redirecting here.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1 block">
                     Bio
                   </label>
                   <textarea
