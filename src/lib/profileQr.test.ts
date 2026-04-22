@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
 
+Object.defineProperty(globalThis, "localStorage", {
+  value: {
+    getItem: () => null,
+    setItem: () => undefined,
+    removeItem: () => undefined,
+  },
+});
+
 describe("profile QR links", () => {
   it("builds the signed StreamRate profile URL from a stable QR handle", async () => {
     const { buildProfileQrUrl } = await import("./profileQr");
