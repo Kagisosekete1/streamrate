@@ -83,6 +83,31 @@ const StreamerProfile = () => {
   const [reelViewerIndex, setReelViewerIndex] = useState(0);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
 
+  const resolveProfileId = async () => {
+    if (!id) return null;
+    if (id.startsWith("user-")) {
+      const signupNumber = Number(id.replace("user-", ""));
+      if (!Number.isNaN(signupNumber)) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("signup_number", signupNumber)
+          .maybeSingle();
+        return data?.id || null;
+      }
+    }
+
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (uuidPattern.test(id)) return id;
+
+    const { data } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("username", id.toLowerCase())
+      .maybeSingle();
+    return data?.id || null;
+  };
+
   useEffect(() => {
     if (id) {
       fetchStreamerData();
