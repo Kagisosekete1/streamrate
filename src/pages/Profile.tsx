@@ -617,12 +617,23 @@ const Profile = () => {
       }
     }
 
+    const handleCheck = await checkQrHandleAvailable(editForm.qrHandle || cleanUsername || profile?.full_name || "", user.id);
+    if (!handleCheck.available) {
+      toast({
+        title: "QR handle unavailable",
+        description: handleCheck.reason || "This profile QR handle is already taken.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Update profile with basic info and social links
     const { error } = await supabase
       .from("profiles")
       .update({
         full_name: editForm.full_name,
         username: cleanUsername,
+        qr_handle: handleCheck.normalized,
         bio: editForm.bio,
         country: editForm.country,
         twitch_url: editForm.twitch_url || null,
