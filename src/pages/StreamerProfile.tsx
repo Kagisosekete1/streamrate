@@ -251,7 +251,7 @@ const StreamerProfile = () => {
         .from("follows")
         .select("id")
         .eq("follower_id", user.id)
-        .eq("following_id", id)
+        .eq("following_id", profileId)
         .maybeSingle();
 
       setIsFollowing(!!followData);
@@ -263,7 +263,7 @@ const StreamerProfile = () => {
     const { data: postsData } = await supabase
       .from("posts")
       .select("id, content, image_url, created_at")
-      .eq("user_id", id)
+      .eq("user_id", profileId)
       .order("created_at", { ascending: false });
 
     const postsWithCounts = await Promise.all(
@@ -285,7 +285,7 @@ const StreamerProfile = () => {
     const { data: reelsData } = await supabase
       .from("reels")
       .select("*")
-      .eq("user_id", id)
+      .eq("user_id", profileId)
       .order("created_at", { ascending: false });
 
     const enrichedReels = (reelsData || []).map(reel => ({
