@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import QRCode from "qrcode";
 import {
   ChevronLeft,
   User,
@@ -32,6 +33,9 @@ import {
   Monitor,
   Clock,
   Info,
+  QrCode,
+  Download,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +51,7 @@ import { PrivacyPolicyModal } from "@/components/settings/PrivacyPolicyModal";
 import { TermsOfServiceModal } from "@/components/settings/TermsOfServiceModal";
 import { ReportProblemModal } from "@/components/settings/ReportProblemModal";
 import { AppLockModal } from "@/components/settings/AppLockModal";
+import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
 // Detect Median.co native webview
 const isMedianApp = () => !!(window as any).median || !!(window as any).gonative;
