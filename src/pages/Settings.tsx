@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import QRCode from "qrcode";
 import {
   ChevronLeft,
   User,
@@ -32,6 +33,9 @@ import {
   Monitor,
   Clock,
   Info,
+  QrCode,
+  Download,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +51,7 @@ import { PrivacyPolicyModal } from "@/components/settings/PrivacyPolicyModal";
 import { TermsOfServiceModal } from "@/components/settings/TermsOfServiceModal";
 import { ReportProblemModal } from "@/components/settings/ReportProblemModal";
 import { AppLockModal } from "@/components/settings/AppLockModal";
+import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
 // Detect Median.co native webview
 const isMedianApp = () => !!(window as any).median || !!(window as any).gonative;
@@ -262,6 +267,7 @@ type ModalType =
   | "appUpdate"
   | "appLock"
   | "lastSeenVisibility"
+  | "qrCode"
   | null;
 
 const Settings = () => {
@@ -270,6 +276,7 @@ const Settings = () => {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { toast } = useToast();
   const [activeModal, setActiveModal] = useState<ModalType>(null);
+  const [qrDataUrl, setQrDataUrl] = useState("");
   const [editForm, setEditForm] = useState({
     username: "",
     bio: "",
@@ -310,6 +317,91 @@ const Settings = () => {
   useEffect(() => {
     localStorage.setItem("notification_prefs", JSON.stringify(notifications));
   }, [notifications]);
+
+  const profileUrl = user ? `${window.location.origin}/streamer/${user.id}` : "";
+  const displayName = profile?.username || profile?.full_name || "StreamRate profile";
+  const avatarUrl = profile?.avatar_url || getDefaultAvatar();
+
+  const generateProfileQr = async () => {
+    if (!profileUrl) return;
+
+    const qrCanvas = document.createElement("canvas");
+    await QRCode.toCanvas(qrCanvas, profileUrl, {
+      width: 960,
+      margin: 3,
+      color: {
+        dark: resolvedTheme === "dark" ? "#f8fafc" : "#0f172a",
+        light: resolvedTheme === "dark" ? "#020617" : "#ffffff",
+      },
+    });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080;
+    canvas.height = 1280;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const bg = resolvedTheme === "dark" ? "#020617" : "#ffffff";
+    const fg = resolvedTheme === "dark" ? "#f8fafc" : "#0f172a";
+    const muted = resolvedTheme === "dark" ? "#94a3b8" : "#64748b";
+    const primary = "#0066ff";
+
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = primary;
+    ctx.beginPath();
+    ctx.roundRect(80, 80, 920, 1120, 40);
+    ctx.fill();
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.roundRect(100, 100, 880, 1080, 32);
+    ctx.fill();
+
+    ctx.drawImage(qrCanvas, 110, 210, 860, 860);
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.arc(540, 640, 104, 0, Math.PI * 2);
+    ctx.fill();
+
+    await new Promise<void>((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(540, 640, 82, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(img, 458, 558, 164, 164);
+        ctx.restore();
+        ctx.strokeStyle = primary;
+        ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.arc(540, 640, 86, 0, Math.PI * 2);
+        ctx.stroke();
+        resolve();
+      };
+      img.onerror = () => resolve();
+      img.src = avatarUrl;
+    });
+
+    ctx.fillStyle = fg;
+    ctx.font = "700 54px Inter, system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("StreamRate", 540, 165);
+    ctx.font = "700 38px Inter, system-ui, sans-serif";
+    ctx.fillText(displayName, 540, 1110);
+    ctx.fillStyle = muted;
+    ctx.font = "500 24px Inter, system-ui, sans-serif";
+    ctx.fillText("Scan to view, sign up, and follow", 540, 1150);
+
+    setQrDataUrl(canvas.toDataURL("image/png"));
+  };
+
+  useEffect(() => {
+    if (activeModal === "qrCode") {
+      generateProfileQr();
+    }
+  }, [activeModal, profileUrl, avatarUrl, displayName, resolvedTheme]);
   const [settings, setSettings] = useState({
     profileVisibility: "public",
     whoCanComment: "everyone",
@@ -461,6 +553,20 @@ const Settings = () => {
     toast({ title: "Report submitted. Our team will review it." });
     setReportForm({ type: "Bug", message: "" });
     setActiveModal(null);
+  };
+
+  const handleDownloadQr = () => {
+    if (!qrDataUrl) return;
+    const link = document.createElement("a");
+    link.href = qrDataUrl;
+    link.download = `streamrate-${profile?.username || "profile"}-qr.png`;
+    link.click();
+    toast({ title: "QR code downloaded" });
+  };
+
+  const handleCopyProfileLink = async () => {
+    await navigator.clipboard.writeText(profileUrl);
+    toast({ title: "Profile link copied" });
   };
 
   const SettingItem = ({
@@ -691,6 +797,12 @@ const Settings = () => {
             title="Role"
             subtitle={userRole === "streamer" ? "Streamer" : userRole === "seller" ? "Seller" : "Fan"}
             onClick={() => toast({ title: "Your role cannot be changed after signup." })}
+          />
+          <SettingItem
+            icon={QrCode}
+            title="Your QR Code"
+            subtitle="Download a scannable profile card"
+            onClick={() => setActiveModal("qrCode")}
           />
         </div>
 
@@ -974,6 +1086,38 @@ const Settings = () => {
               <p className="text-sm text-muted-foreground">
                 Your email is used for login and account recovery.
               </p>
+            </div>
+          </Modal>
+        )}
+
+        {activeModal === "qrCode" && (
+          <Modal title="Your QR Code">
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-border bg-secondary/30 p-4 text-center">
+                {qrDataUrl ? (
+                  <img
+                    src={qrDataUrl}
+                    alt="Your StreamRate profile QR code"
+                    className="mx-auto w-full max-w-[280px] rounded-xl border border-border bg-background"
+                  />
+                ) : (
+                  <div className="mx-auto flex h-[280px] max-w-[280px] items-center justify-center rounded-xl bg-secondary">
+                    <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                )}
+                <p className="mt-3 text-sm font-medium text-foreground">{displayName}</p>
+                <p className="mt-1 text-xs text-muted-foreground break-all">{profileUrl}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Button variant="outline" onClick={handleCopyProfileLink}>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copy Link
+                </Button>
+                <Button variant="gaming" onClick={handleDownloadQr} disabled={!qrDataUrl}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download
+                </Button>
+              </div>
             </div>
           </Modal>
         )}
