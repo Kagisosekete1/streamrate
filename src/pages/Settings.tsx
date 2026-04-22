@@ -318,8 +318,9 @@ const Settings = () => {
     localStorage.setItem("notification_prefs", JSON.stringify(notifications));
   }, [notifications]);
 
-  const profileUrl = user ? `${window.location.origin}/streamer/${user.id}` : "";
-  const displayName = profile?.username || profile?.full_name || "StreamRate profile";
+  const qrHandle = profile?.username || `user-${(profile as any)?.signup_number || user?.id}`;
+  const profileUrl = user ? `https://streamrateapp.com/u/${qrHandle}` : "";
+  const displayName = profile?.username ? `@${profile.username}` : profile?.full_name || "StreamRate profile";
   const avatarUrl = profile?.avatar_url || getDefaultAvatar();
 
   const generateProfileQr = async () => {
