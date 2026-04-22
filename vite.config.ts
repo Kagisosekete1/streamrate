@@ -109,18 +109,6 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: [
       { find: "@", replacement: path.resolve(__dirname, "./src") },
-      {
-        find: "react-dom/client",
-        replacement: path.resolve(__dirname, "./node_modules/react-dom/client.js"),
-      },
-      {
-        find: "react/jsx-runtime",
-        replacement: path.resolve(__dirname, "./node_modules/react/jsx-runtime.js"),
-      },
-      {
-        find: "react/jsx-dev-runtime",
-        replacement: path.resolve(__dirname, "./node_modules/react/jsx-dev-runtime.js"),
-      },
       { find: "react-dom", replacement: path.resolve(__dirname, "./node_modules/react-dom") },
       { find: "react", replacement: path.resolve(__dirname, "./node_modules/react") },
     ],
@@ -129,11 +117,6 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     force: mode === "development",
     include: [
-      "react",
-      "react-dom",
-      "react-dom/client",
-      "react/jsx-runtime",
-      "react/jsx-dev-runtime",
       "react-router-dom",
       "react-router",
       "@tanstack/react-query",
