@@ -555,6 +555,20 @@ const Settings = () => {
     setActiveModal(null);
   };
 
+  const handleDownloadQr = () => {
+    if (!qrDataUrl) return;
+    const link = document.createElement("a");
+    link.href = qrDataUrl;
+    link.download = `streamrate-${profile?.username || "profile"}-qr.png`;
+    link.click();
+    toast({ title: "QR code downloaded" });
+  };
+
+  const handleCopyProfileLink = async () => {
+    await navigator.clipboard.writeText(profileUrl);
+    toast({ title: "Profile link copied" });
+  };
+
   const SettingItem = ({
     icon: Icon,
     title,
@@ -783,6 +797,12 @@ const Settings = () => {
             title="Role"
             subtitle={userRole === "streamer" ? "Streamer" : userRole === "seller" ? "Seller" : "Fan"}
             onClick={() => toast({ title: "Your role cannot be changed after signup." })}
+          />
+          <SettingItem
+            icon={QrCode}
+            title="Your QR Code"
+            subtitle="Download a scannable profile card"
+            onClick={() => setActiveModal("qrCode")}
           />
         </div>
 
