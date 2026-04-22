@@ -172,7 +172,7 @@ const StreamerProfile = () => {
 
     // Check profile visibility
     const visibility = (profileData as any).profile_visibility || "public";
-    if (visibility === "private" && user?.id !== id) {
+    if (visibility === "private" && user?.id !== profileId) {
       setIsPrivateProfile(true);
       // Check if current user follows this profile
       if (user) {
@@ -180,7 +180,7 @@ const StreamerProfile = () => {
           .from("follows")
           .select("id")
           .eq("follower_id", user.id)
-          .eq("following_id", id)
+          .eq("following_id", profileId)
           .maybeSingle();
         setCanViewProfile(!!followData);
       } else {
@@ -192,7 +192,7 @@ const StreamerProfile = () => {
     const { data: ratingsData } = await supabase
       .from("ratings")
       .select("id, stars, review_text, created_at, fan_id")
-      .eq("streamer_id", id)
+      .eq("streamer_id", profileId)
       .order("created_at", { ascending: false });
 
     if (ratingsData && ratingsData.length > 0) {
@@ -235,14 +235,14 @@ const StreamerProfile = () => {
     const { count } = await supabase
       .from("follows")
       .select("*", { count: "exact", head: true })
-      .eq("following_id", id);
+      .eq("following_id", profileId);
     setFollowersCount(count || 0);
 
     // Fetch following count
     const { count: followingCt } = await supabase
       .from("follows")
       .select("*", { count: "exact", head: true })
-      .eq("follower_id", id);
+      .eq("follower_id", profileId);
     setFollowingCount(followingCt || 0);
 
     // Check if user is following
