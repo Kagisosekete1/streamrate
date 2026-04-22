@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { StreamerCard } from "@/components/StreamerCard";
-import { Search, Filter, Hash, Users, MapPin, TrendingUp, Trophy, Contact, Crown, Sparkles, ChevronDown, ShoppingBag, Tv, Radio } from "lucide-react";
+import { Search, Filter, Users, TrendingUp, Trophy, Contact, Sparkles, ChevronDown, ShoppingBag, Tv, Radio, Gamepad2, Scissors, Target, Rocket, BarChart3, Bell, Settings, BarChart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,6 +50,21 @@ const Streamers = () => {
   };
 
   const filters = ["Most Rated", "Trending", "New", "Country"];
+
+  const mobileDiscoverLinks = [
+    { icon: Tv, label: "Watch Parties", path: "/watch-parties" },
+    { icon: Gamepad2, label: "Squad Up", path: "/squad-up" },
+    { icon: Scissors, label: "Clips", path: "/clips" },
+    { icon: Target, label: "Missions", path: "/missions" },
+    { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
+    { icon: Radio, label: "Live", path: "/live" },
+    { icon: Bell, label: "Notifications", path: "/notifications" },
+    { icon: ShoppingBag, label: "Market", path: "/store" },
+    { icon: Rocket, label: "Boost", path: "/boost-profile" },
+    { icon: BarChart3, label: "Creator", path: "/creator-dashboard" },
+    { icon: BarChart, label: "Analytics", path: "/streaming-analytics" },
+    { icon: Settings, label: "Settings", path: "/settings" },
+  ];
 
   useEffect(() => {
     fetchStreamers();
