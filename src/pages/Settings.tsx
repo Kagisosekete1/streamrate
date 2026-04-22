@@ -267,6 +267,7 @@ type ModalType =
   | "appUpdate"
   | "appLock"
   | "lastSeenVisibility"
+  | "qrCode"
   | null;
 
 const Settings = () => {
@@ -275,6 +276,7 @@ const Settings = () => {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { toast } = useToast();
   const [activeModal, setActiveModal] = useState<ModalType>(null);
+  const [qrDataUrl, setQrDataUrl] = useState("");
   const [editForm, setEditForm] = useState({
     username: "",
     bio: "",
@@ -315,6 +317,10 @@ const Settings = () => {
   useEffect(() => {
     localStorage.setItem("notification_prefs", JSON.stringify(notifications));
   }, [notifications]);
+
+  const profileUrl = user ? `${window.location.origin}/streamer/${user.id}` : "";
+  const displayName = profile?.username || profile?.full_name || "StreamRate profile";
+  const avatarUrl = profile?.avatar_url || getDefaultAvatar();
   const [settings, setSettings] = useState({
     profileVisibility: "public",
     whoCanComment: "everyone",
