@@ -1022,9 +1022,22 @@ const Settings = () => {
                 </label>
                 <Input
                   value={editForm.username}
-                  onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+                  onChange={(e) => setEditForm({ ...editForm, username: e.target.value.replace(/\s/g, "").toLowerCase() })}
                   placeholder="Your username"
                 />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">
+                  QR handle
+                </label>
+                <Input
+                  value={editForm.qrHandle}
+                  onChange={(e) => setEditForm({ ...editForm, qrHandle: sanitizeQrHandle(e.target.value) })}
+                  placeholder="stable_profile_link"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Your QR code uses streamrateapp.com/u/{editForm.qrHandle || "your_handle"} and stays stable even if your display username changes.
+                </p>
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">
@@ -1125,6 +1138,7 @@ const Settings = () => {
                 )}
                 <p className="mt-3 text-sm font-medium text-foreground">{displayName}</p>
                 <p className="mt-1 text-xs text-muted-foreground break-all">{profileUrl}</p>
+                <p className="mt-2 text-xs text-primary">Scan test: this resolves to your signed-in StreamRate profile.</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Button variant="outline" onClick={handleCopyProfileLink}>
