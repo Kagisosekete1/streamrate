@@ -500,9 +500,23 @@ const Settings = () => {
   };
 
   const handleSaveProfile = async () => {
-    const { error } = await updateProfile(editForm);
+    const cleanUsername = editForm.username ? editForm.username.replace(/\s/g, "").toLowerCase() : "";
+    const requestedHandle = sanitizeQrHandle(editForm.qrHandle || cleanUsername || profile?.full_name || "");
+    const handleCheck = await checkQrHandleAvailable(requestedHandle, user?.id);
+
+    if (!handleCheck.available) {
+      toast({ title: "QR handle unavailable", description: handleCheck.reason || "Choose another handle.", variant: "destructive" });
+      return;
+    }
+
+    const { error } = await updateProfile({
+      username: cleanUsername,
+      qr_handle: handleCheck.normalized,
+      bio: editForm.bio,
+      country: editForm.country,
+    } as any);
     if (error) {
-      toast({ title: "Failed to update", variant: "destructive" });
+      toast({ title: "Failed to update", description: error.message, variant: "destructive" });
       return;
     }
     toast({ title: "Profile updated!" });
@@ -563,9 +577,9 @@ const Settings = () => {
     if (!qrDataUrl) return;
     const link = document.createElement("a");
     link.href = qrDataUrl;
-    link.download = `streamrate-${profile?.username || "profile"}-qr.png`;
+    link.download = `streamrate-${qrHandle || "profile"}-qr.png`;
     link.click();
-    toast({ title: "QR code downloaded" });
+    toast({ title: "QR code saved", description: "Your profile QR image was generated and downloaded." });
   };
 
   const handleCopyProfileLink = async () => {
