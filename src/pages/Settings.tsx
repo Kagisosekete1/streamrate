@@ -1090,6 +1090,38 @@ const Settings = () => {
           </Modal>
         )}
 
+        {activeModal === "qrCode" && (
+          <Modal title="Your QR Code">
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-border bg-secondary/30 p-4 text-center">
+                {qrDataUrl ? (
+                  <img
+                    src={qrDataUrl}
+                    alt="Your StreamRate profile QR code"
+                    className="mx-auto w-full max-w-[280px] rounded-xl border border-border bg-background"
+                  />
+                ) : (
+                  <div className="mx-auto flex h-[280px] max-w-[280px] items-center justify-center rounded-xl bg-secondary">
+                    <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                )}
+                <p className="mt-3 text-sm font-medium text-foreground">{displayName}</p>
+                <p className="mt-1 text-xs text-muted-foreground break-all">{profileUrl}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Button variant="outline" onClick={handleCopyProfileLink}>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copy Link
+                </Button>
+                <Button variant="gaming" onClick={handleDownloadQr} disabled={!qrDataUrl}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download
+                </Button>
+              </div>
+            </div>
+          </Modal>
+        )}
+
         {activeModal === "profileVisibility" && (
           <Modal title="Profile Visibility" showSave onSave={async () => {
             if (!user) return;
