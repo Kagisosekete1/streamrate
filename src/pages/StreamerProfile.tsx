@@ -301,10 +301,10 @@ const StreamerProfile = () => {
       return;
     }
 
-    if (!id) return;
+    if (!streamer?.id) return;
 
     // Prevent self-follow
-    if (user.id === id) {
+    if (user.id === streamer.id) {
       toast({ title: "You cannot follow yourself", variant: "destructive" });
       return;
     }
@@ -314,14 +314,14 @@ const StreamerProfile = () => {
         .from("follows")
         .delete()
         .eq("follower_id", user.id)
-        .eq("following_id", id);
+        .eq("following_id", streamer.id);
       setIsFollowing(false);
       setFollowersCount((prev) => prev - 1);
       toast({ title: "Unfollowed" });
     } else {
       await supabase.from("follows").insert({
         follower_id: user.id,
-        following_id: id,
+        following_id: streamer.id,
       });
       setIsFollowing(true);
       setFollowersCount((prev) => prev + 1);
@@ -340,13 +340,13 @@ const StreamerProfile = () => {
       return;
     }
 
-    if (!id) return;
+    if (!streamer?.id) return;
 
     setIsSubmitting(true);
 
     const { error } = await supabase.from("ratings").upsert(
       {
-        streamer_id: id,
+        streamer_id: streamer.id,
         fan_id: user.id,
         stars: rating,
         review_text: reviewText.trim() || null,
