@@ -23,6 +23,7 @@ import { LastSeenDisplay } from "@/components/LastSeenDisplay";
 import { SocialLinks } from "@/components/SocialLinks";
 import { ReviewsModal } from "@/components/ReviewsModal";
 import { TwitchLiveEmbed } from "@/components/TwitchLiveEmbed";
+import { checkQrHandleAvailable, sanitizeQrHandle } from "@/lib/profileQr";
 
 interface Post {
   id: string;
@@ -58,6 +59,7 @@ const Profile = () => {
   const [editForm, setEditForm] = useState({
     full_name: "",
     username: "",
+    qrHandle: "",
     bio: "",
     country: "",
     twitch_url: "",
@@ -175,6 +177,7 @@ const Profile = () => {
       setEditForm({
         full_name: profile.full_name || "",
         username: profile.username || "",
+        qrHandle: (profile as any).qr_handle || profile.username || "",
         bio: profile.bio || "",
         country: profile.country || "",
         twitch_url: socialLinks.twitch_url || "",
