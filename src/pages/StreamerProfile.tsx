@@ -118,24 +118,31 @@ const StreamerProfile = () => {
 
   const trackProfileView = async () => {
     if (!id) return;
+    const profileId = await resolveProfileId();
+    if (!profileId) return;
     
     // Insert profile view (will trigger notification via database trigger)
     await supabase
       .from("profile_views")
       .insert({
-        profile_id: id,
+        profile_id: profileId,
         viewer_id: user?.id || null,
       });
   };
 
   const fetchStreamerData = async () => {
     if (!id) return;
+    const profileId = await resolveProfileId();
+    if (!profileId) {
+      setLoading(false);
+      return;
+    }
 
     // Fetch streamer profile
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("id, full_name, username, avatar_url, bio, country, signup_number, email, twitch_url, discord_url, kick_url, youtube_gaming_url, show_twitch, show_discord, show_kick, show_youtube_gaming, profile_visibility")
-      .eq("id", id)
+      .eq("id", profileId)
       .maybeSingle();
 
     if (profileError || !profileData) {
