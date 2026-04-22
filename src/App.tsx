@@ -71,6 +71,7 @@ function AppContent() {
             <Route path="/home" element={<Home />} />
             <Route path="/streamers" element={<Streamers />} />
             <Route path="/streamer/:id" element={<StreamerProfile />} />
+            <Route path="/u/:id" element={<StreamerProfile />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/notifications" element={<Notifications />} />
