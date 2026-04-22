@@ -430,7 +430,7 @@ const StreamerProfile = () => {
               />
               {/* Online indicator */}
               <OnlineIndicator 
-                userId={id!} 
+                userId={streamer.id} 
                 className="absolute bottom-1 right-1"
                 size="lg"
               />
@@ -454,7 +454,7 @@ const StreamerProfile = () => {
             )}
             
             {/* Last Seen */}
-            <LastSeenDisplay userId={id!} className="mt-1" />
+            <LastSeenDisplay userId={streamer.id} className="mt-1" />
             
             {/* About/Bio under Last Seen */}
             {streamer.bio && (
