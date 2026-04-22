@@ -638,10 +638,10 @@ const StreamerProfile = () => {
             onReelClick={(index) => { setReelViewerIndex(index); setShowReelViewer(true); }}
             onPostDelete={() => {}}
             onReelDelete={() => {}}
-            isOwnProfile={user?.id === id}
+            isOwnProfile={user?.id === streamer.id}
             authorName={streamer?.username || streamer?.full_name || "User"}
             authorAvatar={streamer?.avatar_url || ""}
-            authorId={id}
+            authorId={streamer.id}
           />
         </>
       )}
@@ -662,11 +662,11 @@ const StreamerProfile = () => {
       />
 
       {/* Followers/Following Modal */}
-      {showFollowersModal && id && (
+      {showFollowersModal && streamer.id && (
         <FollowersModal
           isOpen={showFollowersModal}
           onClose={() => setShowFollowersModal(false)}
-          userId={id}
+          userId={streamer.id}
           type={followersModalType}
         />
       )}
@@ -683,7 +683,7 @@ const StreamerProfile = () => {
       <ReviewsModal
         isOpen={showReviewsModal}
         onClose={() => setShowReviewsModal(false)}
-        userId={id!}
+        userId={streamer.id}
         userName={streamer?.username || streamer?.full_name || undefined}
       />
 
