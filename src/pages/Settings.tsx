@@ -52,6 +52,7 @@ import { TermsOfServiceModal } from "@/components/settings/TermsOfServiceModal";
 import { ReportProblemModal } from "@/components/settings/ReportProblemModal";
 import { AppLockModal } from "@/components/settings/AppLockModal";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
+import { buildProfileQrUrl, checkQrHandleAvailable, sanitizeQrHandle } from "@/lib/profileQr";
 
 // Detect Median.co native webview
 const isMedianApp = () => !!(window as any).median || !!(window as any).gonative;
@@ -279,6 +280,7 @@ const Settings = () => {
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [editForm, setEditForm] = useState({
     username: "",
+    qrHandle: "",
     bio: "",
     country: "",
   });
@@ -288,6 +290,7 @@ const Settings = () => {
     if (activeModal === "editProfile" && profile) {
       setEditForm({
         username: profile.username || "",
+        qrHandle: (profile as any).qr_handle || profile.username || "",
         bio: profile.bio || "",
         country: profile.country || "",
       });
@@ -318,8 +321,8 @@ const Settings = () => {
     localStorage.setItem("notification_prefs", JSON.stringify(notifications));
   }, [notifications]);
 
-  const qrHandle = profile?.username || `user-${(profile as any)?.signup_number || user?.id}`;
-  const profileUrl = user ? `https://streamrateapp.com/u/${qrHandle}` : "";
+  const qrHandle = (profile as any)?.qr_handle || profile?.username || `user_${(profile as any)?.signup_number || user?.id}`;
+  const profileUrl = user ? buildProfileQrUrl(qrHandle) : "";
   const displayName = profile?.username ? `@${profile.username}` : profile?.full_name || "StreamRate profile";
   const avatarUrl = profile?.avatar_url || getDefaultAvatar();
 
