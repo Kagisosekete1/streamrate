@@ -23,6 +23,7 @@ import { LastSeenDisplay } from "@/components/LastSeenDisplay";
 import { SocialLinks } from "@/components/SocialLinks";
 import { ReviewsModal } from "@/components/ReviewsModal";
 import { TwitchLiveEmbed } from "@/components/TwitchLiveEmbed";
+import { checkQrHandleAvailable, sanitizeQrHandle } from "@/lib/profileQr";
 
 interface Post {
   id: string;
@@ -58,6 +59,7 @@ const Profile = () => {
   const [editForm, setEditForm] = useState({
     full_name: "",
     username: "",
+    qrHandle: "",
     bio: "",
     country: "",
     twitch_url: "",
@@ -175,6 +177,7 @@ const Profile = () => {
       setEditForm({
         full_name: profile.full_name || "",
         username: profile.username || "",
+        qrHandle: (profile as any).qr_handle || profile.username || "",
         bio: profile.bio || "",
         country: profile.country || "",
         twitch_url: socialLinks.twitch_url || "",
@@ -614,12 +617,23 @@ const Profile = () => {
       }
     }
 
+    const handleCheck = await checkQrHandleAvailable(editForm.qrHandle || cleanUsername || profile?.full_name || "", user.id);
+    if (!handleCheck.available) {
+      toast({
+        title: "QR handle unavailable",
+        description: handleCheck.reason || "This profile QR handle is already taken.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Update profile with basic info and social links
     const { error } = await supabase
       .from("profiles")
       .update({
         full_name: editForm.full_name,
         username: cleanUsername,
+        qr_handle: handleCheck.normalized,
         bio: editForm.bio,
         country: editForm.country,
         twitch_url: editForm.twitch_url || null,
@@ -971,6 +985,20 @@ const Profile = () => {
                     }
                     placeholder="yourname (lowercase, no spaces)"
                   />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1 block">
+                    QR handle
+                  </label>
+                  <Input
+                    value={editForm.qrHandle}
+                    onChange={(e) => setEditForm({ ...editForm, qrHandle: sanitizeQrHandle(e.target.value) })}
+                    placeholder="stable_profile_link"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Used for streamrateapp.com/u/{editForm.qrHandle || "your_handle"}; old QR links keep redirecting here.
+                  </p>
                 </div>
 
                 <div>

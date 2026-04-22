@@ -52,6 +52,7 @@ import { TermsOfServiceModal } from "@/components/settings/TermsOfServiceModal";
 import { ReportProblemModal } from "@/components/settings/ReportProblemModal";
 import { AppLockModal } from "@/components/settings/AppLockModal";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
+import { buildProfileQrUrl, checkQrHandleAvailable, sanitizeQrHandle } from "@/lib/profileQr";
 
 // Detect Median.co native webview
 const isMedianApp = () => !!(window as any).median || !!(window as any).gonative;
@@ -279,6 +280,7 @@ const Settings = () => {
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [editForm, setEditForm] = useState({
     username: "",
+    qrHandle: "",
     bio: "",
     country: "",
   });
@@ -288,6 +290,7 @@ const Settings = () => {
     if (activeModal === "editProfile" && profile) {
       setEditForm({
         username: profile.username || "",
+        qrHandle: (profile as any).qr_handle || profile.username || "",
         bio: profile.bio || "",
         country: profile.country || "",
       });
@@ -318,8 +321,8 @@ const Settings = () => {
     localStorage.setItem("notification_prefs", JSON.stringify(notifications));
   }, [notifications]);
 
-  const qrHandle = profile?.username || `user-${(profile as any)?.signup_number || user?.id}`;
-  const profileUrl = user ? `https://streamrateapp.com/u/${qrHandle}` : "";
+  const qrHandle = (profile as any)?.qr_handle || profile?.username || `user_${(profile as any)?.signup_number || user?.id}`;
+  const profileUrl = user ? buildProfileQrUrl(qrHandle) : "";
   const displayName = profile?.username ? `@${profile.username}` : profile?.full_name || "StreamRate profile";
   const avatarUrl = profile?.avatar_url || getDefaultAvatar();
 
@@ -497,9 +500,23 @@ const Settings = () => {
   };
 
   const handleSaveProfile = async () => {
-    const { error } = await updateProfile(editForm);
+    const cleanUsername = editForm.username ? editForm.username.replace(/\s/g, "").toLowerCase() : "";
+    const requestedHandle = sanitizeQrHandle(editForm.qrHandle || cleanUsername || profile?.full_name || "");
+    const handleCheck = await checkQrHandleAvailable(requestedHandle, user?.id);
+
+    if (!handleCheck.available) {
+      toast({ title: "QR handle unavailable", description: handleCheck.reason || "Choose another handle.", variant: "destructive" });
+      return;
+    }
+
+    const { error } = await updateProfile({
+      username: cleanUsername,
+      qr_handle: handleCheck.normalized,
+      bio: editForm.bio,
+      country: editForm.country,
+    } as any);
     if (error) {
-      toast({ title: "Failed to update", variant: "destructive" });
+      toast({ title: "Failed to update", description: error.message, variant: "destructive" });
       return;
     }
     toast({ title: "Profile updated!" });
@@ -560,9 +577,9 @@ const Settings = () => {
     if (!qrDataUrl) return;
     const link = document.createElement("a");
     link.href = qrDataUrl;
-    link.download = `streamrate-${profile?.username || "profile"}-qr.png`;
+    link.download = `streamrate-${qrHandle || "profile"}-qr.png`;
     link.click();
-    toast({ title: "QR code downloaded" });
+    toast({ title: "QR code saved", description: "Your profile QR image was generated and downloaded." });
   };
 
   const handleCopyProfileLink = async () => {
@@ -1005,9 +1022,22 @@ const Settings = () => {
                 </label>
                 <Input
                   value={editForm.username}
-                  onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+                  onChange={(e) => setEditForm({ ...editForm, username: e.target.value.replace(/\s/g, "").toLowerCase() })}
                   placeholder="Your username"
                 />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">
+                  QR handle
+                </label>
+                <Input
+                  value={editForm.qrHandle}
+                  onChange={(e) => setEditForm({ ...editForm, qrHandle: sanitizeQrHandle(e.target.value) })}
+                  placeholder="stable_profile_link"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Your QR code uses streamrateapp.com/u/{editForm.qrHandle || "your_handle"} and stays stable even if your display username changes.
+                </p>
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">
@@ -1108,6 +1138,7 @@ const Settings = () => {
                 )}
                 <p className="mt-3 text-sm font-medium text-foreground">{displayName}</p>
                 <p className="mt-1 text-xs text-muted-foreground break-all">{profileUrl}</p>
+                <p className="mt-2 text-xs text-primary">Scan test: this resolves to your signed-in StreamRate profile.</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Button variant="outline" onClick={handleCopyProfileLink}>

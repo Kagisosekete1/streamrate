@@ -590,6 +590,30 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_qr_aliases: {
+        Row: {
+          alias: string
+          alias_type: string
+          created_at: string
+          id: string
+          profile_id: string
+        }
+        Insert: {
+          alias: string
+          alias_type?: string
+          created_at?: string
+          id?: string
+          profile_id: string
+        }
+        Update: {
+          alias?: string
+          alias_type?: string
+          created_at?: string
+          id?: string
+          profile_id?: string
+        }
+        Relationships: []
+      }
       profile_views: {
         Row: {
           id: string
@@ -632,6 +656,7 @@ export type Database = {
           looking_for_squad: boolean | null
           playstyle: string | null
           profile_visibility: string
+          qr_handle: string
           rank: string | null
           region: string | null
           scheduled_deletion_at: string | null
@@ -666,6 +691,7 @@ export type Database = {
           looking_for_squad?: boolean | null
           playstyle?: string | null
           profile_visibility?: string
+          qr_handle: string
           rank?: string | null
           region?: string | null
           scheduled_deletion_at?: string | null
@@ -700,6 +726,7 @@ export type Database = {
           looking_for_squad?: boolean | null
           playstyle?: string | null
           profile_visibility?: string
+          qr_handle?: string
           rank?: string | null
           region?: string | null
           scheduled_deletion_at?: string | null
@@ -1586,6 +1613,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      normalize_qr_handle: {
+        Args: { _fallback_id?: string; _value: string }
+        Returns: string
       }
       xp_for_level: { Args: { lvl: number }; Returns: number }
     }

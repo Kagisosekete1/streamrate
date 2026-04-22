@@ -21,6 +21,7 @@ import { ReelViewer } from "@/components/ReelViewer";
 import { ReviewsModal } from "@/components/ReviewsModal";
 import { TwitchLiveEmbed } from "@/components/TwitchLiveEmbed";
 import { StreamPolls } from "@/components/StreamPolls";
+import { resolveProfileRouteParam } from "@/lib/profileQr";
 
 interface StreamerData {
   id: string;
@@ -30,6 +31,7 @@ interface StreamerData {
   bio: string | null;
   country: string | null;
   signup_number: number | null;
+  qr_handle?: string | null;
   email: string | null;
   twitch_url: string | null;
   discord_url: string | null;
@@ -84,28 +86,11 @@ const StreamerProfile = () => {
   const [showReviewsModal, setShowReviewsModal] = useState(false);
 
   const resolveProfileId = async () => {
-    if (!id) return null;
-    if (id.startsWith("user-")) {
-      const signupNumber = Number(id.replace("user-", ""));
-      if (!Number.isNaN(signupNumber)) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("signup_number", signupNumber)
-          .maybeSingle();
-        return data?.id || null;
-      }
+    const resolved = await resolveProfileRouteParam(id);
+    if (resolved?.qrHandle && id !== resolved.qrHandle) {
+      navigate(`/u/${resolved.qrHandle}`, { replace: true });
     }
-
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (uuidPattern.test(id)) return id;
-
-    const { data } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("username", id.toLowerCase())
-      .maybeSingle();
-    return data?.id || null;
+    return resolved?.profileId || null;
   };
 
   useEffect(() => {
@@ -141,7 +126,7 @@ const StreamerProfile = () => {
     // Fetch streamer profile
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
-      .select("id, full_name, username, avatar_url, bio, country, signup_number, email, twitch_url, discord_url, kick_url, youtube_gaming_url, show_twitch, show_discord, show_kick, show_youtube_gaming, profile_visibility")
+      .select("id, full_name, username, qr_handle, avatar_url, bio, country, signup_number, email, twitch_url, discord_url, kick_url, youtube_gaming_url, show_twitch, show_discord, show_kick, show_youtube_gaming, profile_visibility")
       .eq("id", profileId)
       .maybeSingle();
 
@@ -155,6 +140,7 @@ const StreamerProfile = () => {
       id: profileData.id,
       full_name: profileData.full_name,
       username: profileData.username,
+      qr_handle: (profileData as any).qr_handle || null,
       avatar_url: profileData.avatar_url,
       bio: profileData.bio,
       country: profileData.country,
