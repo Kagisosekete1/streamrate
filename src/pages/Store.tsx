@@ -37,7 +37,9 @@ const PREMIUM_PAYPAL = "https://www.paypal.com/ncp/payment/83TQ3PBLJFM9W";
 // --- Image Carousel Component ---
 const ImageCarousel = ({ images, name }: { images: string[]; name: string }) => {
   const [current, setCurrent] = useState(0);
-  const allImages = images.length > 0 ? images : ["https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&h=400&fit=crop"];
+  const FALLBACK = "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&h=400&fit=crop";
+  const validImages = images.filter((u) => typeof u === "string" && u.trim().length > 0);
+  const allImages = validImages.length > 0 ? validImages : [FALLBACK];
 
   return (
     <div className="relative w-full aspect-square bg-secondary overflow-hidden group">
@@ -45,6 +47,11 @@ const ImageCarousel = ({ images, name }: { images: string[]; name: string }) => 
         src={allImages[current]}
         alt={`${name} - ${current + 1}`}
         className="w-full h-full object-cover transition-transform"
+        loading="lazy"
+        onError={(e) => {
+          const img = e.currentTarget;
+          if (img.src !== FALLBACK) img.src = FALLBACK;
+        }}
       />
       {allImages.length > 1 && (
         <>
