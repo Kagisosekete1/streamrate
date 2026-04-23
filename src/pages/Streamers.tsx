@@ -453,7 +453,12 @@ const Streamers = () => {
           {/* Suggested Streamers */}
           {!searchQuery && suggestedStreamers.length > 0 && (
             <section>
-              <button onClick={() => toggleSection("suggested")} className="w-full flex items-center gap-2 mb-3">
+              <button
+                onClick={() => toggleSection("suggested")}
+                aria-expanded={expandedSections.suggested}
+                aria-label={`${expandedSections.suggested ? "Collapse" : "Expand"} Suggested for You section`}
+                className="w-full flex items-center gap-2 mb-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
                 <Sparkles className="w-5 h-5 text-accent" />
                 <h2 className="font-semibold text-foreground">Suggested for You</h2>
                 <ChevronDown className={cn("w-4 h-4 ml-auto text-muted-foreground transition-transform", expandedSections.suggested && "rotate-180")} />
