@@ -1032,6 +1032,11 @@ const Profile = () => {
                             ? qrHandleStatus.reason || "This QR handle is unavailable."
                             : "Old QR links keep redirecting to this current profile URL."}
                     </p>
+                    {willRedirectFromLegacy && qrHandleStatus.available !== false && (
+                      <p className="mt-1 text-[11px] text-amber-500">
+                        Heads up: scanning your previous handle “{currentQrHandle}” will redirect to /u/{editingQrHandle}.
+                      </p>
+                    )}
                   </div>
                 </div>
 
