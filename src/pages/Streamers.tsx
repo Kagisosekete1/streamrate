@@ -401,7 +401,8 @@ const Streamers = () => {
           <section className="grid grid-cols-2 gap-3">
             <Link
               to="/store"
-              className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 hover:border-primary/40 transition-all"
+              aria-label="Open Market — gear and accessories for streamers"
+              className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 hover:border-primary/40 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                 <ShoppingBag className="w-5 h-5 text-primary" />
@@ -413,7 +414,8 @@ const Streamers = () => {
             </Link>
             <Link
               to="/leaderboard"
-              className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-500/20 hover:border-yellow-500/40 transition-all"
+              aria-label="Open Leaderboard — top streamers ranking"
+              className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-500/20 hover:border-yellow-500/40 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
                 <Trophy className="w-5 h-5 text-yellow-500" />
