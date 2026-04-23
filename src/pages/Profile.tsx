@@ -116,6 +116,8 @@ const Profile = () => {
   });
   const editingQrHandle = sanitizeQrHandle(editForm.qrHandle || editForm.username || profile?.full_name || "");
   const editingQrUrl = buildProfileQrUrl(editingQrHandle || "your_handle");
+  const currentQrHandle = (profile as any)?.qr_handle as string | undefined;
+  const willRedirectFromLegacy = !!currentQrHandle && !!editingQrHandle && currentQrHandle !== editingQrHandle;
 
 
   useEffect(() => {
