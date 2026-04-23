@@ -53,6 +53,7 @@ import { ReportProblemModal } from "@/components/settings/ReportProblemModal";
 import { AppLockModal } from "@/components/settings/AppLockModal";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 import { buildProfileQrUrl, checkQrHandleAvailable, sanitizeQrHandle } from "@/lib/profileQr";
+import { cn } from "@/lib/utils";
 
 // Detect Median.co native webview
 const isMedianApp = () => !!(window as any).median || !!(window as any).gonative;
