@@ -332,6 +332,8 @@ const Settings = () => {
   const profileUrl = user ? buildProfileQrUrl(qrHandle) : "";
   const editingQrHandle = sanitizeQrHandle(editForm.qrHandle || editForm.username || profile?.full_name || "");
   const editingQrUrl = buildProfileQrUrl(editingQrHandle || "your_handle");
+  const currentQrHandle = (profile as any)?.qr_handle as string | undefined;
+  const willRedirectFromLegacy = !!currentQrHandle && !!editingQrHandle && currentQrHandle !== editingQrHandle;
   const displayName = profile?.username ? `@${profile.username}` : profile?.full_name || "StreamRate profile";
   const avatarUrl = profile?.avatar_url || getDefaultAvatar();
 
