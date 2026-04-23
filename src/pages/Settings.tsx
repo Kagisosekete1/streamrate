@@ -1057,9 +1057,18 @@ const Settings = () => {
                   onChange={(e) => setEditForm({ ...editForm, qrHandle: sanitizeQrHandle(e.target.value) })}
                   placeholder="stable_profile_link"
                 />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Your QR code uses streamrateapp.com/u/{editForm.qrHandle || "your_handle"} and stays stable even if your display username changes.
-                </p>
+                <div className="mt-2 rounded-lg border border-border bg-secondary/40 p-3">
+                  <p className="break-all text-xs font-medium text-foreground">{editingQrUrl}</p>
+                  <p className={cn("mt-1 text-xs", qrHandleStatus.available === false ? "text-destructive" : qrHandleStatus.available ? "text-primary" : "text-muted-foreground")}>
+                    {qrHandleStatus.checking
+                      ? "Checking availability..."
+                      : qrHandleStatus.available === true
+                        ? "Available — this QR link is ready."
+                        : qrHandleStatus.available === false
+                          ? qrHandleStatus.reason || "This QR handle is unavailable."
+                          : "Your QR code stays stable even if your display username changes."}
+                  </p>
+                </div>
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">
