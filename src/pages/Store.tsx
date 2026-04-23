@@ -37,7 +37,9 @@ const PREMIUM_PAYPAL = "https://www.paypal.com/ncp/payment/83TQ3PBLJFM9W";
 // --- Image Carousel Component ---
 const ImageCarousel = ({ images, name }: { images: string[]; name: string }) => {
   const [current, setCurrent] = useState(0);
-  const allImages = images.length > 0 ? images : ["https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&h=400&fit=crop"];
+  const FALLBACK = "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&h=400&fit=crop";
+  const validImages = images.filter((u) => typeof u === "string" && u.trim().length > 0);
+  const allImages = validImages.length > 0 ? validImages : [FALLBACK];
 
   return (
     <div className="relative w-full aspect-square bg-secondary overflow-hidden group">
@@ -45,6 +47,11 @@ const ImageCarousel = ({ images, name }: { images: string[]; name: string }) => 
         src={allImages[current]}
         alt={`${name} - ${current + 1}`}
         className="w-full h-full object-cover transition-transform"
+        loading="lazy"
+        onError={(e) => {
+          const img = e.currentTarget;
+          if (img.src !== FALLBACK) img.src = FALLBACK;
+        }}
       />
       {allImages.length > 1 && (
         <>
@@ -106,7 +113,15 @@ const ProductDetailModal = ({
       >
         {/* Image slider */}
         <div className="relative aspect-square bg-secondary">
-          <img src={allImages[current]} alt={product.name} className="w-full h-full object-cover rounded-t-3xl" />
+          <img
+            src={allImages[current]}
+            alt={product.name}
+            className="w-full h-full object-cover rounded-t-3xl"
+            onError={(e) => {
+              const fallback = "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&h=400&fit=crop";
+              if (e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
+            }}
+          />
           {allImages.length > 1 && (
             <>
               <button onClick={() => setCurrent((p) => (p - 1 + allImages.length) % allImages.length)} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center">
@@ -135,6 +150,7 @@ const ProductDetailModal = ({
             <img
               src={product.seller?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"}
               alt="" className="w-6 h-6 rounded-full object-cover"
+              onError={(e) => { e.currentTarget.src = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"; }}
             />
             <span className="text-sm text-muted-foreground">
               Sold by <span className="text-foreground font-medium">{product.seller?.username || "Seller"}</span>
@@ -691,6 +707,7 @@ const Store = () => {
                       <img
                         src={product.seller?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"}
                         alt="" className="w-4 h-4 rounded-full object-cover"
+                        onError={(e) => { e.currentTarget.src = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"; }}
                       />
                       <span className="text-xs text-muted-foreground truncate">
                         {product.seller?.username || "Seller"}
