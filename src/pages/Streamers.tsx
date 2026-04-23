@@ -486,7 +486,12 @@ const Streamers = () => {
           {/* Popular This Week */}
           {!searchQuery && popularThisWeek.length > 0 && (
             <section>
-              <button onClick={() => toggleSection("popular")} className="w-full flex items-center gap-2 mb-3">
+              <button
+                onClick={() => toggleSection("popular")}
+                aria-expanded={expandedSections.popular}
+                aria-label={`${expandedSections.popular ? "Collapse" : "Expand"} Popular This Week section`}
+                className="w-full flex items-center gap-2 mb-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
                 <TrendingUp className="w-5 h-5 text-green-500" />
                 <h2 className="font-semibold text-foreground">Popular This Week</h2>
                 <ChevronDown className={cn("w-4 h-4 ml-auto text-muted-foreground transition-transform", expandedSections.popular && "rotate-180")} />
@@ -514,7 +519,12 @@ const Streamers = () => {
           {/* Watch Live - Streamers with streaming platforms */}
           {!searchQuery && streamers.filter(s => s.twitch_url || s.kick_url || s.youtube_gaming_url).length > 0 && (
             <section>
-              <button onClick={() => toggleSection("watchlive")} className="w-full flex items-center gap-2 mb-3">
+              <button
+                onClick={() => toggleSection("watchlive")}
+                aria-expanded={expandedSections.watchlive}
+                aria-label={`${expandedSections.watchlive ? "Collapse" : "Expand"} Watch Live section`}
+                className="w-full flex items-center gap-2 mb-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
                 <Tv className="w-5 h-5 text-red-500" />
                 <h2 className="font-semibold text-foreground">Watch Live</h2>
                 <Radio className="w-3 h-3 text-red-500 animate-pulse" />
