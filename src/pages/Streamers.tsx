@@ -433,7 +433,8 @@ const Streamers = () => {
               onClick={() => {
                 navigator.vibrate?.(50);
               }}
-              className="w-full flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 hover:border-primary/40 transition-all"
+              aria-label="Add streamers from your phone contacts"
+              className="w-full flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 hover:border-primary/40 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                 <Contact className="w-5 h-5 text-primary" />
