@@ -1071,6 +1071,12 @@ const Settings = () => {
                           ? qrHandleStatus.reason || "This QR handle is unavailable."
                           : "Your QR code stays stable even if your display username changes."}
                   </p>
+                  {willRedirectFromLegacy && qrHandleStatus.available !== false && (
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      <span className="font-semibold text-foreground">Redirect note:</span>{" "}
+                      Scanning your previous handle “{currentQrHandle}” will redirect to /u/{editingQrHandle}.
+                    </p>
+                  )}
                 </div>
               </div>
               <div>
