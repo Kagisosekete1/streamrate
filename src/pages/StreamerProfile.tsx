@@ -398,7 +398,16 @@ const StreamerProfile = () => {
           <p className="mb-6 text-sm text-muted-foreground">
             {missingProfileParam ? `No StreamRate profile exists for “${missingProfileParam}” anymore.` : "This StreamRate QR link no longer matches a profile."}
           </p>
-          <Button variant="gaming" className="w-full" onClick={() => navigate("/streamers")}>Search for streamer profile</Button>
+          <Button
+            variant="gaming"
+            className="w-full"
+            onClick={() => {
+              trackEvent("qr_handle_search_clicked", { scanned: missingProfileParam || "" });
+              navigate("/streamers");
+            }}
+          >
+            Search for streamer profile
+          </Button>
         </div>
       </div>
     );
