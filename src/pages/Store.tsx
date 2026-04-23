@@ -150,6 +150,7 @@ const ProductDetailModal = ({
             <img
               src={product.seller?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"}
               alt="" className="w-6 h-6 rounded-full object-cover"
+              onError={(e) => { e.currentTarget.src = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"; }}
             />
             <span className="text-sm text-muted-foreground">
               Sold by <span className="text-foreground font-medium">{product.seller?.username || "Seller"}</span>
