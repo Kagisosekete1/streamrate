@@ -359,9 +359,11 @@ const Streamers = () => {
           {/* Leaderboard Section - Collapsible */}
           {!searchQuery && topStreamers.length > 0 && (
             <section>
-              <button 
+              <button
                 onClick={() => toggleSection("leaderboard")}
-                className="w-full flex items-center gap-2 mb-3 group"
+                aria-expanded={expandedSections.leaderboard}
+                aria-label={`${expandedSections.leaderboard ? "Collapse" : "Expand"} Leaderboard section`}
+                className="w-full flex items-center gap-2 mb-3 group rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <Trophy className="w-5 h-5 text-yellow-500" />
                 <h2 className="font-semibold text-foreground group-hover:text-primary transition-colors">
@@ -370,7 +372,8 @@ const Streamers = () => {
                 <Link
                   to="/leaderboard"
                   onClick={(e) => e.stopPropagation()}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="View full leaderboard rankings"
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   • View Full Rankings →
                 </Link>
