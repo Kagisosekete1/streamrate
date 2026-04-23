@@ -1033,7 +1033,8 @@ const Profile = () => {
                             : "Old QR links keep redirecting to this current profile URL."}
                     </p>
                     {willRedirectFromLegacy && qrHandleStatus.available !== false && (
-                      <p className="mt-1 text-[11px] text-amber-500">
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        <span className="font-semibold text-foreground">Redirect note:</span>{" "}
                         Heads up: scanning your previous handle “{currentQrHandle}” will redirect to /u/{editingQrHandle}.
                       </p>
                     )}
