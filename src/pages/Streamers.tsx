@@ -333,7 +333,8 @@ const Streamers = () => {
                   <Link
                     key={member.id}
                     to={`/streamer/${member.id}`}
-                    className="flex flex-col items-center gap-1.5 min-w-[72px]"
+                    aria-label={`Open new member ${member.username || member.full_name || "profile"}`}
+                    className="flex flex-col items-center gap-1.5 min-w-[72px] rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   >
                     <div className="relative">
                       <div className="p-[2px] rounded-full bg-gradient-to-br from-green-400 to-emerald-500">
