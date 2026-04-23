@@ -45,6 +45,7 @@ const Streamers = () => {
     suggested: false,
     popular: false,
     watchlive: false,
+    explore: false,
   });
 
   const toggleSection = (key: string) => {
@@ -57,15 +58,8 @@ const Streamers = () => {
     { icon: Tv, label: "Watch Parties", path: "/watch-parties" },
     { icon: Gamepad2, label: "Squad Up", path: "/squad-up" },
     { icon: Scissors, label: "Clips", path: "/clips" },
-    { icon: Target, label: "Missions", path: "/missions" },
-    { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
-    { icon: Radio, label: "Live", path: "/live" },
-    { icon: Bell, label: "Notifications", path: "/notifications" },
-    { icon: ShoppingBag, label: "Market", path: "/store" },
-    { icon: Rocket, label: "Boost", path: "/boost-profile" },
     { icon: BarChart3, label: "Creator", path: "/creator-dashboard" },
     { icon: BarChart, label: "Analytics", path: "/streaming-analytics" },
-    { icon: Settings, label: "Settings", path: "/settings" },
   ];
 
   useEffect(() => {
@@ -326,38 +320,6 @@ const Streamers = () => {
         {!searchQuery && <TrendingStreamersSection trendingStreamers={trendingStreamers} />}
 
         <main className="px-4 py-4 space-y-6">
-          {!searchQuery && (
-            <section className="md:hidden">
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-5 h-5 text-primary" />
-                <h2 className="font-semibold text-foreground">Explore StreamRate</h2>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                {mobileDiscoverLinks.map((item) => {
-                  const Icon = item.icon;
-                  const showBadge = item.path === "/notifications" && unreadNotifications > 0;
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className="relative flex min-h-[86px] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-card p-3 text-center transition-colors hover:bg-accent/10"
-                    >
-                      <span className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                        <Icon className="h-5 w-5 text-primary" />
-                        {showBadge && (
-                          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                            {unreadNotifications > 9 ? "9+" : unreadNotifications}
-                          </span>
-                        )}
-                      </span>
-                      <span className="text-[11px] font-medium leading-tight text-foreground">{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-
           {/* New Members Section - ALL users */}
           {!searchQuery && newMembers.length > 0 && (
             <section>
