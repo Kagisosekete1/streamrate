@@ -333,7 +333,8 @@ const Streamers = () => {
                   <Link
                     key={member.id}
                     to={`/streamer/${member.id}`}
-                    className="flex flex-col items-center gap-1.5 min-w-[72px]"
+                    aria-label={`Open new member ${member.username || member.full_name || "profile"}`}
+                    className="flex flex-col items-center gap-1.5 min-w-[72px] rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   >
                     <div className="relative">
                       <div className="p-[2px] rounded-full bg-gradient-to-br from-green-400 to-emerald-500">
@@ -358,9 +359,11 @@ const Streamers = () => {
           {/* Leaderboard Section - Collapsible */}
           {!searchQuery && topStreamers.length > 0 && (
             <section>
-              <button 
+              <button
                 onClick={() => toggleSection("leaderboard")}
-                className="w-full flex items-center gap-2 mb-3 group"
+                aria-expanded={expandedSections.leaderboard}
+                aria-label={`${expandedSections.leaderboard ? "Collapse" : "Expand"} Leaderboard section`}
+                className="w-full flex items-center gap-2 mb-3 group rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <Trophy className="w-5 h-5 text-yellow-500" />
                 <h2 className="font-semibold text-foreground group-hover:text-primary transition-colors">
@@ -369,7 +372,8 @@ const Streamers = () => {
                 <Link
                   to="/leaderboard"
                   onClick={(e) => e.stopPropagation()}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="View full leaderboard rankings"
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   • View Full Rankings →
                 </Link>
@@ -401,7 +405,8 @@ const Streamers = () => {
           <section className="grid grid-cols-2 gap-3">
             <Link
               to="/store"
-              className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 hover:border-primary/40 transition-all"
+              aria-label="Open Market — gear and accessories for streamers"
+              className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 hover:border-primary/40 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                 <ShoppingBag className="w-5 h-5 text-primary" />
@@ -413,7 +418,8 @@ const Streamers = () => {
             </Link>
             <Link
               to="/leaderboard"
-              className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-500/20 hover:border-yellow-500/40 transition-all"
+              aria-label="Open Leaderboard — top streamers ranking"
+              className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-500/20 hover:border-yellow-500/40 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
                 <Trophy className="w-5 h-5 text-yellow-500" />
@@ -431,7 +437,8 @@ const Streamers = () => {
               onClick={() => {
                 navigator.vibrate?.(50);
               }}
-              className="w-full flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 hover:border-primary/40 transition-all"
+              aria-label="Add streamers from your phone contacts"
+              className="w-full flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 hover:border-primary/40 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                 <Contact className="w-5 h-5 text-primary" />
@@ -446,7 +453,12 @@ const Streamers = () => {
           {/* Suggested Streamers */}
           {!searchQuery && suggestedStreamers.length > 0 && (
             <section>
-              <button onClick={() => toggleSection("suggested")} className="w-full flex items-center gap-2 mb-3">
+              <button
+                onClick={() => toggleSection("suggested")}
+                aria-expanded={expandedSections.suggested}
+                aria-label={`${expandedSections.suggested ? "Collapse" : "Expand"} Suggested for You section`}
+                className="w-full flex items-center gap-2 mb-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
                 <Sparkles className="w-5 h-5 text-accent" />
                 <h2 className="font-semibold text-foreground">Suggested for You</h2>
                 <ChevronDown className={cn("w-4 h-4 ml-auto text-muted-foreground transition-transform", expandedSections.suggested && "rotate-180")} />
@@ -474,7 +486,12 @@ const Streamers = () => {
           {/* Popular This Week */}
           {!searchQuery && popularThisWeek.length > 0 && (
             <section>
-              <button onClick={() => toggleSection("popular")} className="w-full flex items-center gap-2 mb-3">
+              <button
+                onClick={() => toggleSection("popular")}
+                aria-expanded={expandedSections.popular}
+                aria-label={`${expandedSections.popular ? "Collapse" : "Expand"} Popular This Week section`}
+                className="w-full flex items-center gap-2 mb-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
                 <TrendingUp className="w-5 h-5 text-green-500" />
                 <h2 className="font-semibold text-foreground">Popular This Week</h2>
                 <ChevronDown className={cn("w-4 h-4 ml-auto text-muted-foreground transition-transform", expandedSections.popular && "rotate-180")} />
@@ -502,7 +519,12 @@ const Streamers = () => {
           {/* Watch Live - Streamers with streaming platforms */}
           {!searchQuery && streamers.filter(s => s.twitch_url || s.kick_url || s.youtube_gaming_url).length > 0 && (
             <section>
-              <button onClick={() => toggleSection("watchlive")} className="w-full flex items-center gap-2 mb-3">
+              <button
+                onClick={() => toggleSection("watchlive")}
+                aria-expanded={expandedSections.watchlive}
+                aria-label={`${expandedSections.watchlive ? "Collapse" : "Expand"} Watch Live section`}
+                className="w-full flex items-center gap-2 mb-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
                 <Tv className="w-5 h-5 text-red-500" />
                 <h2 className="font-semibold text-foreground">Watch Live</h2>
                 <Radio className="w-3 h-3 text-red-500 animate-pulse" />
@@ -532,23 +554,37 @@ const Streamers = () => {
 
           {!searchQuery && (
             <section className="md:hidden">
-              <button onClick={() => toggleSection("explore")} className="w-full flex items-center gap-2 mb-3">
+              <button
+                onClick={() => toggleSection("explore")}
+                aria-expanded={expandedSections.explore}
+                aria-controls="explore-streamrate-tiles"
+                aria-label={`${expandedSections.explore ? "Collapse" : "Expand"} Explore StreamRate section`}
+                className="w-full flex items-center gap-2 mb-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
                 <Sparkles className="w-5 h-5 text-primary" />
                 <h2 className="font-semibold text-foreground">Explore StreamRate</h2>
                 <ChevronDown className={cn("w-4 h-4 ml-auto text-muted-foreground transition-transform", expandedSections.explore && "rotate-180")} />
               </button>
               {expandedSections.explore && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="grid grid-cols-3 gap-3 overflow-hidden">
+                <motion.div
+                  id="explore-streamrate-tiles"
+                  role="navigation"
+                  aria-label="Explore StreamRate quick links"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="grid grid-cols-3 gap-3 overflow-hidden"
+                >
                   {mobileDiscoverLinks.map((item) => {
                     const Icon = item.icon;
                     return (
                       <Link
                         key={item.path}
                         to={item.path}
-                        className="relative flex min-h-[86px] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-card p-3 text-center transition-colors hover:bg-accent/10"
+                        aria-label={`Open ${item.label}`}
+                        className="relative flex min-h-[86px] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-card p-3 text-center transition-colors hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       >
                         <span className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                          <Icon className="h-5 w-5 text-primary" />
+                          <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
                         </span>
                         <span className="text-[11px] font-medium leading-tight text-foreground">{item.label}</span>
                       </Link>

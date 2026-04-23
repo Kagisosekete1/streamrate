@@ -22,6 +22,7 @@ import { ReviewsModal } from "@/components/ReviewsModal";
 import { TwitchLiveEmbed } from "@/components/TwitchLiveEmbed";
 import { StreamPolls } from "@/components/StreamPolls";
 import { resolveProfileRouteParam } from "@/lib/profileQr";
+import { trackEvent } from "@/lib/analytics";
 
 interface StreamerData {
   id: string;
@@ -90,8 +91,15 @@ const StreamerProfile = () => {
     const resolved = await resolveProfileRouteParam(id);
     if (resolved?.qrHandle && id?.toLowerCase() !== resolved.qrHandle) {
       navigate(`/u/${resolved.qrHandle}`, { replace: true });
+      trackEvent("qr_handle_redirect", {
+        from: id || "",
+        to: resolved.qrHandle,
+      });
     }
-    if (!resolved) setMissingProfileParam(id || null);
+    if (!resolved) {
+      setMissingProfileParam(id || null);
+      trackEvent("qr_handle_not_found", { scanned: id || "" });
+    }
     return resolved?.profileId || null;
   };
 
@@ -390,7 +398,16 @@ const StreamerProfile = () => {
           <p className="mb-6 text-sm text-muted-foreground">
             {missingProfileParam ? `No StreamRate profile exists for “${missingProfileParam}” anymore.` : "This StreamRate QR link no longer matches a profile."}
           </p>
-          <Button variant="gaming" className="w-full" onClick={() => navigate("/streamers")}>Search for streamer profile</Button>
+          <Button
+            variant="gaming"
+            className="w-full"
+            onClick={() => {
+              trackEvent("qr_handle_search_clicked", { scanned: missingProfileParam || "" });
+              navigate("/streamers");
+            }}
+          >
+            Search for streamer profile
+          </Button>
         </div>
       </div>
     );

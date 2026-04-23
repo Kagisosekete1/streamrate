@@ -332,6 +332,8 @@ const Settings = () => {
   const profileUrl = user ? buildProfileQrUrl(qrHandle) : "";
   const editingQrHandle = sanitizeQrHandle(editForm.qrHandle || editForm.username || profile?.full_name || "");
   const editingQrUrl = buildProfileQrUrl(editingQrHandle || "your_handle");
+  const currentQrHandle = (profile as any)?.qr_handle as string | undefined;
+  const willRedirectFromLegacy = !!currentQrHandle && !!editingQrHandle && currentQrHandle !== editingQrHandle;
   const displayName = profile?.username ? `@${profile.username}` : profile?.full_name || "StreamRate profile";
   const avatarUrl = profile?.avatar_url || getDefaultAvatar();
 
@@ -1069,6 +1071,12 @@ const Settings = () => {
                           ? qrHandleStatus.reason || "This QR handle is unavailable."
                           : "Your QR code stays stable even if your display username changes."}
                   </p>
+                  {willRedirectFromLegacy && qrHandleStatus.available !== false && (
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      <span className="font-semibold text-foreground">Redirect note:</span>{" "}
+                      Scanning your previous handle “{currentQrHandle}” will redirect to /u/{editingQrHandle}.
+                    </p>
+                  )}
                 </div>
               </div>
               <div>

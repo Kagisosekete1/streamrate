@@ -116,6 +116,8 @@ const Profile = () => {
   });
   const editingQrHandle = sanitizeQrHandle(editForm.qrHandle || editForm.username || profile?.full_name || "");
   const editingQrUrl = buildProfileQrUrl(editingQrHandle || "your_handle");
+  const currentQrHandle = (profile as any)?.qr_handle as string | undefined;
+  const willRedirectFromLegacy = !!currentQrHandle && !!editingQrHandle && currentQrHandle !== editingQrHandle;
 
 
   useEffect(() => {
@@ -1030,6 +1032,12 @@ const Profile = () => {
                             ? qrHandleStatus.reason || "This QR handle is unavailable."
                             : "Old QR links keep redirecting to this current profile URL."}
                     </p>
+                    {willRedirectFromLegacy && qrHandleStatus.available !== false && (
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        <span className="font-semibold text-foreground">Redirect note:</span>{" "}
+                        Heads up: scanning your previous handle “{currentQrHandle}” will redirect to /u/{editingQrHandle}.
+                      </p>
+                    )}
                   </div>
                 </div>
 
