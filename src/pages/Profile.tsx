@@ -23,7 +23,8 @@ import { LastSeenDisplay } from "@/components/LastSeenDisplay";
 import { SocialLinks } from "@/components/SocialLinks";
 import { ReviewsModal } from "@/components/ReviewsModal";
 import { TwitchLiveEmbed } from "@/components/TwitchLiveEmbed";
-import { checkQrHandleAvailable, sanitizeQrHandle } from "@/lib/profileQr";
+import { buildProfileQrUrl, checkQrHandleAvailable, sanitizeQrHandle } from "@/lib/profileQr";
+import { cn } from "@/lib/utils";
 
 interface Post {
   id: string;
@@ -107,6 +108,14 @@ const Profile = () => {
   const [isUpdatingPosts, setIsUpdatingPosts] = useState(false);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
+  const [qrHandleStatus, setQrHandleStatus] = useState<{ checking: boolean; available: boolean | null; reason: string | null; normalized: string }>({
+    checking: false,
+    available: null,
+    reason: null,
+    normalized: "",
+  });
+  const editingQrHandle = sanitizeQrHandle(editForm.qrHandle || editForm.username || profile?.full_name || "");
+  const editingQrUrl = buildProfileQrUrl(editingQrHandle || "your_handle");
 
 
   useEffect(() => {
@@ -191,6 +200,20 @@ const Profile = () => {
       });
     }
   }, [showEditModal]);
+
+  useEffect(() => {
+    if (!showEditModal || !user) return;
+    const nextHandle = sanitizeQrHandle(editForm.qrHandle || editForm.username || profile?.full_name || "");
+    setQrHandleStatus({ checking: !!nextHandle, available: null, reason: null, normalized: nextHandle });
+    if (!nextHandle) return;
+
+    const timer = window.setTimeout(async () => {
+      const result = await checkQrHandleAvailable(nextHandle, user.id);
+      setQrHandleStatus({ checking: false, available: result.available, reason: result.reason, normalized: result.normalized });
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [showEditModal, editForm.qrHandle, editForm.username, profile?.full_name, user]);
 
   const fetchHeaderUrl = async () => {
     if (!user) return;
