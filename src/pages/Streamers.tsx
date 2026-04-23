@@ -532,6 +532,35 @@ const Streamers = () => {
             </section>
           )}
 
+          {!searchQuery && (
+            <section className="md:hidden">
+              <button onClick={() => toggleSection("explore")} className="w-full flex items-center gap-2 mb-3">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <h2 className="font-semibold text-foreground">Explore StreamRate</h2>
+                <ChevronDown className={cn("w-4 h-4 ml-auto text-muted-foreground transition-transform", expandedSections.explore && "rotate-180")} />
+              </button>
+              {expandedSections.explore && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="grid grid-cols-3 gap-3 overflow-hidden">
+                  {mobileDiscoverLinks.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        className="relative flex min-h-[86px] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-card p-3 text-center transition-colors hover:bg-accent/10"
+                      >
+                        <span className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                          <Icon className="h-5 w-5 text-primary" />
+                        </span>
+                        <span className="text-[11px] font-medium leading-tight text-foreground">{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </section>
+          )}
+
           {/* All Streamers (when searching or filtered) */}
           {(searchQuery || activeFilter) && (
             <section>
