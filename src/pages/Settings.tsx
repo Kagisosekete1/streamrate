@@ -284,6 +284,12 @@ const Settings = () => {
     bio: "",
     country: "",
   });
+  const [qrHandleStatus, setQrHandleStatus] = useState<{ checking: boolean; available: boolean | null; reason: string | null; normalized: string }>({
+    checking: false,
+    available: null,
+    reason: null,
+    normalized: "",
+  });
 
   // Sync form data only when modal opens
   useEffect(() => {
@@ -323,8 +329,24 @@ const Settings = () => {
 
   const qrHandle = (profile as any)?.qr_handle || profile?.username || `user_${(profile as any)?.signup_number || user?.id}`;
   const profileUrl = user ? buildProfileQrUrl(qrHandle) : "";
+  const editingQrHandle = sanitizeQrHandle(editForm.qrHandle || editForm.username || profile?.full_name || "");
+  const editingQrUrl = buildProfileQrUrl(editingQrHandle || "your_handle");
   const displayName = profile?.username ? `@${profile.username}` : profile?.full_name || "StreamRate profile";
   const avatarUrl = profile?.avatar_url || getDefaultAvatar();
+
+  useEffect(() => {
+    if (activeModal !== "editProfile" || !user) return;
+    const nextHandle = sanitizeQrHandle(editForm.qrHandle || editForm.username || profile?.full_name || "");
+    setQrHandleStatus({ checking: !!nextHandle, available: null, reason: null, normalized: nextHandle });
+    if (!nextHandle) return;
+
+    const timer = window.setTimeout(async () => {
+      const result = await checkQrHandleAvailable(nextHandle, user.id);
+      setQrHandleStatus({ checking: false, available: result.available, reason: result.reason, normalized: result.normalized });
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [activeModal, editForm.qrHandle, editForm.username, profile?.full_name, user]);
 
   const generateProfileQr = async () => {
     if (!profileUrl) return;
