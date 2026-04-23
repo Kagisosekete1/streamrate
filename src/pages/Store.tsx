@@ -113,7 +113,15 @@ const ProductDetailModal = ({
       >
         {/* Image slider */}
         <div className="relative aspect-square bg-secondary">
-          <img src={allImages[current]} alt={product.name} className="w-full h-full object-cover rounded-t-3xl" />
+          <img
+            src={allImages[current]}
+            alt={product.name}
+            className="w-full h-full object-cover rounded-t-3xl"
+            onError={(e) => {
+              const fallback = "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&h=400&fit=crop";
+              if (e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
+            }}
+          />
           {allImages.length > 1 && (
             <>
               <button onClick={() => setCurrent((p) => (p - 1 + allImages.length) % allImages.length)} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center">
