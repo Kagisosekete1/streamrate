@@ -1,14 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { StreamerCard } from "@/components/StreamerCard";
-import { Search, Filter, Users, TrendingUp, Trophy, Contact, Sparkles, ChevronDown, ShoppingBag, Tv, Radio, Gamepad2, Scissors, Target, Rocket, BarChart3, Bell, Settings, BarChart } from "lucide-react";
+import { Search, Filter, Users, TrendingUp, Trophy, Contact, Sparkles, ChevronDown, ShoppingBag, Tv, Radio, Gamepad2, Scissors, BarChart3, BarChart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { TrendingStreamersSection } from "@/components/TrendingStreamersSection";
-import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 
 interface Streamer {
   id: string;
@@ -39,7 +38,6 @@ const Streamers = () => {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [trendingHashtags, setTrendingHashtags] = useState<Hashtag[]>([]);
-  const unreadNotifications = useUnreadNotifications();
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     leaderboard: false,
     suggested: false,
