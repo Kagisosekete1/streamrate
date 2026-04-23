@@ -707,6 +707,7 @@ const Store = () => {
                       <img
                         src={product.seller?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"}
                         alt="" className="w-4 h-4 rounded-full object-cover"
+                        onError={(e) => { e.currentTarget.src = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"; }}
                       />
                       <span className="text-xs text-muted-foreground truncate">
                         {product.seller?.username || "Seller"}
