@@ -23,7 +23,8 @@ import { LastSeenDisplay } from "@/components/LastSeenDisplay";
 import { SocialLinks } from "@/components/SocialLinks";
 import { ReviewsModal } from "@/components/ReviewsModal";
 import { TwitchLiveEmbed } from "@/components/TwitchLiveEmbed";
-import { checkQrHandleAvailable, sanitizeQrHandle } from "@/lib/profileQr";
+import { buildProfileQrUrl, checkQrHandleAvailable, sanitizeQrHandle } from "@/lib/profileQr";
+import { cn } from "@/lib/utils";
 
 interface Post {
   id: string;
@@ -107,6 +108,14 @@ const Profile = () => {
   const [isUpdatingPosts, setIsUpdatingPosts] = useState(false);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
+  const [qrHandleStatus, setQrHandleStatus] = useState<{ checking: boolean; available: boolean | null; reason: string | null; normalized: string }>({
+    checking: false,
+    available: null,
+    reason: null,
+    normalized: "",
+  });
+  const editingQrHandle = sanitizeQrHandle(editForm.qrHandle || editForm.username || profile?.full_name || "");
+  const editingQrUrl = buildProfileQrUrl(editingQrHandle || "your_handle");
 
 
   useEffect(() => {
@@ -191,6 +200,20 @@ const Profile = () => {
       });
     }
   }, [showEditModal]);
+
+  useEffect(() => {
+    if (!showEditModal || !user) return;
+    const nextHandle = sanitizeQrHandle(editForm.qrHandle || editForm.username || profile?.full_name || "");
+    setQrHandleStatus({ checking: !!nextHandle, available: null, reason: null, normalized: nextHandle });
+    if (!nextHandle) return;
+
+    const timer = window.setTimeout(async () => {
+      const result = await checkQrHandleAvailable(nextHandle, user.id);
+      setQrHandleStatus({ checking: false, available: result.available, reason: result.reason, normalized: result.normalized });
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [showEditModal, editForm.qrHandle, editForm.username, profile?.full_name, user]);
 
   const fetchHeaderUrl = async () => {
     if (!user) return;
@@ -996,9 +1019,18 @@ const Profile = () => {
                     onChange={(e) => setEditForm({ ...editForm, qrHandle: sanitizeQrHandle(e.target.value) })}
                     placeholder="stable_profile_link"
                   />
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Used for streamrateapp.com/u/{editForm.qrHandle || "your_handle"}; old QR links keep redirecting here.
-                  </p>
+                  <div className="mt-2 rounded-lg border border-border bg-secondary/40 p-3">
+                    <p className="break-all text-xs font-medium text-foreground">{editingQrUrl}</p>
+                    <p className={cn("mt-1 text-xs", qrHandleStatus.available === false ? "text-destructive" : qrHandleStatus.available ? "text-primary" : "text-muted-foreground")}>
+                      {qrHandleStatus.checking
+                        ? "Checking availability..."
+                        : qrHandleStatus.available === true
+                          ? "Available — this QR link is ready."
+                          : qrHandleStatus.available === false
+                            ? qrHandleStatus.reason || "This QR handle is unavailable."
+                            : "Old QR links keep redirecting to this current profile URL."}
+                    </p>
+                  </div>
                 </div>
 
                 <div>

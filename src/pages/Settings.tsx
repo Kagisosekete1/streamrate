@@ -53,6 +53,7 @@ import { ReportProblemModal } from "@/components/settings/ReportProblemModal";
 import { AppLockModal } from "@/components/settings/AppLockModal";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 import { buildProfileQrUrl, checkQrHandleAvailable, sanitizeQrHandle } from "@/lib/profileQr";
+import { cn } from "@/lib/utils";
 
 // Detect Median.co native webview
 const isMedianApp = () => !!(window as any).median || !!(window as any).gonative;
@@ -284,6 +285,12 @@ const Settings = () => {
     bio: "",
     country: "",
   });
+  const [qrHandleStatus, setQrHandleStatus] = useState<{ checking: boolean; available: boolean | null; reason: string | null; normalized: string }>({
+    checking: false,
+    available: null,
+    reason: null,
+    normalized: "",
+  });
 
   // Sync form data only when modal opens
   useEffect(() => {
@@ -323,8 +330,24 @@ const Settings = () => {
 
   const qrHandle = (profile as any)?.qr_handle || profile?.username || `user_${(profile as any)?.signup_number || user?.id}`;
   const profileUrl = user ? buildProfileQrUrl(qrHandle) : "";
+  const editingQrHandle = sanitizeQrHandle(editForm.qrHandle || editForm.username || profile?.full_name || "");
+  const editingQrUrl = buildProfileQrUrl(editingQrHandle || "your_handle");
   const displayName = profile?.username ? `@${profile.username}` : profile?.full_name || "StreamRate profile";
   const avatarUrl = profile?.avatar_url || getDefaultAvatar();
+
+  useEffect(() => {
+    if (activeModal !== "editProfile" || !user) return;
+    const nextHandle = sanitizeQrHandle(editForm.qrHandle || editForm.username || profile?.full_name || "");
+    setQrHandleStatus({ checking: !!nextHandle, available: null, reason: null, normalized: nextHandle });
+    if (!nextHandle) return;
+
+    const timer = window.setTimeout(async () => {
+      const result = await checkQrHandleAvailable(nextHandle, user.id);
+      setQrHandleStatus({ checking: false, available: result.available, reason: result.reason, normalized: result.normalized });
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [activeModal, editForm.qrHandle, editForm.username, profile?.full_name, user]);
 
   const generateProfileQr = async () => {
     if (!profileUrl) return;
@@ -1035,9 +1058,18 @@ const Settings = () => {
                   onChange={(e) => setEditForm({ ...editForm, qrHandle: sanitizeQrHandle(e.target.value) })}
                   placeholder="stable_profile_link"
                 />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Your QR code uses streamrateapp.com/u/{editForm.qrHandle || "your_handle"} and stays stable even if your display username changes.
-                </p>
+                <div className="mt-2 rounded-lg border border-border bg-secondary/40 p-3">
+                  <p className="break-all text-xs font-medium text-foreground">{editingQrUrl}</p>
+                  <p className={cn("mt-1 text-xs", qrHandleStatus.available === false ? "text-destructive" : qrHandleStatus.available ? "text-primary" : "text-muted-foreground")}>
+                    {qrHandleStatus.checking
+                      ? "Checking availability..."
+                      : qrHandleStatus.available === true
+                        ? "Available — this QR link is ready."
+                        : qrHandleStatus.available === false
+                          ? qrHandleStatus.reason || "This QR handle is unavailable."
+                          : "Your QR code stays stable even if your display username changes."}
+                  </p>
+                </div>
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">

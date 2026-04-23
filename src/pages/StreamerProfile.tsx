@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, MapPin, Star, Users, MessageCircle, Lock } from "lucide-react";
+import { ArrowLeft, MapPin, Star, Users, MessageCircle, Lock, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "@/components/StarRating";
 import { BottomNav } from "@/components/BottomNav";
@@ -84,12 +84,14 @@ const StreamerProfile = () => {
   const [showReelViewer, setShowReelViewer] = useState(false);
   const [reelViewerIndex, setReelViewerIndex] = useState(0);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
+  const [missingProfileParam, setMissingProfileParam] = useState<string | null>(null);
 
   const resolveProfileId = async () => {
     const resolved = await resolveProfileRouteParam(id);
-    if (resolved?.qrHandle && id !== resolved.qrHandle) {
+    if (resolved?.qrHandle && id?.toLowerCase() !== resolved.qrHandle) {
       navigate(`/u/${resolved.qrHandle}`, { replace: true });
     }
+    if (!resolved) setMissingProfileParam(id || null);
     return resolved?.profileId || null;
   };
 
@@ -379,8 +381,17 @@ const StreamerProfile = () => {
 
   if (!streamer) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Streamer not found</p>
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="w-full max-w-sm text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
+            <SearchX className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h1 className="mb-2 text-xl font-bold text-foreground">QR profile not found</h1>
+          <p className="mb-6 text-sm text-muted-foreground">
+            {missingProfileParam ? `No StreamRate profile exists for “${missingProfileParam}” anymore.` : "This StreamRate QR link no longer matches a profile."}
+          </p>
+          <Button variant="gaming" className="w-full" onClick={() => navigate("/streamers")}>Search for streamer profile</Button>
+        </div>
       </div>
     );
   }
