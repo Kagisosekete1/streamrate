@@ -91,8 +91,15 @@ const StreamerProfile = () => {
     const resolved = await resolveProfileRouteParam(id);
     if (resolved?.qrHandle && id?.toLowerCase() !== resolved.qrHandle) {
       navigate(`/u/${resolved.qrHandle}`, { replace: true });
+      trackEvent("qr_handle_redirect", {
+        from: id || "",
+        to: resolved.qrHandle,
+      });
     }
-    if (!resolved) setMissingProfileParam(id || null);
+    if (!resolved) {
+      setMissingProfileParam(id || null);
+      trackEvent("qr_handle_not_found", { scanned: id || "" });
+    }
     return resolved?.profileId || null;
   };
 
