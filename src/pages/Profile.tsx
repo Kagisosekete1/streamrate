@@ -1019,9 +1019,18 @@ const Profile = () => {
                     onChange={(e) => setEditForm({ ...editForm, qrHandle: sanitizeQrHandle(e.target.value) })}
                     placeholder="stable_profile_link"
                   />
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Used for streamrateapp.com/u/{editForm.qrHandle || "your_handle"}; old QR links keep redirecting here.
-                  </p>
+                  <div className="mt-2 rounded-lg border border-border bg-secondary/40 p-3">
+                    <p className="break-all text-xs font-medium text-foreground">{editingQrUrl}</p>
+                    <p className={cn("mt-1 text-xs", qrHandleStatus.available === false ? "text-destructive" : qrHandleStatus.available ? "text-primary" : "text-muted-foreground")}>
+                      {qrHandleStatus.checking
+                        ? "Checking availability..."
+                        : qrHandleStatus.available === true
+                          ? "Available — this QR link is ready."
+                          : qrHandleStatus.available === false
+                            ? qrHandleStatus.reason || "This QR handle is unavailable."
+                            : "Old QR links keep redirecting to this current profile URL."}
+                    </p>
+                  </div>
                 </div>
 
                 <div>
