@@ -22,6 +22,7 @@ import { ReviewsModal } from "@/components/ReviewsModal";
 import { TwitchLiveEmbed } from "@/components/TwitchLiveEmbed";
 import { StreamPolls } from "@/components/StreamPolls";
 import { resolveProfileRouteParam } from "@/lib/profileQr";
+import { trackEvent } from "@/lib/analytics";
 
 interface StreamerData {
   id: string;
