@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Users, Plus, Tv, Radio } from "lucide-react";
+import { Users, Plus, Tv, Radio, Search, X, Flame } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,6 +24,7 @@ interface Party {
   created_at: string;
   member_count?: number;
   host_name?: string;
+  host_username?: string;
 }
 
 const WatchParties = () => {
@@ -36,6 +37,8 @@ const WatchParties = () => {
   const [title, setTitle] = useState("");
   const [platform, setPlatform] = useState("twitch");
   const [streamUrl, setStreamUrl] = useState("");
+  const [search, setSearch] = useState("");
+  const [endingId, setEndingId] = useState<string | null>(null);
 
   const fetchParties = async () => {
     setLoading(true);
@@ -57,9 +60,20 @@ const WatchParties = () => {
             .select("username, full_name")
             .eq("id", p.host_id)
             .maybeSingle();
-          return { ...p, member_count: count || 0, host_name: host?.username || host?.full_name || "Host" };
+          return {
+            ...p,
+            member_count: count || 0,
+            host_name: host?.username || host?.full_name || "Host",
+            host_username: host?.username || "",
+          };
         })
       );
+      // Sort: trending (most members) first, then newest
+      enriched.sort((a, b) => {
+        const m = (b.member_count || 0) - (a.member_count || 0);
+        if (m !== 0) return m;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
       setParties(enriched);
     }
     setLoading(false);
@@ -68,6 +82,35 @@ const WatchParties = () => {
   useEffect(() => {
     fetchParties();
   }, []);
+
+  const endParty = async (party: Party) => {
+    if (!user || user.id !== party.host_id) return;
+    if (!confirm(`End "${party.title}"? Members will no longer be able to join.`)) return;
+    setEndingId(party.id);
+    const { error } = await supabase
+      .from("watch_parties")
+      .update({ is_active: false, ended_at: new Date().toISOString() })
+      .eq("id", party.id)
+      .eq("host_id", user.id);
+    setEndingId(null);
+    if (error) {
+      toast.error("Couldn't end party");
+      return;
+    }
+    toast.success("Party ended");
+    setParties((prev) => prev.filter((p) => p.id !== party.id));
+  };
+
+  const filteredParties = (() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return parties;
+    return parties.filter(
+      (p) =>
+        (p.host_username || "").toLowerCase().includes(q) ||
+        (p.host_name || "").toLowerCase().includes(q) ||
+        p.title.toLowerCase().includes(q)
+    );
+  })();
 
   const createParty = async () => {
     if (!user) {
@@ -142,42 +185,92 @@ const WatchParties = () => {
           </div>
         </header>
         <main className="px-4 py-4">
+          {/* Search */}
+          <div className="relative mb-4">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by username or party title..."
+              className="pl-9 pr-9"
+              aria-label="Search parties by username or title"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                aria-label="Clear search"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
           {loading ? (
             <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-24 bg-secondary rounded-xl animate-pulse" />)}</div>
-          ) : parties.length === 0 ? (
+          ) : filteredParties.length === 0 ? (
             <div className="flex flex-col items-center py-20 text-center">
               <Tv className="w-12 h-12 text-muted-foreground mb-3" />
-              <h3 className="font-semibold mb-1">No active parties</h3>
-              <p className="text-sm text-muted-foreground">Be the first to host one!</p>
+              <h3 className="font-semibold mb-1">{search ? "No matching parties" : "No active parties"}</h3>
+              <p className="text-sm text-muted-foreground">{search ? "Try a different username" : "Be the first to host one!"}</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {parties.map((p, i) => (
+              {filteredParties.map((p, i) => {
+                const isHost = user?.id === p.host_id;
+                const isTrending = i === 0 && (p.member_count || 0) >= 3;
+                return (
                 <motion.div
                   key={p.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.04 }}
-                  className="bg-card rounded-xl p-4 border border-border/50 cursor-pointer hover:border-primary/40 transition-colors"
+                  className={`bg-card rounded-xl p-4 border cursor-pointer hover:border-primary/40 transition-colors ${
+                    isTrending ? "border-orange-500/40 bg-gradient-to-br from-orange-500/5 to-card" : "border-border/50"
+                  }`}
                   onClick={() => navigate(`/watch-party/${p.id}`)}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <Radio className="w-4 h-4 text-red-500 animate-pulse" />
+                        {isTrending ? (
+                          <Flame className="w-4 h-4 text-orange-500" aria-label="Trending" />
+                        ) : (
+                          <Radio className="w-4 h-4 text-red-500 animate-pulse" />
+                        )}
                         <h3 className="font-semibold truncate">{p.title}</h3>
+                        {isTrending && (
+                          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-500">
+                            Trending
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
                         Hosted by {p.host_name} · {p.platform}
                       </p>
                     </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Users className="w-3.5 h-3.5" />
-                      {p.member_count}
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Users className="w-3.5 h-3.5" />
+                        {p.member_count}
+                      </div>
+                      {isHost && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={endingId === p.id}
+                          onClick={(e) => { e.stopPropagation(); endParty(p); }}
+                          className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                          aria-label={`End party ${p.title}`}
+                        >
+                          {endingId === p.id ? "Ending..." : "End"}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </motion.div>
-              ))}
+                );
+              })}
             </div>
           )}
         </main>
