@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Users, Send, X } from "lucide-react";
@@ -6,6 +6,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { normalizeStreamUrl } from "@/lib/streamLinks";
 import { toast } from "sonner";
 
@@ -24,6 +25,7 @@ const WatchPartyRoom = () => {
   const [party, setParty] = useState<any>(null);
   const [memberCount, setMemberCount] = useState(0);
   const [floating, setFloating] = useState<{ id: string; emoji: string; x: number }[]>([]);
+  const [embedLoaded, setEmbedLoaded] = useState(false);
   const channelRef = useRef<any>(null);
 
   useEffect(() => {
@@ -32,6 +34,11 @@ const WatchPartyRoom = () => {
       const { data } = await supabase.from("watch_parties").select("*").eq("id", id).maybeSingle();
       if (!data) {
         toast.error("Party not found");
+        navigate("/watch-parties");
+        return;
+      }
+      if (data.is_active === false) {
+        toast.error("This watch party has ended");
         navigate("/watch-parties");
         return;
       }
@@ -75,11 +82,38 @@ const WatchPartyRoom = () => {
 
   if (!party) return null;
 
-  const embedUrl = party.platform === "twitch"
-    ? `https://player.twitch.tv/?channel=${party.stream_url.split("/").filter(Boolean).pop()}&parent=${window.location.hostname}&muted=true`
-    : null;
-
   const externalUrl = normalizeStreamUrl(party.platform, party.stream_url) || party.stream_url;
+
+  const embedUrl = (() => {
+    const url = party.stream_url || "";
+    const handleOrPath = url.split("/").filter(Boolean).pop() || "";
+    const parent = window.location.hostname;
+
+    if (party.platform === "twitch") {
+      const channel = handleOrPath.replace(/^@/, "");
+      // Twitch requires parent for every parent domain; pass the current host.
+      return `https://player.twitch.tv/?channel=${encodeURIComponent(channel)}&parent=${parent}&muted=true&autoplay=true`;
+    }
+    if (party.platform === "kick") {
+      const channel = handleOrPath.replace(/^@/, "");
+      return `https://player.kick.com/${encodeURIComponent(channel)}?muted=true&autoplay=true`;
+    }
+    if (party.platform === "youtube") {
+      // Try to extract a video id from common YouTube URL forms
+      const m =
+        url.match(/(?:youtu\.be\/|v=|\/embed\/|\/live\/)([A-Za-z0-9_-]{11})/) ||
+        url.match(/^([A-Za-z0-9_-]{11})$/);
+      if (m) {
+        return `https://www.youtube.com/embed/${m[1]}?autoplay=1&mute=1`;
+      }
+      // Channel live fallback
+      const channel = handleOrPath.replace(/^@/, "");
+      if (channel) {
+        return `https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(channel)}&autoplay=1&mute=1`;
+      }
+    }
+    return null;
+  })();
 
   return (
     <AppLayout showBottomNav={false}>
@@ -94,9 +128,21 @@ const WatchPartyRoom = () => {
           </div>
         </header>
 
-        <div className="relative bg-black aspect-video w-full">
+        <div className="relative bg-black aspect-video w-full max-w-5xl mx-auto">
           {embedUrl ? (
-            <iframe src={embedUrl} className="w-full h-full" allowFullScreen title="Stream" />
+            <>
+              {!embedLoaded && (
+                <Skeleton className="absolute inset-0 w-full h-full bg-muted/40" />
+              )}
+              <iframe
+                src={embedUrl}
+                className="w-full h-full"
+                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                allowFullScreen
+                onLoad={() => setEmbedLoaded(true)}
+                title="Stream"
+              />
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center p-4">
               <p className="text-white mb-3">Open the stream in a new tab to watch with the party</p>
