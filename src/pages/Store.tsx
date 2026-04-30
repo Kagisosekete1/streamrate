@@ -278,6 +278,7 @@ const ListProductModal = ({
   onSubmit: (form: { name: string; price: string; description: string; imageFiles: File[]; external_url: string; category: string }) => void;
   isSubmitting: boolean;
 }) => {
+  const { toast } = useToast();
   const [form, setForm] = useState({
     name: "",
     price: "",
@@ -293,13 +294,53 @@ const ListProductModal = ({
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
+    const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    const MAX_BYTES = 10 * 1024 * 1024; // 10MB
+
+    const valid: File[] = [];
+    const invalid: string[] = [];
+    const tooLarge: string[] = [];
+
+    for (const f of files) {
+      const isImage = f.type.startsWith("image/") && (ALLOWED.includes(f.type) || /\.(jpe?g|png|webp|gif)$/i.test(f.name));
+      if (!isImage) {
+        invalid.push(f.name);
+        continue;
+      }
+      if (f.size > MAX_BYTES) {
+        tooLarge.push(f.name);
+        continue;
+      }
+      valid.push(f);
+    }
+
+    if (invalid.length) {
+      toast({
+        title: "Only image files are allowed",
+        description: `Skipped: ${invalid.join(", ")}. Use JPG, PNG, WEBP or GIF.`,
+        variant: "destructive",
+      });
+    }
+    if (tooLarge.length) {
+      toast({
+        title: "Image too large",
+        description: `${tooLarge.join(", ")} exceeds 10MB.`,
+        variant: "destructive",
+      });
+    }
+
+    if (valid.length === 0) {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     const remaining = 5 - imageFiles.length;
-    const toAdd = files.slice(0, remaining);
-    
-    const newPreviews = toAdd.map(f => URL.createObjectURL(f));
-    setImageFiles(prev => [...prev, ...toAdd]);
-    setImagePreviews(prev => [...prev, ...newPreviews]);
-    
+    const toAdd = valid.slice(0, remaining);
+
+    const newPreviews = toAdd.map((f) => URL.createObjectURL(f));
+    setImageFiles((prev) => [...prev, ...toAdd]);
+    setImagePreviews((prev) => [...prev, ...newPreviews]);
+
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
