@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Users, Plus, Tv, Radio, Search, X, Flame } from "lucide-react";
+import { Users, Plus, Tv, Radio, Search, X, Flame, TrendingUp, Clock } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 interface Party {
@@ -39,6 +40,7 @@ const WatchParties = () => {
   const [streamUrl, setStreamUrl] = useState("");
   const [search, setSearch] = useState("");
   const [endingId, setEndingId] = useState<string | null>(null);
+  const [sortMode, setSortMode] = useState<"trending" | "newest">("trending");
 
   const fetchParties = async () => {
     setLoading(true);
@@ -68,12 +70,6 @@ const WatchParties = () => {
           };
         })
       );
-      // Sort: trending (most members) first, then newest
-      enriched.sort((a, b) => {
-        const m = (b.member_count || 0) - (a.member_count || 0);
-        if (m !== 0) return m;
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      });
       setParties(enriched);
     }
     setLoading(false);
@@ -103,13 +99,39 @@ const WatchParties = () => {
 
   const filteredParties = (() => {
     const q = search.trim().toLowerCase();
-    if (!q) return parties;
-    return parties.filter(
-      (p) =>
-        (p.host_username || "").toLowerCase().includes(q) ||
-        (p.host_name || "").toLowerCase().includes(q) ||
-        p.title.toLowerCase().includes(q)
-    );
+    let list = parties;
+    if (q) {
+      list = parties.filter((p) => {
+        const username = (p.host_username || "").toLowerCase();
+        const name = (p.host_name || "").toLowerCase();
+        const title = p.title.toLowerCase();
+        // case-insensitive partial match on username/name/title + exact title match
+        return (
+          username.includes(q) ||
+          name.includes(q) ||
+          title.includes(q) ||
+          title === q
+        );
+      });
+    }
+    // Always keep trending (highest member_count) at the top, then apply chosen sort
+    const sorted = [...list].sort((a, b) => {
+      if (sortMode === "trending") {
+        const m = (b.member_count || 0) - (a.member_count || 0);
+        if (m !== 0) return m;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+      // Newest mode: still pin the most-trending party (>=3 members) on top
+      const aTrend = (a.member_count || 0) >= 3;
+      const bTrend = (b.member_count || 0) >= 3;
+      if (aTrend !== bTrend) return aTrend ? -1 : 1;
+      if (aTrend && bTrend) {
+        const m = (b.member_count || 0) - (a.member_count || 0);
+        if (m !== 0) return m;
+      }
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+    return sorted;
   })();
 
   const createParty = async () => {
@@ -185,6 +207,32 @@ const WatchParties = () => {
           </div>
         </header>
         <main className="px-4 py-4">
+          {/* Sort controls */}
+          <div className="flex items-center gap-2 mb-3" role="group" aria-label="Sort parties">
+            <button
+              onClick={() => setSortMode("trending")}
+              aria-pressed={sortMode === "trending"}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                sortMode === "trending"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <TrendingUp className="w-3.5 h-3.5" /> Trending
+            </button>
+            <button
+              onClick={() => setSortMode("newest")}
+              aria-pressed={sortMode === "newest"}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                sortMode === "newest"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5" /> Newest
+            </button>
+          </div>
+
           {/* Search */}
           <div className="relative mb-4">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
@@ -207,7 +255,19 @@ const WatchParties = () => {
           </div>
 
           {loading ? (
-            <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-24 bg-secondary rounded-xl animate-pulse" />)}</div>
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="bg-card rounded-xl p-4 border border-border/50">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-3/5" />
+                      <Skeleton className="h-3 w-2/5" />
+                    </div>
+                    <Skeleton className="h-6 w-10 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : filteredParties.length === 0 ? (
             <div className="flex flex-col items-center py-20 text-center">
               <Tv className="w-12 h-12 text-muted-foreground mb-3" />
@@ -219,27 +279,46 @@ const WatchParties = () => {
               {filteredParties.map((p, i) => {
                 const isHost = user?.id === p.host_id;
                 const isTrending = i === 0 && (p.member_count || 0) >= 3;
+                const isClosed = p.is_active === false;
                 return (
                 <motion.div
                   key={p.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.04 }}
-                  className={`bg-card rounded-xl p-4 border cursor-pointer hover:border-primary/40 transition-colors ${
-                    isTrending ? "border-orange-500/40 bg-gradient-to-br from-orange-500/5 to-card" : "border-border/50"
+                  className={`bg-card rounded-xl p-4 border transition-colors ${
+                    isClosed
+                      ? "border-border/30 opacity-60 cursor-not-allowed"
+                      : "cursor-pointer hover:border-primary/40 " +
+                        (isTrending
+                          ? "border-orange-500/40 bg-gradient-to-br from-orange-500/5 to-card"
+                          : "border-border/50")
                   }`}
-                  onClick={() => navigate(`/watch-party/${p.id}`)}
+                  onClick={() => {
+                    if (isClosed) {
+                      toast.error("This party has ended");
+                      return;
+                    }
+                    navigate(`/watch-party/${p.id}`);
+                  }}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        {isTrending ? (
+                        {isClosed ? (
+                          <X className="w-4 h-4 text-muted-foreground" aria-label="Ended" />
+                        ) : isTrending ? (
                           <Flame className="w-4 h-4 text-orange-500" aria-label="Trending" />
                         ) : (
                           <Radio className="w-4 h-4 text-red-500 animate-pulse" />
                         )}
                         <h3 className="font-semibold truncate">{p.title}</h3>
-                        {isTrending && (
+                        {isClosed && (
+                          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                            Ended
+                          </span>
+                        )}
+                        {!isClosed && isTrending && (
                           <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-500">
                             Trending
                           </span>
@@ -254,6 +333,29 @@ const WatchParties = () => {
                         <Users className="w-3.5 h-3.5" />
                         {p.member_count}
                       </div>
+                      {!isClosed && !isHost && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="h-7 px-2 text-xs"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/watch-party/${p.id}`); }}
+                          aria-label={`Join party ${p.title}`}
+                        >
+                          Join
+                        </Button>
+                      )}
+                      {isClosed && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled
+                          className="h-7 px-2 text-xs"
+                          onClick={(e) => { e.stopPropagation(); toast.error("This party has ended"); }}
+                          aria-label={`Party ${p.title} has ended`}
+                        >
+                          Ended
+                        </Button>
+                      )}
                       {isHost && (
                         <Button
                           variant="ghost"
