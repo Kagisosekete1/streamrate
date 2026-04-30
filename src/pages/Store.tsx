@@ -8,6 +8,7 @@ import {
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,20 +38,26 @@ const PREMIUM_PAYPAL = "https://www.paypal.com/ncp/payment/83TQ3PBLJFM9W";
 // --- Image Carousel Component ---
 const ImageCarousel = ({ images, name }: { images: string[]; name: string }) => {
   const [current, setCurrent] = useState(0);
+  const [loaded, setLoaded] = useState(false);
   const FALLBACK = "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&h=400&fit=crop";
   const validImages = images.filter((u) => typeof u === "string" && u.trim().length > 0);
   const allImages = validImages.length > 0 ? validImages : [FALLBACK];
 
   return (
     <div className="relative w-full aspect-square bg-secondary overflow-hidden group">
+      {!loaded && (
+        <Skeleton className="absolute inset-0 w-full h-full bg-muted/50" />
+      )}
       <img
         src={allImages[current]}
         alt={`${name} - ${current + 1}`}
-        className="w-full h-full object-cover transition-transform"
+        className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
         loading="lazy"
+        onLoad={() => setLoaded(true)}
         onError={(e) => {
           const img = e.currentTarget;
           if (img.src !== FALLBACK) img.src = FALLBACK;
+          setLoaded(true);
         }}
       />
       {allImages.length > 1 && (
