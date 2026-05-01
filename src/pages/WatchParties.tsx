@@ -13,6 +13,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { validateStreamUrl, StreamPlatform } from "@/lib/streamLinks";
+
+const SORT_STORAGE_KEY = "wp:sortMode";
+const PAGE_SIZE = 8;
 
 interface Party {
   id: string;
@@ -40,7 +44,24 @@ const WatchParties = () => {
   const [streamUrl, setStreamUrl] = useState("");
   const [search, setSearch] = useState("");
   const [endingId, setEndingId] = useState<string | null>(null);
-  const [sortMode, setSortMode] = useState<"trending" | "newest">("trending");
+  const [sortMode, setSortMode] = useState<"trending" | "newest">(() => {
+    if (typeof window === "undefined") return "trending";
+    const stored = window.localStorage.getItem(SORT_STORAGE_KEY);
+    return stored === "newest" ? "newest" : "trending";
+  });
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [urlError, setUrlError] = useState<string | null>(null);
+
+  // Persist sort across reloads / navigation
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(SORT_STORAGE_KEY, sortMode);
+  }, [sortMode]);
+
+  // Reset pagination when the filtered list changes shape
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [search, sortMode]);
 
   const fetchParties = async () => {
     setLoading(true);
@@ -143,9 +164,16 @@ const WatchParties = () => {
       toast.error("Title and stream URL required");
       return;
     }
+    const validated = validateStreamUrl(platform as StreamPlatform, streamUrl);
+    if (!validated.ok) {
+      setUrlError(validated.error);
+      toast.error(validated.error);
+      return;
+    }
+    setUrlError(null);
     const { data, error } = await supabase
       .from("watch_parties")
-      .insert({ host_id: user.id, title: title.trim(), platform, stream_url: streamUrl.trim() })
+      .insert({ host_id: user.id, title: title.trim(), platform, stream_url: validated.url })
       .select()
       .single();
     if (error || !data) {
