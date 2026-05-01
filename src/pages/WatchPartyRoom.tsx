@@ -7,7 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { normalizeStreamUrl } from "@/lib/streamLinks";
+import { normalizeStreamUrl, validateStreamUrl, StreamPlatform } from "@/lib/streamLinks";
+import { WatchPartyComments } from "@/components/WatchPartyComments";
 import { toast } from "sonner";
 
 const REACTIONS = ["🔥", "😂", "💯", "🎮", "👏", "❤️", "😱", "🏆"];
@@ -82,35 +83,31 @@ const WatchPartyRoom = () => {
 
   if (!party) return null;
 
-  const externalUrl = normalizeStreamUrl(party.platform, party.stream_url) || party.stream_url;
+  // Validate + normalize once so embeds are reliable on laptops too.
+  const platform = party.platform as StreamPlatform;
+  const validated = validateStreamUrl(platform, party.stream_url);
+  const canonicalUrl = validated.ok ? validated.url : normalizeStreamUrl(platform, party.stream_url) || party.stream_url;
+  const externalUrl = canonicalUrl;
 
   const embedUrl = (() => {
-    const url = party.stream_url || "";
-    const handleOrPath = url.split("/").filter(Boolean).pop() || "";
+    const url = canonicalUrl;
     const parent = window.location.hostname;
 
-    if (party.platform === "twitch") {
-      const channel = handleOrPath.replace(/^@/, "");
-      // Twitch requires parent for every parent domain; pass the current host.
+    if (platform === "twitch") {
+      const channel = url.split("/").filter(Boolean).pop()?.replace(/^@/, "") || "";
+      if (!channel) return null;
       return `https://player.twitch.tv/?channel=${encodeURIComponent(channel)}&parent=${parent}&muted=true&autoplay=true`;
     }
-    if (party.platform === "kick") {
-      const channel = handleOrPath.replace(/^@/, "");
+    if (platform === "kick") {
+      const channel = url.split("/").filter(Boolean).pop()?.replace(/^@/, "") || "";
+      if (!channel) return null;
       return `https://player.kick.com/${encodeURIComponent(channel)}?muted=true&autoplay=true`;
     }
-    if (party.platform === "youtube") {
-      // Try to extract a video id from common YouTube URL forms
-      const m =
-        url.match(/(?:youtu\.be\/|v=|\/embed\/|\/live\/)([A-Za-z0-9_-]{11})/) ||
-        url.match(/^([A-Za-z0-9_-]{11})$/);
-      if (m) {
-        return `https://www.youtube.com/embed/${m[1]}?autoplay=1&mute=1`;
-      }
-      // Channel live fallback
-      const channel = handleOrPath.replace(/^@/, "");
-      if (channel) {
-        return `https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(channel)}&autoplay=1&mute=1`;
-      }
+    if (platform === "youtube") {
+      const m = url.match(/(?:youtu\.be\/|v=|\/embed\/|\/live\/)([A-Za-z0-9_-]{11})/);
+      if (m) return `https://www.youtube.com/embed/${m[1]}?autoplay=1&mute=1`;
+      const handle = url.split("/").filter(Boolean).pop()?.replace(/^@/, "") || "";
+      if (handle) return `https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(handle)}&autoplay=1&mute=1`;
     }
     return null;
   })();
@@ -183,6 +180,8 @@ const WatchPartyRoom = () => {
             ))}
           </div>
         </div>
+
+        {id && <WatchPartyComments partyId={id} />}
       </div>
     </AppLayout>
   );
