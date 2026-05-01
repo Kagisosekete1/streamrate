@@ -316,7 +316,7 @@ const WatchParties = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredParties.map((p, i) => {
+              {filteredParties.slice(0, visibleCount).map((p, i) => {
                 const isHost = user?.id === p.host_id;
                 const isTrending = i === 0 && (p.member_count || 0) >= 3;
                 const isClosed = p.is_active === false;
@@ -413,6 +413,21 @@ const WatchParties = () => {
                 </motion.div>
                 );
               })}
+              {visibleCount < filteredParties.length && (
+                <div className="pt-2 flex flex-col items-center gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    Showing {visibleCount} of {filteredParties.length}
+                  </p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                    aria-label="Load more parties"
+                  >
+                    Load more
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </main>
