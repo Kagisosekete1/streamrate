@@ -13,14 +13,18 @@ interface ShareMenuProps {
   postId: string;
   title?: string;
   imageUrl?: string;
+  authorUsername?: string | null;
+  authorName?: string | null;
 }
 
-export const ShareMenu = ({ postId, title = "Check out this post", imageUrl }: ShareMenuProps) => {
+export const ShareMenu = ({ postId, title = "Check out this post", imageUrl, authorUsername, authorName }: ShareMenuProps) => {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
-  
+
   const shareUrl = `${window.location.origin}/post/${postId}`;
-  const shareText = `${title} - StreamRate`;
+  const handle = authorUsername ? `@${authorUsername}` : authorName || "";
+  const attribution = handle ? ` by ${handle}` : "";
+  const shareText = `${title}${attribution} – StreamRate`;
 
   const handleCopyLink = async (e: React.MouseEvent) => {
     e.stopPropagation();

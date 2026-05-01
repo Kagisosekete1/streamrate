@@ -288,6 +288,7 @@ const ListProductModal = ({
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [rejectedFiles, setRejectedFiles] = useState<{ name: string; reason: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -298,33 +299,27 @@ const ListProductModal = ({
     const MAX_BYTES = 10 * 1024 * 1024; // 10MB
 
     const valid: File[] = [];
-    const invalid: string[] = [];
-    const tooLarge: string[] = [];
+    const rejected: { name: string; reason: string }[] = [];
 
     for (const f of files) {
       const isImage = f.type.startsWith("image/") && (ALLOWED.includes(f.type) || /\.(jpe?g|png|webp|gif)$/i.test(f.name));
       if (!isImage) {
-        invalid.push(f.name);
+        rejected.push({ name: f.name, reason: "Not an image (use JPG, PNG, WEBP or GIF)" });
         continue;
       }
       if (f.size > MAX_BYTES) {
-        tooLarge.push(f.name);
+        const mb = (f.size / 1024 / 1024).toFixed(1);
+        rejected.push({ name: f.name, reason: `Too large (${mb} MB, max 10 MB)` });
         continue;
       }
       valid.push(f);
     }
 
-    if (invalid.length) {
+    setRejectedFiles(rejected);
+    if (rejected.length) {
       toast({
-        title: "Only image files are allowed",
-        description: `Skipped: ${invalid.join(", ")}. Use JPG, PNG, WEBP or GIF.`,
-        variant: "destructive",
-      });
-    }
-    if (tooLarge.length) {
-      toast({
-        title: "Image too large",
-        description: `${tooLarge.join(", ")} exceeds 10MB.`,
+        title: rejected.length === 1 ? "1 file couldn't be added" : `${rejected.length} files couldn't be added`,
+        description: "See the details below each thumbnail.",
         variant: "destructive",
       });
     }
@@ -427,6 +422,30 @@ const ListProductModal = ({
               className="hidden"
             />
             <p className="text-xs text-muted-foreground">Upload product photos. Buyers will swipe through them.</p>
+            {rejectedFiles.length > 0 && (
+              <div className="mt-2 rounded-lg border border-destructive/30 bg-destructive/5 p-2 space-y-1">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-semibold text-destructive uppercase tracking-wide">
+                    Skipped files
+                  </p>
+                  <button
+                    onClick={() => setRejectedFiles([])}
+                    className="text-[11px] text-muted-foreground hover:text-foreground"
+                    aria-label="Dismiss skipped files"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+                <ul className="space-y-0.5">
+                  {rejectedFiles.map((r, i) => (
+                    <li key={i} className="text-[11px] text-destructive flex gap-1">
+                      <span className="font-medium truncate max-w-[140px]">{r.name}</span>
+                      <span className="text-muted-foreground">— {r.reason}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           <div>

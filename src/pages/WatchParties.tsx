@@ -13,6 +13,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { validateStreamUrl, StreamPlatform } from "@/lib/streamLinks";
+
+const SORT_STORAGE_KEY = "wp:sortMode";
+const PAGE_SIZE = 8;
 
 interface Party {
   id: string;
@@ -40,7 +44,24 @@ const WatchParties = () => {
   const [streamUrl, setStreamUrl] = useState("");
   const [search, setSearch] = useState("");
   const [endingId, setEndingId] = useState<string | null>(null);
-  const [sortMode, setSortMode] = useState<"trending" | "newest">("trending");
+  const [sortMode, setSortMode] = useState<"trending" | "newest">(() => {
+    if (typeof window === "undefined") return "trending";
+    const stored = window.localStorage.getItem(SORT_STORAGE_KEY);
+    return stored === "newest" ? "newest" : "trending";
+  });
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [urlError, setUrlError] = useState<string | null>(null);
+
+  // Persist sort across reloads / navigation
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(SORT_STORAGE_KEY, sortMode);
+  }, [sortMode]);
+
+  // Reset pagination when the filtered list changes shape
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [search, sortMode]);
 
   const fetchParties = async () => {
     setLoading(true);
@@ -143,9 +164,17 @@ const WatchParties = () => {
       toast.error("Title and stream URL required");
       return;
     }
+    const validated = validateStreamUrl(platform as StreamPlatform, streamUrl);
+    if (validated.ok !== true) {
+      const msg = validated.error;
+      setUrlError(msg);
+      toast.error(msg);
+      return;
+    }
+    setUrlError(null);
     const { data, error } = await supabase
       .from("watch_parties")
-      .insert({ host_id: user.id, title: title.trim(), platform, stream_url: streamUrl.trim() })
+      .insert({ host_id: user.id, title: title.trim(), platform, stream_url: validated.url })
       .select()
       .single();
     if (error || !data) {
@@ -198,7 +227,18 @@ const WatchParties = () => {
                   </div>
                   <div>
                     <Label>Stream URL or Channel</Label>
-                    <Input value={streamUrl} onChange={(e) => setStreamUrl(e.target.value)} placeholder="https://twitch.tv/channel" />
+                    <Input
+                      value={streamUrl}
+                      onChange={(e) => { setStreamUrl(e.target.value); if (urlError) setUrlError(null); }}
+                      placeholder="https://twitch.tv/channel"
+                      aria-invalid={!!urlError}
+                    />
+                    {urlError && (
+                      <p className="text-xs text-destructive mt-1" role="alert">{urlError}</p>
+                    )}
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Accepts twitch.tv, kick.com, or youtube.com URLs (or just the channel name).
+                    </p>
                   </div>
                   <Button onClick={createParty} className="w-full">Start Party</Button>
                 </div>
@@ -276,7 +316,7 @@ const WatchParties = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredParties.map((p, i) => {
+              {filteredParties.slice(0, visibleCount).map((p, i) => {
                 const isHost = user?.id === p.host_id;
                 const isTrending = i === 0 && (p.member_count || 0) >= 3;
                 const isClosed = p.is_active === false;
@@ -373,6 +413,21 @@ const WatchParties = () => {
                 </motion.div>
                 );
               })}
+              {visibleCount < filteredParties.length && (
+                <div className="pt-2 flex flex-col items-center gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    Showing {visibleCount} of {filteredParties.length}
+                  </p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                    aria-label="Load more parties"
+                  >
+                    Load more
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </main>

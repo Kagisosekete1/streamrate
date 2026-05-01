@@ -461,7 +461,7 @@ export const PostCard = ({
                 )}
               </button>
             )}
-            <ShareMenu postId={id} title={content.slice(0, 50)} imageUrl={imageUrl} />
+            <ShareMenu postId={id} title={content.slice(0, 50)} imageUrl={imageUrl} authorUsername={streamerName} />
           </div>
         </div>
 

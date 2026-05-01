@@ -23,6 +23,7 @@ interface Post {
   profiles: {
     full_name: string | null;
     avatar_url: string | null;
+    username?: string | null;
   } | null;
 }
 
@@ -67,7 +68,7 @@ const PostDetail = () => {
 
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("full_name, avatar_url")
+      .select("full_name, avatar_url, username")
       .eq("id", postData.user_id)
       .maybeSingle();
 
@@ -281,7 +282,12 @@ const PostDetail = () => {
               <span className="text-sm font-medium">Comment</span>
             </button>
 
-            <ShareMenu postId={post.id} title={post.content.slice(0, 50)} />
+            <ShareMenu
+              postId={post.id}
+              title={post.content.slice(0, 50)}
+              authorUsername={post.profiles?.username || null}
+              authorName={post.profiles?.full_name || null}
+            />
           </div>
 
           {/* Divider */}
