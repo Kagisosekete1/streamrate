@@ -422,6 +422,30 @@ const ListProductModal = ({
               className="hidden"
             />
             <p className="text-xs text-muted-foreground">Upload product photos. Buyers will swipe through them.</p>
+            {rejectedFiles.length > 0 && (
+              <div className="mt-2 rounded-lg border border-destructive/30 bg-destructive/5 p-2 space-y-1">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-semibold text-destructive uppercase tracking-wide">
+                    Skipped files
+                  </p>
+                  <button
+                    onClick={() => setRejectedFiles([])}
+                    className="text-[11px] text-muted-foreground hover:text-foreground"
+                    aria-label="Dismiss skipped files"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+                <ul className="space-y-0.5">
+                  {rejectedFiles.map((r, i) => (
+                    <li key={i} className="text-[11px] text-destructive flex gap-1">
+                      <span className="font-medium truncate max-w-[140px]">{r.name}</span>
+                      <span className="text-muted-foreground">— {r.reason}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           <div>
