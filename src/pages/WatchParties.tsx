@@ -227,7 +227,18 @@ const WatchParties = () => {
                   </div>
                   <div>
                     <Label>Stream URL or Channel</Label>
-                    <Input value={streamUrl} onChange={(e) => setStreamUrl(e.target.value)} placeholder="https://twitch.tv/channel" />
+                    <Input
+                      value={streamUrl}
+                      onChange={(e) => { setStreamUrl(e.target.value); if (urlError) setUrlError(null); }}
+                      placeholder="https://twitch.tv/channel"
+                      aria-invalid={!!urlError}
+                    />
+                    {urlError && (
+                      <p className="text-xs text-destructive mt-1" role="alert">{urlError}</p>
+                    )}
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Accepts twitch.tv, kick.com, or youtube.com URLs (or just the channel name).
+                    </p>
                   </div>
                   <Button onClick={createParty} className="w-full">Start Party</Button>
                 </div>
