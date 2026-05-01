@@ -165,9 +165,10 @@ const WatchParties = () => {
       return;
     }
     const validated = validateStreamUrl(platform as StreamPlatform, streamUrl);
-    if (!validated.ok) {
-      setUrlError(validated.error);
-      toast.error(validated.error);
+    if (validated.ok !== true) {
+      const msg = validated.error;
+      setUrlError(msg);
+      toast.error(msg);
       return;
     }
     setUrlError(null);
