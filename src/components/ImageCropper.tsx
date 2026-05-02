@@ -131,30 +131,33 @@ export const ImageCropper = ({
             </button>
           </div>
 
-          <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
-            <ReactCrop
-              crop={crop}
-              onChange={(_, percentCrop) => setCrop(percentCrop)}
-              onComplete={(c) => setCompletedCrop(c)}
-              aspect={aspectRatio}
-              className="max-h-full"
-            >
-              <img
-                ref={imgRef}
-                src={imageSrc}
-                alt="Crop preview"
-                onLoad={onImageLoad}
-                className="max-h-[50vh] max-w-full object-contain"
-                style={{
-                  transform: `scale(${zoom}) rotate(${rotation}deg)`,
-                  transition: "transform 0.2s ease",
-                }}
-              />
-            </ReactCrop>
+          <div className="flex-1 flex items-center justify-center p-4 overflow-auto">
+            <div className="w-full max-w-[min(90vw,720px)] flex items-center justify-center">
+              <ReactCrop
+                crop={crop}
+                onChange={(_, percentCrop) => setCrop(percentCrop)}
+                onComplete={(c) => setCompletedCrop(c)}
+                aspect={aspectRatio}
+                className="max-h-full"
+              >
+                <img
+                  ref={imgRef}
+                  src={imageSrc}
+                  alt="Crop preview"
+                  onLoad={onImageLoad}
+                  className="max-h-[60vh] md:max-h-[70vh] max-w-full w-auto object-contain select-none"
+                  draggable={false}
+                  style={{
+                    transform: `scale(${zoom}) rotate(${rotation}deg)`,
+                    transition: "transform 0.2s ease",
+                  }}
+                />
+              </ReactCrop>
+            </div>
           </div>
 
           {/* Zoom & Rotate Controls */}
-          <div className="px-4 py-3 border-t border-border space-y-3">
+          <div className="px-4 py-3 border-t border-border space-y-3 bg-background">
             <div className="flex items-center gap-3">
               <ZoomOut className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <Slider
@@ -179,15 +182,18 @@ export const ImageCropper = ({
             </div>
           </div>
 
-          <div className="p-4 border-t border-border">
+          <div
+            className="p-4 border-t border-border bg-background sticky bottom-0"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
+          >
             <Button
               variant="gaming"
               onClick={handleCropComplete}
-              className="w-full"
+              className="w-full h-12 text-base"
               disabled={!completedCrop}
             >
-              <Check className="w-4 h-4" />
-              Apply Crop
+              <Check className="w-5 h-5" />
+              Save & Apply
             </Button>
           </div>
         </motion.div>
