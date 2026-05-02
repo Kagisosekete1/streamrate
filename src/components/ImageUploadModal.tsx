@@ -1,7 +1,6 @@
-import * as React from "react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Save, Zap, Image as ImageIcon } from "lucide-react";
+import { X, Save, Zap, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { compressImage, formatFileSize } from "@/utils/imageCompression";
 
@@ -35,6 +34,13 @@ export const ImageUploadModal = ({
       handleCompress();
     }
   }, [isOpen, originalFile, useCompression]);
+
+  // Hide the mobile bottom nav while this modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.classList.add("hide-bottom-nav");
+    return () => document.body.classList.remove("hide-bottom-nav");
+  }, [isOpen]);
 
   const handleCompress = async () => {
     if (!originalFile) return;
@@ -75,7 +81,7 @@ export const ImageUploadModal = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+          className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
           onClick={onClose}
         >
           <motion.div
@@ -84,8 +90,8 @@ export const ImageUploadModal = ({
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md bg-card rounded-3xl p-6 border border-border shadow-2xl my-auto max-h-[calc(100dvh-2rem)] overflow-y-auto"
-            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.5rem + 5rem)" }}
+            className="w-full max-w-md bg-card rounded-3xl p-6 border border-border shadow-2xl my-auto max-h-[calc(100dvh-2rem)] overflow-y-auto relative"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)" }}
           >
             <div className="flex items-center justify-between mb-4">
               <button
@@ -170,9 +176,32 @@ export const ImageUploadModal = ({
               className="w-full h-12 text-base"
               disabled={isSaving || isCompressing}
             >
-              <Save className="w-5 h-5 mr-2" />
-              {isSaving ? "Saving..." : `Save ${title}`}
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Uploading…
+                </>
+              ) : isCompressing ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Preparing image…
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5 mr-2" />
+                  Save {title}
+                </>
+              )}
             </Button>
+
+            {/* Full-modal saving overlay */}
+            {isSaving && (
+              <div className="absolute inset-0 z-10 rounded-3xl bg-background/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <p className="text-sm font-medium text-foreground">Uploading your photo…</p>
+                <p className="text-xs text-muted-foreground">Please don't close this window</p>
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { motion, AnimatePresence } from "framer-motion";
@@ -112,6 +112,13 @@ export const ImageCropper = ({
     setRotation((prev) => (prev + 90) % 360);
   };
 
+  // Hide the mobile bottom nav while cropping so it never overlaps the crop UI
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.classList.add("hide-bottom-nav");
+    return () => document.body.classList.remove("hide-bottom-nav");
+  }, [isOpen]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -119,7 +126,7 @@ export const ImageCropper = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col"
+          className="fixed inset-0 z-[70] bg-background/95 backdrop-blur-sm flex flex-col"
         >
           <div className="flex items-center justify-between p-4 border-b border-border">
             <button onClick={onClose}>

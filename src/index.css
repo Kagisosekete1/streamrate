@@ -199,3 +199,8 @@
     -webkit-appearance: none !important;
   }
 }
+
+/* Hide the mobile bottom nav whenever a fullscreen modal/cropper requests it */
+body.hide-bottom-nav nav.mobile-bottom-nav {
+  display: none !important;
+}

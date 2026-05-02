@@ -63,7 +63,7 @@ export const BottomNav = () => {
   }, [location.pathname]);
 
   return (
-    <nav className="fixed bottom-4 left-4 right-4 z-50 md:hidden">
+    <nav className="mobile-bottom-nav fixed bottom-4 left-4 right-4 z-40 md:hidden">
       <div className="bg-background/95 backdrop-blur-lg border border-border rounded-2xl shadow-lg shadow-black/10">
         <div className="flex justify-around items-center h-14 max-w-lg mx-auto px-2">
           {navItems.map((item) => {
