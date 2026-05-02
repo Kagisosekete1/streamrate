@@ -74,7 +74,7 @@ export const ImageUploadModal = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
           onClick={onClose}
         >
           <motion.div
@@ -83,7 +83,8 @@ export const ImageUploadModal = ({
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md bg-card rounded-3xl p-6 border border-border shadow-2xl"
+            className="w-full max-w-md bg-card rounded-3xl p-6 border border-border shadow-2xl my-auto max-h-[calc(100dvh-2rem)] overflow-y-auto"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.5rem + 5rem)" }}
           >
             <div className="flex items-center justify-between mb-4">
               <button
@@ -165,10 +166,10 @@ export const ImageUploadModal = ({
             <Button
               variant="gaming"
               onClick={handleSave}
-              className="w-full"
+              className="w-full h-12 text-base"
               disabled={isSaving || isCompressing}
             >
-              <Save className="w-4 h-4 mr-2" />
+              <Save className="w-5 h-5 mr-2" />
               {isSaving ? "Saving..." : `Save ${title}`}
             </Button>
           </motion.div>
