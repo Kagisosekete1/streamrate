@@ -1631,14 +1631,91 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_public: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          country: string | null
+          created_at: string | null
+          discord_url: string | null
+          full_name: string | null
+          header_url: string | null
+          id: string | null
+          kick_url: string | null
+          last_seen: string | null
+          last_seen_visibility: string | null
+          profile_visibility: string | null
+          show_discord: boolean | null
+          show_kick: boolean | null
+          show_twitch: boolean | null
+          show_youtube_gaming: boolean | null
+          signup_number: number | null
+          twitch_url: string | null
+          updated_at: string | null
+          username: string | null
+          who_can_comment: string | null
+          youtube_gaming_url: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          country?: string | null
+          created_at?: string | null
+          discord_url?: string | null
+          full_name?: string | null
+          header_url?: string | null
+          id?: string | null
+          kick_url?: string | null
+          last_seen?: string | null
+          last_seen_visibility?: string | null
+          profile_visibility?: string | null
+          show_discord?: boolean | null
+          show_kick?: boolean | null
+          show_twitch?: boolean | null
+          show_youtube_gaming?: boolean | null
+          signup_number?: number | null
+          twitch_url?: string | null
+          updated_at?: string | null
+          username?: string | null
+          who_can_comment?: string | null
+          youtube_gaming_url?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          country?: string | null
+          created_at?: string | null
+          discord_url?: string | null
+          full_name?: string | null
+          header_url?: string | null
+          id?: string | null
+          kick_url?: string | null
+          last_seen?: string | null
+          last_seen_visibility?: string | null
+          profile_visibility?: string | null
+          show_discord?: boolean | null
+          show_kick?: boolean | null
+          show_twitch?: boolean | null
+          show_youtube_gaming?: boolean | null
+          signup_number?: number | null
+          twitch_url?: string | null
+          updated_at?: string | null
+          username?: string | null
+          who_can_comment?: string | null
+          youtube_gaming_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       calculate_level: { Args: { xp: number }; Returns: number }
+      get_my_email: { Args: never; Returns: string }
+      get_profile_visibility: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_who_can_comment: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
