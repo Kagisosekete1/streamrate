@@ -396,43 +396,89 @@ const Profile = () => {
   };
 
   const handleSaveProfilePicture = async (fileOrBlob: File | Blob) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "You're signed out",
+        description: "Please sign in again to update your profile picture.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate the file/blob before attempting upload
+    if (!fileOrBlob || fileOrBlob.size === 0) {
+      toast({
+        title: "Invalid image",
+        description: "The selected image is empty. Please pick another photo.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (fileOrBlob.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Image too large",
+        description: "Please choose an image under 10 MB.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsUploading(true);
     const fileName = `${user.id}/${Date.now()}.jpg`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(fileName, fileOrBlob);
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, fileOrBlob, {
+          contentType: "image/jpeg",
+          upsert: false,
+        });
 
-    if (uploadError) {
-      toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
-      setIsUploading(false);
-      return;
-    }
-
-    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(fileName);
-    const { error } = await updateProfile({ avatar_url: urlData.publicUrl });
-
-    if (error) {
-      toast({ title: "Failed to update avatar", variant: "destructive" });
-    } else {
-      toast({ title: "Profile picture saved!" });
-      
-      // Check if user has posts and ask if they want to update them
-      if (posts.length > 0) {
-        setNewAvatarUrl(urlData.publicUrl);
-        setShowUpdatePostsDialog(true);
+      if (uploadError) {
+        const msg = uploadError.message?.toLowerCase() || "";
+        let description = uploadError.message || "Please try again.";
+        if (msg.includes("row-level security") || msg.includes("not authorized")) {
+          description = "You don't have permission to upload. Please sign in again.";
+        } else if (msg.includes("network") || msg.includes("fetch")) {
+          description = "Network error. Check your connection and try again.";
+        }
+        toast({ title: "Upload failed", description, variant: "destructive" });
+        setIsUploading(false);
+        return;
       }
+
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(fileName);
+      const { error } = await updateProfile({ avatar_url: urlData.publicUrl });
+
+      if (error) {
+        toast({
+          title: "Couldn't save profile picture",
+          description: error.message || "We uploaded your image but failed to update your profile. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Profile picture saved!" });
+        if (posts.length > 0) {
+          setNewAvatarUrl(urlData.publicUrl);
+          setShowUpdatePostsDialog(true);
+        }
+      }
+    } catch (err) {
+      console.error("Avatar upload failed:", err);
+      toast({
+        title: "Something went wrong",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      setShowImagePreview(false);
+      if (previewImageSrc) {
+        URL.revokeObjectURL(previewImageSrc);
+      }
+      setPreviewImageSrc(null);
+      setSelectedFile(null);
     }
-    
-    setIsUploading(false);
-    setShowImagePreview(false);
-    if (previewImageSrc) {
-      URL.revokeObjectURL(previewImageSrc);
-    }
-    setPreviewImageSrc(null);
-    setSelectedFile(null);
   };
 
   const handleUpdatePostsWithNewAvatar = async () => {
