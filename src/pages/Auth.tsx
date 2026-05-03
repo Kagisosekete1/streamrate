@@ -34,6 +34,15 @@ const Auth = () => {
     }
   }, [user, authLoading, navigate]);
 
+  // Capture referral code from URL (?ref=CODE) for later redemption
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref) {
+      try { localStorage.setItem("pending_referral_code", ref.trim()); } catch {}
+    }
+  }, []);
+
   const handleGoogleSignIn = async () => {
     const { error } = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
@@ -110,6 +119,23 @@ const Auth = () => {
     setShowVerifyEmail(true);
     setIsSubmitting(false);
   };
+
+  // After a user signs in (post-verification), try to redeem any pending referral
+  useEffect(() => {
+    if (!user) return;
+    let pending: string | null = null;
+    try { pending = localStorage.getItem("pending_referral_code"); } catch {}
+    if (!pending) return;
+    import("@/integrations/supabase/client").then(({ supabase }) => {
+      supabase.rpc("redeem_referral", { _code: pending! }).then(({ data }) => {
+        try { localStorage.removeItem("pending_referral_code"); } catch {}
+        const r = data as any;
+        if (r?.ok && r.reward_granted) {
+          toast({ title: "Referral applied!", description: "Your friend earned a Blue badge for a year." });
+        }
+      });
+    });
+  }, [user, toast]);
 
   if (authLoading) {
     return (
