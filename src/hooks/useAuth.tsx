@@ -13,6 +13,9 @@ interface Profile {
   avatar_url: string | null;
   bio: string | null;
   country: string | null;
+  referral_code?: string | null;
+  manual_verification_badge?: string | null;
+  manual_verification_expires_at?: string | null;
 }
 
 interface AuthContextType {
