@@ -369,6 +369,29 @@ const Profile = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file type — only real image files (not videos, PDFs, etc.)
+    const isImage = file.type.startsWith("image/") &&
+      ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/heic"].includes(file.type);
+    if (!isImage) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file (JPG, PNG, WebP, or GIF).",
+        variant: "destructive",
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    // Validate file size (10 MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Image too large",
+        description: "Please choose an image under 10 MB.",
+        variant: "destructive",
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     // Create preview URL and open cropper first
     const previewUrl = URL.createObjectURL(file);
     setPreviewImageSrc(previewUrl);
@@ -867,7 +890,13 @@ const Profile = () => {
             <div className="flex items-center gap-2 mt-4">
               <h1 className="text-xl font-bold text-foreground inline-flex items-center gap-1">
                 {profile.username || "Anonymous"}
-                <VerificationBadge email={profile.email} signupNumber={(profile as any).signup_number} className="w-5 h-5" />
+                <VerificationBadge
+                  email={profile.email}
+                  signupNumber={(profile as any).signup_number}
+                  manualBadge={(profile as any).manual_verification_badge}
+                  manualExpiresAt={(profile as any).manual_verification_expires_at}
+                  className="w-5 h-5"
+                />
               </h1>
               {(profile as any).signup_number && (
                 <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-xs font-bold">

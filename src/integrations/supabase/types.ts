@@ -654,10 +654,14 @@ export type Database = {
           last_seen: string | null
           last_seen_visibility: string | null
           looking_for_squad: boolean | null
+          manual_verification_badge: string | null
+          manual_verification_expires_at: string | null
+          manual_verification_reason: string | null
           playstyle: string | null
           profile_visibility: string
           qr_handle: string
           rank: string | null
+          referral_code: string | null
           region: string | null
           scheduled_deletion_at: string | null
           show_discord: boolean | null
@@ -689,10 +693,14 @@ export type Database = {
           last_seen?: string | null
           last_seen_visibility?: string | null
           looking_for_squad?: boolean | null
+          manual_verification_badge?: string | null
+          manual_verification_expires_at?: string | null
+          manual_verification_reason?: string | null
           playstyle?: string | null
           profile_visibility?: string
           qr_handle: string
           rank?: string | null
+          referral_code?: string | null
           region?: string | null
           scheduled_deletion_at?: string | null
           show_discord?: boolean | null
@@ -724,10 +732,14 @@ export type Database = {
           last_seen?: string | null
           last_seen_visibility?: string | null
           looking_for_squad?: boolean | null
+          manual_verification_badge?: string | null
+          manual_verification_expires_at?: string | null
+          manual_verification_reason?: string | null
           playstyle?: string | null
           profile_visibility?: string
           qr_handle?: string
           rank?: string | null
+          referral_code?: string | null
           region?: string | null
           scheduled_deletion_at?: string | null
           show_discord?: boolean | null
@@ -945,6 +957,36 @@ export type Database = {
         }
         Relationships: []
       }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          referee_id: string
+          referral_code: string
+          referrer_id: string
+          reward_expires_at: string | null
+          reward_granted: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referee_id: string
+          referral_code: string
+          referrer_id: string
+          reward_expires_at?: string | null
+          reward_granted?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referee_id?: string
+          referral_code?: string
+          referrer_id?: string
+          reward_expires_at?: string | null
+          reward_granted?: boolean
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           created_at: string
@@ -972,6 +1014,48 @@ export type Database = {
           reported_reel_id?: string | null
           reported_user_id?: string | null
           reporter_id?: string
+        }
+        Relationships: []
+      }
+      security_findings: {
+        Row: {
+          created_at: string
+          description: string
+          fixed_at: string | null
+          id: string
+          internal_id: string
+          notes: string | null
+          scanner: string
+          severity: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          fixed_at?: string | null
+          id?: string
+          internal_id: string
+          notes?: string | null
+          scanner: string
+          severity: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          fixed_at?: string | null
+          id?: string
+          internal_id?: string
+          notes?: string | null
+          scanner?: string
+          severity?: string
+          status?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1723,14 +1807,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_hashtag_use_count: {
+        Args: { _hashtag_id: string }
+        Returns: undefined
+      }
+      is_verified_seller: { Args: { _user_id: string }; Returns: boolean }
       normalize_qr_handle: {
         Args: { _fallback_id?: string; _value: string }
         Returns: string
       }
+      redeem_referral: { Args: { _code: string }; Returns: Json }
       xp_for_level: { Args: { lvl: number }; Returns: number }
     }
     Enums: {
-      app_role: "fan" | "streamer" | "seller"
+      app_role: "fan" | "streamer" | "seller" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1858,7 +1948,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["fan", "streamer", "seller"],
+      app_role: ["fan", "streamer", "seller", "admin"],
     },
   },
 } as const

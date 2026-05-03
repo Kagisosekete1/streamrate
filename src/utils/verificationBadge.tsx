@@ -1,38 +1,54 @@
 import React from "react";
 
-// Manual verification overrides (red/blue only)
+// Hardcoded manual verification overrides (legacy — kept for backwards compatibility)
 const VERIFIED_ACCOUNTS: Record<string, "red" | "blue"> = {
   "kgsinnocent@gmail.com": "red",
   "kagisosekete5@gmail.com": "blue",
 };
 
-// Gold verification is automatic for the first 100 signups
+export type BadgeColor = "red" | "blue" | "gold";
+
+// Gold = first 100 signups. Manual badge (from DB) overrides.
+// A manual badge with an expires_at in the past is ignored.
 export const getVerificationBadge = (
   email: string | null | undefined,
-  signupNumber?: number | null
-): "red" | "blue" | "gold" | null => {
-  if (!email) return null;
-  
-  // Check manual overrides first
-  const manual = VERIFIED_ACCOUNTS[email.toLowerCase()];
-  if (manual) return manual;
-  
-  // Auto-gold for first 100 signups
+  signupNumber?: number | null,
+  manualBadge?: string | null,
+  manualExpiresAt?: string | null
+): BadgeColor | null => {
+  // 1. Database-driven manual badge (e.g. earned via referral)
+  if (manualBadge && (manualBadge === "red" || manualBadge === "blue" || manualBadge === "gold")) {
+    if (!manualExpiresAt || new Date(manualExpiresAt).getTime() > Date.now()) {
+      return manualBadge as BadgeColor;
+    }
+  }
+
+  // 2. Legacy hardcoded overrides
+  if (email) {
+    const manual = VERIFIED_ACCOUNTS[email.toLowerCase()];
+    if (manual) return manual;
+  }
+
+  // 3. Auto-gold for first 100 signups
   if (signupNumber && signupNumber <= 100) return "gold";
-  
+
   return null;
 };
 
 export const VerificationBadge = ({
   email,
   signupNumber,
+  manualBadge,
+  manualExpiresAt,
   className = "w-4 h-4",
 }: {
-  email: string | null | undefined;
+  email?: string | null;
   signupNumber?: number | null;
+  manualBadge?: string | null;
+  manualExpiresAt?: string | null;
   className?: string;
 }) => {
-  const badge = getVerificationBadge(email, signupNumber);
+  const badge = getVerificationBadge(email, signupNumber, manualBadge, manualExpiresAt);
   if (!badge) return null;
 
   const colorMap = {
