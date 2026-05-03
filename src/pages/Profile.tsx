@@ -369,6 +369,29 @@ const Profile = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file type — only real image files (not videos, PDFs, etc.)
+    const isImage = file.type.startsWith("image/") &&
+      ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/heic"].includes(file.type);
+    if (!isImage) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file (JPG, PNG, WebP, or GIF).",
+        variant: "destructive",
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    // Validate file size (10 MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Image too large",
+        description: "Please choose an image under 10 MB.",
+        variant: "destructive",
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     // Create preview URL and open cropper first
     const previewUrl = URL.createObjectURL(file);
     setPreviewImageSrc(previewUrl);
