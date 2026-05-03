@@ -40,6 +40,8 @@ import WatchParties from "./pages/WatchParties";
 import WatchPartyRoom from "./pages/WatchPartyRoom";
 import SquadUp from "./pages/SquadUp";
 import Clips from "./pages/Clips";
+import Invite from "./pages/Invite";
+import SecurityFindings from "./pages/SecurityFindings";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -95,6 +97,8 @@ function AppContent() {
             <Route path="/watch-party/:id" element={<WatchPartyRoom />} />
             <Route path="/squad-up" element={<SquadUp />} />
             <Route path="/clips" element={<Clips />} />
+            <Route path="/invite" element={<Invite />} />
+            <Route path="/security/findings" element={<SecurityFindings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLockGate>
