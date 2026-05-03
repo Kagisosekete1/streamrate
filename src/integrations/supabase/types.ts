@@ -1730,7 +1730,7 @@ export type Database = {
       xp_for_level: { Args: { lvl: number }; Returns: number }
     }
     Enums: {
-      app_role: "fan" | "streamer" | "seller"
+      app_role: "fan" | "streamer" | "seller" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1858,7 +1858,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["fan", "streamer", "seller"],
+      app_role: ["fan", "streamer", "seller", "admin"],
     },
   },
 } as const
