@@ -1817,6 +1817,7 @@ export type Database = {
         Returns: string
       }
       redeem_referral: { Args: { _code: string }; Returns: Json }
+      verify_app_lock_pin: { Args: { _pin_hash: string }; Returns: boolean }
       xp_for_level: { Args: { lvl: number }; Returns: number }
     }
     Enums: {
