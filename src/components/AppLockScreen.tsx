@@ -28,17 +28,11 @@ export const AppLockScreen = ({ onUnlock }: AppLockScreenProps) => {
   };
 
   const verifyPin = async (enteredPin: string) => {
-    const { user } = (await supabase.auth.getUser()).data;
-    if (!user) return;
+    const { data, error } = await supabase.rpc("verify_app_lock_pin", {
+      _pin_hash: hashPin(enteredPin),
+    });
 
-    const { data } = await supabase
-      .from("app_lock_settings")
-      .select("pin_hash")
-      .eq("user_id", user.id)
-      .eq("is_enabled", true)
-      .maybeSingle();
-
-    if (data && data.pin_hash === hashPin(enteredPin)) {
+    if (!error && data === true) {
       sessionStorage.setItem("app_unlocked", "true");
       onUnlock();
     } else {
