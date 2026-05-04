@@ -1009,6 +1009,69 @@ const Profile = () => {
         </div>
       </section>
 
+      {/* Referral link - visible on desktop & mobile */}
+      {(profile as any)?.referral_code && (
+        <section className="px-4 pb-2">
+          <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+                <Gift className="w-4 h-4 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-foreground">Invite friends — earn a Blue Badge</h3>
+                <p className="text-xs text-muted-foreground">Share your link. One reward per year.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0 px-3 py-2 rounded-lg bg-muted/40 border border-border text-xs sm:text-sm font-mono text-foreground truncate">
+                {`${window.location.origin}/auth?ref=${(profile as any).referral_code}`}
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={async () => {
+                  const url = `${window.location.origin}/auth?ref=${(profile as any).referral_code}`;
+                  try {
+                    await navigator.clipboard.writeText(url);
+                    setReferralCopied(true);
+                    toast({ title: "Invite link copied!" });
+                    setTimeout(() => setReferralCopied(false), 2000);
+                  } catch {
+                    toast({ title: "Couldn't copy", variant: "destructive" });
+                  }
+                }}
+              >
+                {referralCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                <span className="hidden sm:inline ml-1">{referralCopied ? "Copied" : "Copy"}</span>
+              </Button>
+              <Button
+                variant="gaming"
+                size="sm"
+                onClick={async () => {
+                  const url = `${window.location.origin}/auth?ref=${(profile as any).referral_code}`;
+                  if (navigator.share) {
+                    try {
+                      await navigator.share({ title: "Join me on StreamRate", text: "Join StreamRate with my invite!", url });
+                    } catch {}
+                  } else {
+                    await navigator.clipboard.writeText(url);
+                    toast({ title: "Invite link copied!" });
+                  }
+                }}
+              >
+                <Share2 className="w-4 h-4" />
+                <span className="hidden sm:inline ml-1">Share</span>
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Code: <span className="font-mono font-semibold text-foreground">{(profile as any).referral_code}</span>
+              {" · "}
+              <button onClick={() => navigate("/invite")} className="underline hover:text-foreground">View referrals</button>
+            </p>
+          </div>
+        </section>
+      )}
+
       {/* Live Twitch Stream Preview */}
       <TwitchLiveEmbed
         twitchUrl={socialLinks.twitch_url}
