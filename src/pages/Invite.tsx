@@ -22,12 +22,24 @@ const Invite = () => {
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("referrals")
-      .select("*")
-      .eq("referrer_id", user.id)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => setHistory(data || []));
+    (async () => {
+      const { data: refs } = await supabase
+        .from("referrals")
+        .select("*")
+        .eq("referrer_id", user.id)
+        .order("created_at", { ascending: false });
+      const list = refs || [];
+      const refereeIds = Array.from(new Set(list.map((r: any) => r.referee_id))).filter(Boolean);
+      let profilesById: Record<string, any> = {};
+      if (refereeIds.length > 0) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id, username, full_name, avatar_url")
+          .in("id", refereeIds);
+        profilesById = Object.fromEntries((profs || []).map((p: any) => [p.id, p]));
+      }
+      setHistory(list.map((r: any) => ({ ...r, referee: profilesById[r.referee_id] || null })));
+    })();
   }, [user]);
 
   const handleCopy = async () => {
@@ -143,15 +155,44 @@ const Invite = () => {
           {history.length === 0 ? (
             <p className="text-sm text-muted-foreground">No referrals yet — share your link to get started.</p>
           ) : (
-            <ul className="space-y-2 text-sm">
-              {history.map((r) => (
-                <li key={r.id} className="flex items-center justify-between border-b border-border/50 pb-2 last:border-0">
-                  <span className="text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
-                  <span className={r.reward_granted ? "text-primary font-medium" : "text-muted-foreground"}>
-                    {r.reward_granted ? "Blue badge granted" : "No reward (yearly limit)"}
-                  </span>
-                </li>
-              ))}
+            <ul className="space-y-3 text-sm">
+              {history.map((r) => {
+                const referee = r.referee || {};
+                const name = referee.username || referee.full_name || "New member";
+                const avatar = referee.avatar_url;
+                return (
+                  <li
+                    key={r.id}
+                    className="flex items-center gap-3 border-b border-border/50 pb-3 last:border-0"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-muted overflow-hidden flex-shrink-0">
+                      {avatar ? (
+                        <img src={avatar} alt={name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs font-bold text-muted-foreground">
+                          {name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">@{name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Confirmed {new Date(r.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <span
+                      className={
+                        "text-xs px-2 py-1 rounded-full whitespace-nowrap " +
+                        (r.reward_granted
+                          ? "bg-primary/15 text-primary font-medium"
+                          : "bg-muted text-muted-foreground")
+                      }
+                    >
+                      {r.reward_granted ? "Blue badge" : "No reward"}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>
