@@ -108,6 +108,7 @@ const Profile = () => {
   const [isUpdatingPosts, setIsUpdatingPosts] = useState(false);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
+  const [referralCopied, setReferralCopied] = useState(false);
   const [qrHandleStatus, setQrHandleStatus] = useState<{ checking: boolean; available: boolean | null; reason: string | null; normalized: string }>({
     checking: false,
     available: null,
