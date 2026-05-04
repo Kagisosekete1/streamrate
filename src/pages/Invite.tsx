@@ -22,24 +22,24 @@ const Invite = () => {
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("referrals")
-      .select("*, referee:profiles!referrals_referee_id_fkey(id, username, full_name, avatar_url, created_at)")
-      .eq("referrer_id", user.id)
-      .order("created_at", { ascending: false })
-      .then(({ data, error }) => {
-        if (error) {
-          // Fallback without join (FK name may differ)
-          supabase
-            .from("referrals")
-            .select("*")
-            .eq("referrer_id", user.id)
-            .order("created_at", { ascending: false })
-            .then((r) => setHistory(r.data || []));
-          return;
-        }
-        setHistory(data || []);
-      });
+    (async () => {
+      const { data: refs } = await supabase
+        .from("referrals")
+        .select("*")
+        .eq("referrer_id", user.id)
+        .order("created_at", { ascending: false });
+      const list = refs || [];
+      const refereeIds = Array.from(new Set(list.map((r: any) => r.referee_id))).filter(Boolean);
+      let profilesById: Record<string, any> = {};
+      if (refereeIds.length > 0) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id, username, full_name, avatar_url")
+          .in("id", refereeIds);
+        profilesById = Object.fromEntries((profs || []).map((p: any) => [p.id, p]));
+      }
+      setHistory(list.map((r: any) => ({ ...r, referee: profilesById[r.referee_id] || null })));
+    })();
   }, [user]);
 
   const handleCopy = async () => {
