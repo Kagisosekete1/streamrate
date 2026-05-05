@@ -15,6 +15,7 @@ import {
   Bell,
   Settings as SettingsIcon,
   BarChart,
+  Sparkles,
 } from "lucide-react";
 import {
   Sheet,
@@ -27,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 
 const moreItems = [
+  { icon: Sparkles, label: "Hidden Stuff", path: "/hidden", color: "text-pink-500", bg: "bg-pink-500/10" },
   { icon: Tv, label: "Watch Parties", path: "/watch-parties", color: "text-purple-500", bg: "bg-purple-500/10" },
   { icon: Gamepad2, label: "Squad Up", path: "/squad-up", color: "text-blue-500", bg: "bg-blue-500/10" },
   { icon: Scissors, label: "Clips", path: "/clips", color: "text-orange-500", bg: "bg-orange-500/10" },
