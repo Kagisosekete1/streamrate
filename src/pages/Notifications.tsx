@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Bell, Users, FileText, Star, TrendingUp, Check, Eye, X, Gamepad2 } from "lucide-react";
+import { ChevronLeft, Bell, Users, FileText, Star, TrendingUp, Check, Eye, X, Gamepad2, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AppLayout } from "@/components/AppLayout";
@@ -27,7 +27,7 @@ interface Notification {
   };
 }
 
-type FilterType = "all" | "follows" | "posts" | "ratings" | "trending";
+type FilterType = "all" | "follows" | "posts" | "ratings" | "trending" | "referrals";
 
 const filterOptions: { value: FilterType; label: string; icon: React.ElementType }[] = [
   { value: "all", label: "All", icon: Bell },
@@ -35,6 +35,7 @@ const filterOptions: { value: FilterType; label: string; icon: React.ElementType
   { value: "posts", label: "Posts", icon: FileText },
   { value: "ratings", label: "Ratings", icon: Star },
   { value: "trending", label: "Trending", icon: TrendingUp },
+  { value: "referrals", label: "Referrals", icon: Gift },
 ];
 
 const Notifications = () => {
@@ -233,6 +234,8 @@ const Notifications = () => {
       case "party_join":
       case "poll_vote":
         return <Bell className="w-4 h-4 text-purple-400" />;
+      case "referral":
+        return <Gift className="w-4 h-4 text-pink-400" />;
       default:
         return <Bell className="w-4 h-4 text-primary" />;
     }
@@ -248,6 +251,7 @@ const Notifications = () => {
       if (activeFilter === "posts") return n.type === "new_post";
       if (activeFilter === "ratings") return n.type === "rating";
       if (activeFilter === "trending") return n.type === "trending";
+      if (activeFilter === "referrals") return n.type === "referral";
       return true;
     });
 
@@ -316,6 +320,7 @@ const Notifications = () => {
                     if (filter.value === "posts") return n.type === "new_post";
                     if (filter.value === "ratings") return n.type === "rating";
                     if (filter.value === "trending") return n.type === "trending";
+                    if (filter.value === "referrals") return n.type === "referral";
                     return false;
                   }).length;
 
