@@ -234,6 +234,8 @@ const Notifications = () => {
       case "party_join":
       case "poll_vote":
         return <Bell className="w-4 h-4 text-purple-400" />;
+      case "referral":
+        return <Gift className="w-4 h-4 text-pink-400" />;
       default:
         return <Bell className="w-4 h-4 text-primary" />;
     }
