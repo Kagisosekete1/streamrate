@@ -42,6 +42,7 @@ import SquadUp from "./pages/SquadUp";
 import Clips from "./pages/Clips";
 import Invite from "./pages/Invite";
 import SecurityFindings from "./pages/SecurityFindings";
+import Hidden from "./pages/Hidden";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -99,6 +100,7 @@ function AppContent() {
             <Route path="/clips" element={<Clips />} />
             <Route path="/invite" element={<Invite />} />
             <Route path="/security/findings" element={<SecurityFindings />} />
+            <Route path="/hidden" element={<Hidden />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLockGate>
