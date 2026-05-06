@@ -18,10 +18,20 @@ import {
   Bell,
   Settings as SettingsIcon,
   Clapperboard,
+  Users,
+  Hash,
+  Film,
+  PenSquare,
+  Video,
 } from "lucide-react";
 
 const items = [
   { icon: Gift, label: "Invite & Referrals", desc: "Share your link, earn Blue Verification.", path: "/invite", color: "text-pink-500", bg: "bg-pink-500/10" },
+  { icon: Users, label: "Streamers", desc: "Browse and rate streamers.", path: "/streamers", color: "text-blue-500", bg: "bg-blue-500/10" },
+  { icon: Hash, label: "Hashtags", desc: "Explore trending tags.", path: "/hashtags", color: "text-violet-500", bg: "bg-violet-500/10" },
+  { icon: Film, label: "Reels", desc: "Vertical video feed.", path: "/reels", color: "text-rose-500", bg: "bg-rose-500/10" },
+  { icon: PenSquare, label: "Create Post", desc: "Share something new.", path: "/create-post", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+  { icon: Video, label: "Create Reel", desc: "Upload a new reel.", path: "/create-reel", color: "text-orange-500", bg: "bg-orange-500/10" },
   { icon: Shield, label: "Security Findings", desc: "Recent security scan results.", path: "/security/findings", color: "text-emerald-500", bg: "bg-emerald-500/10" },
   { icon: BarChart, label: "Streaming Analytics", desc: "Twitch, Kick, Discord stats.", path: "/streaming-analytics", color: "text-cyan-500", bg: "bg-cyan-500/10" },
   { icon: BarChart3, label: "Creator Dashboard", desc: "Milestones and growth.", path: "/creator-dashboard", color: "text-indigo-500", bg: "bg-indigo-500/10" },
