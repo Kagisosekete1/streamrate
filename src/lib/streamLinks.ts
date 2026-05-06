@@ -1,4 +1,4 @@
-export type StreamPlatform = "twitch" | "kick" | "youtube";
+export type StreamPlatform = "twitch" | "kick" | "youtube" | "custom";
 
 const hasProtocol = (value: string) => /^https?:\/\//i.test(value);
 
@@ -20,6 +20,7 @@ export const normalizeStreamUrl = (platform: StreamPlatform, rawUrl: string): st
 
     if (platform === "twitch") return `https://www.twitch.tv/${handle}`;
     if (platform === "kick") return `https://kick.com/${handle}`;
+    if (platform === "custom") return "";
     return `https://www.youtube.com/@${handle}`;
   }
 
@@ -48,6 +49,13 @@ export const validateStreamUrl = (
   }
 
   const host = parsed.hostname.toLowerCase().replace(/^www\./, "");
+
+  if (platform === "custom") {
+    if (!/^https?:$/.test(parsed.protocol)) {
+      return { ok: false, error: "Use a valid http(s) URL." };
+    }
+    return { ok: true, url: normalized };
+  }
 
   if (platform === "twitch") {
     if (!/(^|\.)twitch\.tv$/.test(host)) {

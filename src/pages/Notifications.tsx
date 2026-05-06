@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Bell, Users, FileText, Star, TrendingUp, Check, Eye, X, Gamepad2, Gift } from "lucide-react";
+import { ChevronLeft, Bell, Users, FileText, Star, TrendingUp, Check, Eye, X, Gamepad2, Gift, Share2, RefreshCw, Code2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AppLayout } from "@/components/AppLayout";
@@ -45,6 +46,41 @@ const Notifications = () => {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [loading, setLoading] = useState(true);
   const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [debugOpenIds, setDebugOpenIds] = useState<Set<string>>(new Set());
+
+  const toggleDebug = (id: string) => {
+    setDebugOpenIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const shareReferralLink = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("referral_code, username")
+      .eq("id", user.id)
+      .maybeSingle();
+    const code = data?.referral_code || data?.username;
+    if (!code) {
+      toast.error("No referral code yet — visit Invite to set up.");
+      navigate("/invite");
+      return;
+    }
+    const url = `${window.location.origin}/auth?ref=${encodeURIComponent(code)}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Join me", url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Referral link copied");
+      }
+    } catch {
+      // user cancelled
+    }
+  };
 
   useEffect(() => {
     if (!user) {
@@ -358,15 +394,35 @@ const Notifications = () => {
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filteredNotifications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-60 text-muted-foreground">
-            <Bell className="w-12 h-12 mb-3 opacity-50" />
-            <p className="text-lg font-medium">No notifications</p>
-            <p className="text-sm">
-              {activeFilter === "all"
-                ? "You're all caught up!"
-                : `No ${activeFilter} notifications yet`}
-            </p>
-          </div>
+          activeFilter === "referrals" ? (
+            <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+              <div className="w-16 h-16 rounded-full bg-pink-500/10 flex items-center justify-center mb-4">
+                <Gift className="w-8 h-8 text-pink-400" />
+              </div>
+              <p className="text-lg font-semibold text-foreground">No referral alerts yet</p>
+              <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+                Share your link — you'll get notified the moment a friend joins and confirms their email.
+              </p>
+              <div className="flex items-center gap-2 mt-5">
+                <Button onClick={shareReferralLink} className="gap-2">
+                  <Share2 className="w-4 h-4" /> Share my link
+                </Button>
+                <Button variant="outline" onClick={fetchNotifications} className="gap-2">
+                  <RefreshCw className="w-4 h-4" /> Refresh
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-60 text-muted-foreground">
+              <Bell className="w-12 h-12 mb-3 opacity-50" />
+              <p className="text-lg font-medium">No notifications</p>
+              <p className="text-sm">
+                {activeFilter === "all"
+                  ? "You're all caught up!"
+                  : `No ${activeFilter} notifications yet`}
+              </p>
+            </div>
+          )
         ) : (
           <div className="divide-y divide-border">
             <AnimatePresence>
@@ -454,6 +510,30 @@ const Notifications = () => {
                           addSuffix: true,
                         })}
                       </p>
+                      {notification.type === "referral" && (
+                        <div className="mt-2">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); toggleDebug(notification.id); }}
+                            className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+                          >
+                            <Code2 className="w-3 h-3" />
+                            {debugOpenIds.has(notification.id) ? "Hide" : "Show"} debug payload
+                          </button>
+                          {debugOpenIds.has(notification.id) && (
+                            <pre className="mt-2 text-[10px] bg-muted/60 rounded-md p-2 overflow-x-auto whitespace-pre-wrap break-all">
+{JSON.stringify({
+  id: notification.id,
+  type: notification.type,
+  title: notification.title,
+  message: notification.message,
+  from_user_id: notification.from_user_id,
+  created_at: notification.created_at,
+  exact_timestamp: new Date(notification.created_at).toISOString(),
+}, null, 2)}
+                            </pre>
+                          )}
+                        </div>
+                      )}
                         </>
                       )}
                     </div>
