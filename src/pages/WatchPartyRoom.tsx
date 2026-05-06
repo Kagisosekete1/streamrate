@@ -91,12 +91,22 @@ const WatchPartyRoom = () => {
 
   const embedUrl = (() => {
     const url = canonicalUrl;
-    const parent = window.location.hostname;
+    const host = window.location.hostname;
+    // Twitch requires every embedding parent host. Cover the current host
+    // plus the Lovable preview/published domains so laptop previews work.
+    const parents = Array.from(new Set([
+      host,
+      "lovable.app",
+      "lovableproject.com",
+      "streamrateapp.com",
+      "www.streamrateapp.com",
+    ].filter(Boolean)));
+    const parentParams = parents.map((p) => `parent=${encodeURIComponent(p)}`).join("&");
 
     if (platform === "twitch") {
       const channel = url.split("/").filter(Boolean).pop()?.replace(/^@/, "") || "";
       if (!channel) return null;
-      return `https://player.twitch.tv/?channel=${encodeURIComponent(channel)}&parent=${parent}&muted=true&autoplay=true`;
+      return `https://player.twitch.tv/?channel=${encodeURIComponent(channel)}&${parentParams}&muted=true&autoplay=true`;
     }
     if (platform === "kick") {
       const channel = url.split("/").filter(Boolean).pop()?.replace(/^@/, "") || "";
@@ -108,6 +118,10 @@ const WatchPartyRoom = () => {
       if (m) return `https://www.youtube.com/embed/${m[1]}?autoplay=1&mute=1`;
       const handle = url.split("/").filter(Boolean).pop()?.replace(/^@/, "") || "";
       if (handle) return `https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(handle)}&autoplay=1&mute=1`;
+    }
+    if (platform === "custom") {
+      // Best-effort: try to load the URL itself (works for sites that allow framing).
+      return url;
     }
     return null;
   })();
