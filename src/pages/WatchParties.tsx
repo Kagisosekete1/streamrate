@@ -222,6 +222,7 @@ const WatchParties = () => {
                         <SelectItem value="twitch">Twitch</SelectItem>
                         <SelectItem value="youtube">YouTube</SelectItem>
                         <SelectItem value="kick">Kick</SelectItem>
+                        <SelectItem value="custom">Custom URL</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -230,14 +231,14 @@ const WatchParties = () => {
                     <Input
                       value={streamUrl}
                       onChange={(e) => { setStreamUrl(e.target.value); if (urlError) setUrlError(null); }}
-                      placeholder="https://twitch.tv/channel"
+                      placeholder={platform === "custom" ? "https://your-stream-link.com" : "https://twitch.tv/channel"}
                       aria-invalid={!!urlError}
                     />
                     {urlError && (
                       <p className="text-xs text-destructive mt-1" role="alert">{urlError}</p>
                     )}
                     <p className="text-[11px] text-muted-foreground mt-1">
-                      Accepts twitch.tv, kick.com, or youtube.com URLs (or just the channel name).
+                      Accepts twitch.tv, kick.com, youtube.com — or any custom http(s) stream URL.
                     </p>
                   </div>
                   <Button onClick={createParty} className="w-full">Start Party</Button>
