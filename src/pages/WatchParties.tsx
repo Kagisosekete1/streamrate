@@ -205,6 +205,23 @@ const WatchParties = () => {
     navigate(`/watch-party/${data.id}`);
   };
 
+  if (!inRouter) {
+    return (
+      <AppLayout showBottomNav>
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+          <Tv className="w-10 h-10 text-muted-foreground mb-3" />
+          <h1 className="text-lg font-semibold mb-1">Watch Parties unavailable</h1>
+          <p className="text-sm text-muted-foreground mb-4">
+            Navigation isn't ready right now. Please reload the page.
+          </p>
+          <Button onClick={() => typeof window !== "undefined" && window.location.reload()}>
+            Reload
+          </Button>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout showBottomNav>
       <div className="min-h-screen bg-background pb-20 md:pb-8">
