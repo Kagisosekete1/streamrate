@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useInRouterContext } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Users, Plus, Tv, Radio, Search, X, Flame, TrendingUp, Clock } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
@@ -35,7 +35,22 @@ interface Party {
 const WatchParties = () => {
   const { user } = useAuth();
   const { updateMissionProgress } = useGamification();
-  const navigate = useNavigate();
+  const inRouter = useInRouterContext();
+  // Always call the hook to keep hook order stable; guard against HMR cases
+  // where the router context is briefly missing and useNavigate throws.
+  let navigateFn: ReturnType<typeof useNavigate> | null = null;
+  try {
+    navigateFn = useNavigate();
+  } catch {
+    navigateFn = null;
+  }
+  const navigate = (to: string) => {
+    if (inRouter && navigateFn) {
+      navigateFn(to);
+      return;
+    }
+    if (typeof window !== "undefined") window.location.assign(to);
+  };
   const [parties, setParties] = useState<Party[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -189,6 +204,23 @@ const WatchParties = () => {
     setStreamUrl("");
     navigate(`/watch-party/${data.id}`);
   };
+
+  if (!inRouter) {
+    return (
+      <AppLayout showBottomNav>
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+          <Tv className="w-10 h-10 text-muted-foreground mb-3" />
+          <h1 className="text-lg font-semibold mb-1">Watch Parties unavailable</h1>
+          <p className="text-sm text-muted-foreground mb-4">
+            Navigation isn't ready right now. Please reload the page.
+          </p>
+          <Button onClick={() => typeof window !== "undefined" && window.location.reload()}>
+            Reload
+          </Button>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout showBottomNav>
