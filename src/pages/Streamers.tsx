@@ -53,7 +53,6 @@ const Streamers = () => {
   const filters = ["Most Rated", "Trending", "New", "Country"];
 
   const mobileDiscoverLinks = [
-    { icon: Tv, label: "Watch Parties", path: "/watch-parties" },
     { icon: Gamepad2, label: "Squad Up", path: "/squad-up" },
     { icon: Scissors, label: "Clips", path: "/clips" },
     { icon: BarChart3, label: "Creator", path: "/creator-dashboard" },
@@ -357,6 +356,28 @@ const Streamers = () => {
                   </Link>
                 ))}
               </div>
+            </section>
+          )}
+          {/* Watch Parties promo - right under New Members so everyone can jump in & post */}
+          {!searchQuery && (
+            <section className="isolate transform-gpu">
+              <Link
+                to="/watch-parties"
+                aria-label="Open Watch Parties — create or join a party and post"
+                className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-purple-500/15 to-pink-500/15 border border-purple-500/30 hover:border-purple-500/50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                <div className="w-11 h-11 rounded-full bg-purple-500/20 flex items-center justify-center shrink-0">
+                  <Tv className="w-5 h-5 text-purple-400" />
+                </div>
+                <div className="text-left flex-1 min-w-0">
+                  <p className="font-semibold text-foreground text-sm flex items-center gap-2">
+                    Watch Parties
+                    <span className="px-1.5 py-0.5 rounded-full bg-purple-500/30 text-purple-200 text-[9px] font-bold uppercase">Open to all</span>
+                  </p>
+                  <p className="text-[11px] text-muted-foreground truncate">New & old members — host, join, and post together</p>
+                </div>
+                <ChevronDown className="w-4 h-4 -rotate-90 text-muted-foreground shrink-0" />
+              </Link>
             </section>
           )}
           {/* Leaderboard Section - Collapsible */}
