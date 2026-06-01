@@ -254,7 +254,10 @@ const Streamers = () => {
     <AppLayout showBottomNav={true}>
       <div className="min-h-screen bg-background pb-20 md:pb-8">
         {/* Header */}
-        <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border/50">
+        {/* Note: heavy backdrop-blur on a sticky element triggers Android Chrome
+            compositor glitches (torn/striped gradients) on PWA. Use a solid
+            background + transform-gpu to force its own layer. */}
+        <header className="sticky top-0 z-40 bg-background border-b border-border/50 transform-gpu">
           <div className="px-4 py-4">
             <motion.h1
               initial={{ opacity: 0, y: -10 }}
@@ -402,7 +405,7 @@ const Streamers = () => {
           )}
 
           {/* Quick Links - Market & Leaderboard */}
-          <section className="grid grid-cols-2 gap-3">
+          <section className="grid grid-cols-2 gap-3 isolate transform-gpu">
             <Link
               to="/store"
               aria-label="Open Market — gear and accessories for streamers"
@@ -432,7 +435,7 @@ const Streamers = () => {
           </section>
 
           {/* Add from Contacts - Mobile Only */}
-          <section className="md:hidden">
+          <section className="md:hidden isolate transform-gpu">
             <button 
               onClick={() => {
                 navigator.vibrate?.(50);
