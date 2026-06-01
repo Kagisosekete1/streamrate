@@ -53,7 +53,6 @@ const Streamers = () => {
   const filters = ["Most Rated", "Trending", "New", "Country"];
 
   const mobileDiscoverLinks = [
-    { icon: Tv, label: "Watch Parties", path: "/watch-parties" },
     { icon: Gamepad2, label: "Squad Up", path: "/squad-up" },
     { icon: Scissors, label: "Clips", path: "/clips" },
     { icon: BarChart3, label: "Creator", path: "/creator-dashboard" },
