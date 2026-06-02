@@ -666,9 +666,9 @@ const Profile = () => {
 
   const handleDeletePost = async (postId: string) => {
     setDeletingPostId(postId);
-    const { error } = await supabase.from("posts").delete().eq("id", postId);
+    const { data, error } = await supabase.rpc("delete_own_post", { _post_id: postId });
 
-    if (error) {
+    if (error || data !== true) {
       toast({ title: "Failed to delete post", variant: "destructive" });
       setDeletingPostId(null);
       return;
