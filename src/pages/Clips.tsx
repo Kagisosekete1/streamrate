@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Scissors, ExternalLink } from "lucide-react";
+import { Scissors, ExternalLink, Trash2 } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface Clip {
   id: string;
@@ -20,8 +23,24 @@ interface Clip {
 
 const Clips = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [clips, setClips] = useState<Clip[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const deleteClip = async (clipId: string) => {
+    if (!user) return;
+    if (!confirm("Delete this clip?")) return;
+    setDeletingId(clipId);
+    const { error } = await supabase.from("stream_clips").delete().eq("id", clipId).eq("clipper_id", user.id);
+    setDeletingId(null);
+    if (error) {
+      toast.error("Couldn't delete clip");
+      return;
+    }
+    setClips((prev) => prev.filter((clip) => clip.id !== clipId));
+    toast.success("Clip deleted");
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -41,7 +60,7 @@ const Clips = () => {
   return (
     <AppLayout showBottomNav>
       <div className="min-h-screen bg-background pb-20 md:pb-8">
-        <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border/50 px-4 py-4 flex items-center gap-2">
+        <header className="sticky top-0 z-40 bg-background border-b border-border/50 px-4 py-4 flex items-center gap-2 transform-gpu">
           <Scissors className="w-6 h-6 text-orange-500" />
           <h1 className="text-2xl font-bold">Stream Clips</h1>
         </header>
@@ -79,9 +98,16 @@ const Clips = () => {
                       {c.title && <p className="text-xs text-muted-foreground mt-1">{c.title}</p>}
                       <div className="flex items-center justify-between mt-2">
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary capitalize">{c.platform}</span>
-                        <a href={c.stream_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary flex items-center gap-1">
-                          <ExternalLink className="w-3 h-3" /> Watch
-                        </a>
+                        <div className="flex items-center gap-2">
+                          {user?.id === c.clipper_id && (
+                            <Button size="sm" variant="ghost" disabled={deletingId === c.id} onClick={() => deleteClip(c.id)} className="h-7 px-2 text-xs text-destructive hover:text-destructive">
+                              <Trash2 className="w-3 h-3" /> {deletingId === c.id ? "Deleting" : "Delete"}
+                            </Button>
+                          )}
+                          <a href={c.stream_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary flex items-center gap-1">
+                            <ExternalLink className="w-3 h-3" /> Watch
+                          </a>
+                        </div>
                       </div>
                     </div>
                   </div>

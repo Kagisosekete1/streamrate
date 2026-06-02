@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Heart, MessageSquareText, Bookmark, MoreHorizontal, Trash2, Edit2, Flag, BookmarkPlus, Send, Zap } from "lucide-react";
+import { Heart, MessageSquareText, Bookmark, MoreHorizontal, Trash2, Edit2, Flag, Eye } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -117,7 +117,7 @@ export const PostCard = ({
   onDelete,
   onUpdate,
 }: PostCardProps) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(initialIsLiked);
@@ -136,8 +136,11 @@ export const PostCard = ({
   const [showReportBlock, setShowReportBlock] = useState(false);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
   const [showLikesModal, setShowLikesModal] = useState(false);
+  const [showSeenList, setShowSeenList] = useState(false);
+  const [postViewers, setPostViewers] = useState<Array<{ user_id: string; username: string | null; full_name: string | null; avatar_url: string | null; viewed_at: string }>>([]);
 
   const isOwner = user?.id === streamerId;
+  const canSeePostViews = profile?.email?.toLowerCase() === "kagisosekete5@gmail.com";
 
   // Realtime likes & comments count
   useEffect(() => {
@@ -180,6 +183,13 @@ export const PostCard = ({
     return () => { supabase.removeChannel(channel); };
   }, [id, user]);
 
+  useEffect(() => {
+    if (!canSeePostViews) return;
+    supabase
+      .rpc("get_post_viewers", { _post_id: id })
+      .then(({ data }) => setPostViewers(data || []));
+  }, [canSeePostViews, id]);
+
   const handleBookmark = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -211,9 +221,9 @@ export const PostCard = ({
     if (!user || !isOwner) return;
 
     setIsDeleting(true);
-    const { error } = await supabase.from("posts").delete().eq("id", id);
+    const { data, error } = await supabase.rpc("delete_own_post", { _post_id: id });
 
-    if (error) {
+    if (error || data !== true) {
       toast({ title: "Failed to delete post", variant: "destructive" });
       setIsDeleting(false);
       return;
@@ -472,6 +482,33 @@ export const PostCard = ({
         >
           {likes.toLocaleString()} likes
         </button>
+
+        {canSeePostViews && (
+          <div className="mt-2">
+            <button
+              onClick={() => setShowSeenList((prev) => !prev)}
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              {postViewers.length.toLocaleString()} seen
+            </button>
+            {showSeenList && (
+              <div className="mt-2 space-y-1 rounded-lg border border-border bg-secondary/40 p-2">
+                {postViewers.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No views yet</p>
+                ) : (
+                  postViewers.slice(0, 20).map((viewer) => (
+                    <div key={`${viewer.user_id}-${viewer.viewed_at}`} className="flex items-center gap-2 text-xs">
+                      <img src={viewer.avatar_url || "/placeholder.svg"} alt="" className="w-6 h-6 rounded-full object-cover" />
+                      <span className="font-medium text-foreground truncate">{viewer.username || viewer.full_name || "User"}</span>
+                      <span className="ml-auto text-muted-foreground">{formatDistanceToNow(new Date(viewer.viewed_at), { addSuffix: true })}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* View comments */}
         {!isPrivate && commentsCount > 0 && (

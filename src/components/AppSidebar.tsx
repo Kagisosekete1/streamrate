@@ -22,7 +22,6 @@ import {
   Tv,
   Gamepad2,
   Scissors,
-  Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,7 +44,6 @@ const mainNavItems: NavItem[] = [
 ];
 
 const moreNavItems: NavItem[] = [
-  { icon: Sparkles, label: "Hidden Stuff", path: "/hidden" },
   { icon: Tv, label: "Watch Parties", path: "/watch-parties" },
   { icon: Gamepad2, label: "Squad Up", path: "/squad-up" },
   { icon: Scissors, label: "Clips", path: "/clips" },

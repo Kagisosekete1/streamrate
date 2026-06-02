@@ -1793,7 +1793,18 @@ export type Database = {
     }
     Functions: {
       calculate_level: { Args: { xp: number }; Returns: number }
+      delete_own_post: { Args: { _post_id: string }; Returns: boolean }
       get_my_email: { Args: never; Returns: string }
+      get_post_viewers: {
+        Args: { _post_id: string }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          user_id: string
+          username: string
+          viewed_at: string
+        }[]
+      }
       get_profile_visibility: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
@@ -1811,6 +1822,7 @@ export type Database = {
         Args: { _hashtag_id: string }
         Returns: undefined
       }
+      is_seen_admin: { Args: never; Returns: boolean }
       is_verified_seller: { Args: { _user_id: string }; Returns: boolean }
       normalize_qr_handle: {
         Args: { _fallback_id?: string; _value: string }
