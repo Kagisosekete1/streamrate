@@ -2,13 +2,18 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { applyChromePwaRenderingGuards } from "@/lib/chromePwaRenderingGuard";
 // @ts-ignore - virtual module from vite-plugin-pwa
 import { registerSW } from "virtual:pwa-register";
 
-// Register service worker for PWA
-registerSW({
+applyChromePwaRenderingGuards();
+
+// Register service worker for PWA, but immediately activate fresh builds so
+// installed Chrome Android PWAs do not keep serving a stale bugged shell.
+const updateSW = registerSW({
+  immediate: true,
   onNeedRefresh() {
-    console.log("New content available, refreshing...");
+    updateSW(true);
   },
   onOfflineReady() {
     console.log("App ready to work offline");
