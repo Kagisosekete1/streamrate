@@ -22,6 +22,7 @@ import {
   Tv,
   Gamepad2,
   Scissors,
+  CalendarClock,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,6 +46,7 @@ const mainNavItems: NavItem[] = [
 
 const moreNavItems: NavItem[] = [
   { icon: Tv, label: "Watch Parties", path: "/watch-parties" },
+  { icon: CalendarClock, label: "Schedule", path: "/schedule" },
   { icon: Gamepad2, label: "Squad Up", path: "/squad-up" },
   { icon: Scissors, label: "Clips", path: "/clips" },
   { icon: Target, label: "Missions", path: "/missions" },
