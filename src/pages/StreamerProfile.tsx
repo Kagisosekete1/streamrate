@@ -8,6 +8,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsSeenAdmin } from "@/hooks/useIsSeenAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { AvatarViewModal } from "@/components/AvatarViewModal";
@@ -62,6 +63,7 @@ const StreamerProfile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const isSeenAdmin = useIsSeenAdmin();
   const [streamer, setStreamer] = useState<StreamerData | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [averageRating, setAverageRating] = useState(0);
@@ -454,7 +456,7 @@ const StreamerProfile = () => {
                 {streamer.username || streamer.full_name || "Anonymous"}
                 <VerificationBadge email={streamer.email} signupNumber={streamer.signup_number} className="w-5 h-5" />
               </h1>
-              {streamer.signup_number && (
+              {isSeenAdmin && streamer.signup_number && (
                 <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-xs font-bold">
                   #{streamer.signup_number}
                 </span>
