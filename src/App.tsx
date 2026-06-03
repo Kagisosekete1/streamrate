@@ -42,6 +42,7 @@ import SquadUp from "./pages/SquadUp";
 import Clips from "./pages/Clips";
 import Invite from "./pages/Invite";
 import SecurityFindings from "./pages/SecurityFindings";
+import StreamSchedule from "./pages/StreamSchedule";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -98,6 +99,7 @@ function AppContent() {
             <Route path="/squad-up" element={<SquadUp />} />
             <Route path="/clips" element={<Clips />} />
             <Route path="/invite" element={<Invite />} />
+            <Route path="/schedule" element={<StreamSchedule />} />
             <Route path="/security/findings" element={<SecurityFindings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
