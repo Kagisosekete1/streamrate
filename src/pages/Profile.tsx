@@ -1006,15 +1006,6 @@ const Profile = () => {
           <Button variant="outline" className="md:hidden" onClick={handleLogout}>
             <LogOut className="w-4 h-4" />
           </Button>
-          <Button
-            variant="outline"
-            className="md:hidden"
-            onClick={() => navigate("/hidden")}
-            aria-label="Hidden stuff"
-            title="Hidden Stuff"
-          >
-            <MoreVertical className="w-4 h-4" />
-          </Button>
         </div>
       </section>
 
