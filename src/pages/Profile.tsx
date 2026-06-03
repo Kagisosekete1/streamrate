@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { AppLayout } from "@/components/AppLayout";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsSeenAdmin } from "@/hooks/useIsSeenAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { ImageUploadModal } from "@/components/ImageUploadModal";
 import { ImageCropper } from "@/components/ImageCropper";
@@ -50,6 +51,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, profile, userRole, loading, signOut, updateProfile } = useAuth();
+  const isSeenAdmin = useIsSeenAdmin();
   const { xp, coins } = useGamification();
   const [posts, setPosts] = useState<Post[]>([]);
   const [followersCount, setFollowersCount] = useState(0);
