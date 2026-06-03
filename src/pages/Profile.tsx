@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, LogOut, Edit2, Users, Star, MessageCircle, Camera, X, ImageIcon, Eye, MapPin, ToggleLeft, ToggleRight, Copy, Check, Share2, Gift, MoreVertical, Sparkles } from "lucide-react";
+import { Settings, LogOut, Edit2, Users, Star, MessageCircle, Camera, X, ImageIcon, Eye, MapPin, ToggleLeft, ToggleRight, Copy, Check, Share2, Gift, Sparkles } from "lucide-react";
 import { VerificationBadge } from "@/utils/verificationBadge";
 import { XPLevelBadge } from "@/components/XPLevelBadge";
 import { SellerVerificationBadge, SellerVerificationApply } from "@/components/SellerVerificationBadge";
