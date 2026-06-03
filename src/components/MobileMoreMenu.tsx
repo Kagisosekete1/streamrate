@@ -15,6 +15,7 @@ import {
   Bell,
   Settings as SettingsIcon,
   BarChart,
+  CalendarClock,
 } from "lucide-react";
 import {
   Sheet,
@@ -28,6 +29,7 @@ import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 
 const moreItems = [
   { icon: Tv, label: "Watch Parties", path: "/watch-parties", color: "text-purple-500", bg: "bg-purple-500/10" },
+  { icon: CalendarClock, label: "Schedule", path: "/schedule", color: "text-amber-500", bg: "bg-amber-500/10" },
   { icon: Gamepad2, label: "Squad Up", path: "/squad-up", color: "text-blue-500", bg: "bg-blue-500/10" },
   { icon: Scissors, label: "Clips", path: "/clips", color: "text-orange-500", bg: "bg-orange-500/10" },
   { icon: Target, label: "Missions", path: "/missions", color: "text-green-500", bg: "bg-green-500/10" },
