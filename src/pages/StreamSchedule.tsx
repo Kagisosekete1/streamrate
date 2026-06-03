@@ -166,7 +166,8 @@ const StreamSchedule = () => {
     if (streamUrl.trim()) {
       const res = validateStreamUrl(platform, streamUrl);
       if (!res.ok) {
-        toast({ title: "Invalid stream URL", description: res.error, variant: "destructive" });
+        const msg = "error" in res ? res.error : "Invalid URL";
+        toast({ title: "Invalid stream URL", description: msg, variant: "destructive" });
         return;
       }
       normalizedUrl = res.url;
