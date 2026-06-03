@@ -1275,6 +1275,71 @@ export type Database = {
         }
         Relationships: []
       }
+      stream_schedule_reminders: {
+        Row: {
+          created_at: string
+          id: string
+          schedule_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          schedule_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          schedule_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stream_schedule_reminders_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "stream_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stream_schedules: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          platform: string
+          scheduled_at: string
+          stream_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          platform?: string
+          scheduled_at: string
+          stream_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          platform?: string
+          scheduled_at?: string
+          stream_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       streaming_analytics: {
         Row: {
           chat_messages_count: number | null
