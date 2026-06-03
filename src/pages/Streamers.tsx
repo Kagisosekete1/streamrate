@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { TrendingStreamersSection } from "@/components/TrendingStreamersSection";
+import { useIsSeenAdmin } from "@/hooks/useIsSeenAdmin";
 
 interface Streamer {
   id: string;
@@ -31,6 +32,7 @@ interface Hashtag {
 }
 
 const Streamers = () => {
+  const isSeenAdmin = useIsSeenAdmin();
   const [streamers, setStreamers] = useState<Streamer[]>([]);
   const [filteredStreamers, setFilteredStreamers] = useState<Streamer[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -320,8 +322,8 @@ const Streamers = () => {
         {!searchQuery && <TrendingStreamersSection trendingStreamers={trendingStreamers} />}
 
         <main className="px-4 py-4 space-y-6">
-          {/* New Members Section - ALL users */}
-          {!searchQuery && newMembers.length > 0 && (
+          {/* New Members Section - visible only to the seen-by admin */}
+          {!searchQuery && isSeenAdmin && newMembers.length > 0 && (
             <section>
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="w-5 h-5 text-green-500" />
