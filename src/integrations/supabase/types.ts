@@ -1279,18 +1279,21 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          lead_minutes: number
           schedule_id: string
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          lead_minutes?: number
           schedule_id: string
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          lead_minutes?: number
           schedule_id?: string
           user_id?: string
         }
@@ -1312,6 +1315,7 @@ export type Database = {
           platform: string
           scheduled_at: string
           stream_url: string | null
+          timezone: string | null
           title: string
           updated_at: string
           user_id: string
@@ -1323,6 +1327,7 @@ export type Database = {
           platform?: string
           scheduled_at: string
           stream_url?: string | null
+          timezone?: string | null
           title: string
           updated_at?: string
           user_id: string
@@ -1334,6 +1339,7 @@ export type Database = {
           platform?: string
           scheduled_at?: string
           stream_url?: string | null
+          timezone?: string | null
           title?: string
           updated_at?: string
           user_id?: string

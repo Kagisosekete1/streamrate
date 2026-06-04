@@ -12,6 +12,10 @@ import {
   Twitch,
   Youtube,
   Radio,
+  Search,
+  Settings2,
+  Globe,
+  Users,
 } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
@@ -47,12 +51,32 @@ interface ScheduleRow {
   platform: StreamPlatform;
   stream_url: string | null;
   scheduled_at: string;
+  timezone?: string | null;
   profile?: {
     username: string | null;
     avatar_url: string | null;
     full_name: string | null;
   } | null;
 }
+
+interface ReminderRow {
+  id: string;
+  schedule_id: string;
+  lead_minutes: number;
+}
+
+const LEAD_OPTIONS = [
+  { value: 5, label: "5 minutes before" },
+  { value: 15, label: "15 minutes before" },
+  { value: 30, label: "30 minutes before" },
+  { value: 60, label: "1 hour before" },
+  { value: 180, label: "3 hours before" },
+  { value: 1440, label: "1 day before" },
+];
+
+const localTz = () => {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch { return "UTC"; }
+};
 
 const PLATFORM_META: Record<
   StreamPlatform,
@@ -73,18 +97,43 @@ const formatWhen = (iso: string) => {
   if (diffMin < 60 && diffMin >= -5) return diffMin <= 0 ? "Live now" : `In ${diffMin}m`;
   const sameDay = date.toDateString() === now.toDateString();
   const opts: Intl.DateTimeFormatOptions = sameDay
-    ? { hour: "numeric", minute: "2-digit" }
-    : { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" };
+    ? { hour: "numeric", minute: "2-digit", timeZoneName: "short" }
+    : { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" };
   return date.toLocaleString(undefined, opts);
 };
+
+// Convert a "YYYY-MM-DDTHH:mm" wall-clock string in tz to a real Date (UTC instant).
+function parseInTimeZone(local: string, tz: string): Date {
+  try {
+    const naive = new Date(local);
+    const dtf = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, hour12: false,
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+    });
+    const parts = dtf.formatToParts(naive).reduce<Record<string, string>>((a, p) => { a[p.type] = p.value; return a; }, {});
+    const asTz = Date.UTC(
+      parseInt(parts.year, 10), parseInt(parts.month, 10) - 1, parseInt(parts.day, 10),
+      parseInt(parts.hour, 10), parseInt(parts.minute, 10), parseInt(parts.second, 10),
+    );
+    const offset = asTz - naive.getTime();
+    return new Date(naive.getTime() - offset);
+  } catch {
+    return new Date(local);
+  }
+}
 
 const StreamSchedule = () => {
   const { user } = useAuth();
   const [rows, setRows] = useState<ScheduleRow[]>([]);
-  const [reminderIds, setReminderIds] = useState<Set<string>>(new Set());
+  const [reminders, setReminders] = useState<ReminderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
-  const [tab, setTab] = useState<"upcoming" | "mine">("upcoming");
+  const [tab, setTab] = useState<"upcoming" | "following" | "mine" | "reminders">("upcoming");
+  const [search, setSearch] = useState("");
+  const [platformFilter, setPlatformFilter] = useState<"all" | StreamPlatform>("all");
+  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
+  const [defaultLead, setDefaultLead] = useState<number>(15);
 
   // form state
   const [title, setTitle] = useState("");
@@ -92,6 +141,7 @@ const StreamSchedule = () => {
   const [platform, setPlatform] = useState<StreamPlatform>("twitch");
   const [streamUrl, setStreamUrl] = useState("");
   const [whenLocal, setWhenLocal] = useState("");
+  const [tz, setTz] = useState<string>(localTz());
   const [saving, setSaving] = useState(false);
 
   const fetchAll = async () => {
@@ -99,7 +149,7 @@ const StreamSchedule = () => {
     const nowIso = new Date(Date.now() - 30 * 60 * 1000).toISOString();
     const { data, error } = await (supabase as any)
       .from("stream_schedules")
-      .select("id, user_id, title, description, platform, stream_url, scheduled_at")
+      .select("id, user_id, title, description, platform, stream_url, scheduled_at, timezone")
       .gte("scheduled_at", nowIso)
       .order("scheduled_at", { ascending: true })
       .limit(100);
@@ -127,21 +177,49 @@ const StreamSchedule = () => {
     if (user) {
       const { data: rem } = await (supabase as any)
         .from("stream_schedule_reminders")
-        .select("schedule_id")
+        .select("id, schedule_id, lead_minutes")
         .eq("user_id", user.id);
-      setReminderIds(new Set(((rem || []) as any[]).map((r) => r.schedule_id)));
+      setReminders(((rem || []) as any[]) as ReminderRow[]);
+
+      const { data: fol } = await supabase
+        .from("follows")
+        .select("following_id")
+        .eq("follower_id", user.id);
+      setFollowingIds(new Set(((fol || []) as any[]).map((f) => f.following_id)));
     }
     setLoading(false);
   };
 
   useEffect(() => {
     fetchAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
+  const reminderMap = useMemo(() => {
+    const m = new Map<string, ReminderRow>();
+    reminders.forEach((r) => m.set(r.schedule_id, r));
+    return m;
+  }, [reminders]);
+
   const visibleRows = useMemo(() => {
-    if (tab === "mine") return rows.filter((r) => r.user_id === user?.id);
-    return rows;
-  }, [rows, tab, user?.id]);
+    let list = rows;
+    if (tab === "mine") list = list.filter((r) => r.user_id === user?.id);
+    else if (tab === "following") list = list.filter((r) => followingIds.has(r.user_id));
+    else if (tab === "reminders") list = list.filter((r) => reminderMap.has(r.id));
+
+    if (platformFilter !== "all") list = list.filter((r) => r.platform === platformFilter);
+
+    const q = search.trim().toLowerCase();
+    if (q) {
+      list = list.filter((r) => {
+        const u = (r.profile?.username || "").toLowerCase();
+        const n = (r.profile?.full_name || "").toLowerCase();
+        const t = (r.title || "").toLowerCase();
+        return u.includes(q) || n.includes(q) || t.includes(q);
+      });
+    }
+    return list;
+  }, [rows, tab, user?.id, platformFilter, search, followingIds, reminderMap]);
 
   const handleCreate = async () => {
     if (!user) {
@@ -156,7 +234,7 @@ const StreamSchedule = () => {
       toast({ title: "Pick a date and time", variant: "destructive" });
       return;
     }
-    const when = new Date(whenLocal);
+    const when = parseInTimeZone(whenLocal, tz);
     if (Number.isNaN(when.getTime()) || when.getTime() < Date.now() - 5 * 60 * 1000) {
       toast({ title: "Pick a future date/time", variant: "destructive" });
       return;
@@ -181,6 +259,7 @@ const StreamSchedule = () => {
       platform,
       stream_url: normalizedUrl,
       scheduled_at: when.toISOString(),
+      timezone: tz,
     });
     setSaving(false);
 
@@ -202,8 +281,8 @@ const StreamSchedule = () => {
       toast({ title: "Sign in to set a reminder", variant: "destructive" });
       return;
     }
-    const has = reminderIds.has(row.id);
-    if (has) {
+    const existing = reminderMap.get(row.id);
+    if (existing) {
       const { error } = await (supabase as any)
         .from("stream_schedule_reminders")
         .delete()
@@ -213,30 +292,39 @@ const StreamSchedule = () => {
         toast({ title: "Couldn't remove reminder", description: error.message, variant: "destructive" });
         return;
       }
-      const next = new Set(reminderIds);
-      next.delete(row.id);
-      setReminderIds(next);
+      setReminders((prev) => prev.filter((r) => r.schedule_id !== row.id));
       toast({ title: "Reminder removed" });
     } else {
-      const { error } = await (supabase as any)
+      const { data: inserted, error } = await (supabase as any)
         .from("stream_schedule_reminders")
-        .insert({ schedule_id: row.id, user_id: user.id });
+        .insert({ schedule_id: row.id, user_id: user.id, lead_minutes: defaultLead })
+        .select("id, schedule_id, lead_minutes")
+        .single();
       if (error) {
         toast({ title: "Couldn't set reminder", description: error.message, variant: "destructive" });
         return;
       }
-      const next = new Set(reminderIds);
-      next.add(row.id);
-      setReminderIds(next);
-
-      // Best-effort browser notification permission + local alarm while app is open
+      if (inserted) setReminders((prev) => [...prev, inserted as ReminderRow]);
       try {
         if ("Notification" in window && Notification.permission === "default") {
           await Notification.requestPermission();
         }
       } catch { /* ignore */ }
-      toast({ title: "You'll be reminded", description: formatWhen(row.scheduled_at) });
+      toast({ title: "You'll be reminded", description: `${defaultLead}m before • ${formatWhen(row.scheduled_at)}` });
     }
+  };
+
+  const updateReminderLead = async (reminderId: string, lead: number) => {
+    const { error } = await (supabase as any)
+      .from("stream_schedule_reminders")
+      .update({ lead_minutes: lead })
+      .eq("id", reminderId);
+    if (error) {
+      toast({ title: "Couldn't update reminder", description: error.message, variant: "destructive" });
+      return;
+    }
+    setReminders((prev) => prev.map((r) => (r.id === reminderId ? { ...r, lead_minutes: lead } : r)));
+    toast({ title: "Reminder updated" });
   };
 
   const handleDelete = async (row: ScheduleRow) => {
@@ -308,6 +396,18 @@ const StreamSchedule = () => {
                     </div>
                   </div>
                   <div className="space-y-1">
+                    <Label htmlFor="ss-tz">Your timezone</Label>
+                    <Input
+                      id="ss-tz"
+                      value={tz}
+                      onChange={(e) => setTz(e.target.value)}
+                      placeholder="e.g. Africa/Johannesburg"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Fans will see this time converted to their own timezone.
+                    </p>
+                  </div>
+                  <div className="space-y-1">
                     <Label htmlFor="ss-url">Stream link (optional)</Label>
                     <Input
                       id="ss-url"
@@ -338,21 +438,62 @@ const StreamSchedule = () => {
               </DialogContent>
             </Dialog>
           </div>
-          <div className="max-w-2xl mx-auto px-4 pb-2 flex gap-2">
-            {(["upcoming", "mine"] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-medium transition",
-                  tab === t
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {t === "upcoming" ? "Upcoming" : "My schedule"}
-              </button>
-            ))}
+          <div className="max-w-2xl mx-auto px-4 pb-2 space-y-2">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar">
+              {([
+                { id: "upcoming", label: "All", Icon: Globe },
+                { id: "following", label: "Following", Icon: Users },
+                { id: "reminders", label: "My reminders", Icon: Bell },
+                { id: "mine", label: "My schedule", Icon: CalendarClock },
+              ] as const).map(({ id, label, Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setTab(id)}
+                  className={cn(
+                    "shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition inline-flex items-center gap-1",
+                    tab === id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Icon className="w-3.5 h-3.5" /> {label}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search streamer username or title…"
+                  className="pl-8 h-9"
+                />
+              </div>
+              <Select value={platformFilter} onValueChange={(v) => setPlatformFilter(v as any)}>
+                <SelectTrigger className="h-9 w-[120px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All platforms</SelectItem>
+                  <SelectItem value="twitch">Twitch</SelectItem>
+                  <SelectItem value="kick">Kick</SelectItem>
+                  <SelectItem value="youtube">YouTube</SelectItem>
+                  <SelectItem value="custom">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <Settings2 className="w-3.5 h-3.5" />
+              <span>Default reminder:</span>
+              <Select value={String(defaultLead)} onValueChange={(v) => setDefaultLead(parseInt(v, 10))}>
+                <SelectTrigger className="h-7 w-[160px] text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {LEAD_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={String(o.value)}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="ml-auto">Your tz: {localTz()}</span>
+            </div>
           </div>
         </header>
 
@@ -365,7 +506,13 @@ const StreamSchedule = () => {
             <div className="text-center py-16 space-y-2">
               <CalendarClock className="w-10 h-10 mx-auto text-muted-foreground" />
               <p className="text-foreground font-medium">
-                {tab === "mine" ? "You haven't scheduled any streams" : "Nothing scheduled yet"}
+                {tab === "mine"
+                  ? "You haven't scheduled any streams"
+                  : tab === "following"
+                  ? "None of the streamers you follow have streams scheduled"
+                  : tab === "reminders"
+                  ? "No reminders set yet"
+                  : "Nothing scheduled yet"}
               </p>
               <p className="text-sm text-muted-foreground">
                 Tap <span className="font-semibold">Schedule</span> to announce your next stream.
@@ -376,7 +523,9 @@ const StreamSchedule = () => {
               const meta = PLATFORM_META[row.platform] || PLATFORM_META.custom;
               const Icon = meta.Icon;
               const isOwner = user?.id === row.user_id;
-              const hasReminder = reminderIds.has(row.id);
+              const existing = reminderMap.get(row.id);
+              const hasReminder = !!existing;
+              const showStreamerTz = row.timezone && row.timezone !== localTz();
               return (
                 <motion.div
                   key={row.id}
@@ -410,6 +559,14 @@ const StreamSchedule = () => {
                       >
                         @{row.profile?.username || "streamer"}
                       </Link>
+                      {showStreamerTz && (
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          Streamer's time: {new Date(row.scheduled_at).toLocaleString(undefined, {
+                            timeZone: row.timezone!,
+                            hour: "numeric", minute: "2-digit", weekday: "short", month: "short", day: "numeric",
+                          })} ({row.timezone})
+                        </p>
+                      )}
                       {row.description && (
                         <p className="text-sm text-foreground/80 mt-2 whitespace-pre-wrap">
                           {row.description}
@@ -430,7 +587,7 @@ const StreamSchedule = () => {
                         </a>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
                       {isOwner ? (
                         <Button
                           variant="ghost"
@@ -441,18 +598,33 @@ const StreamSchedule = () => {
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       ) : (
-                        <Button
-                          variant={hasReminder ? "secondary" : "default"}
-                          size="sm"
-                          onClick={() => toggleReminder(row)}
-                          className="gap-1"
-                        >
-                          {hasReminder ? (
-                            <><BellOff className="w-4 h-4" /> Reminding</>
-                          ) : (
-                            <><Bell className="w-4 h-4" /> Remind me</>
+                        <>
+                          {hasReminder && existing && (
+                            <Select
+                              value={String(existing.lead_minutes)}
+                              onValueChange={(v) => updateReminderLead(existing.id, parseInt(v, 10))}
+                            >
+                              <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {LEAD_OPTIONS.map((o) => (
+                                  <SelectItem key={o.value} value={String(o.value)}>{o.label}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           )}
-                        </Button>
+                          <Button
+                            variant={hasReminder ? "secondary" : "default"}
+                            size="sm"
+                            onClick={() => toggleReminder(row)}
+                            className="gap-1"
+                          >
+                            {hasReminder ? (
+                              <><BellOff className="w-4 h-4" /> Remove</>
+                            ) : (
+                              <><Bell className="w-4 h-4" /> Remind me</>
+                            )}
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
