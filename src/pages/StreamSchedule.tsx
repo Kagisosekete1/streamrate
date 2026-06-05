@@ -134,6 +134,7 @@ const StreamSchedule = () => {
   const [platformFilter, setPlatformFilter] = useState<"all" | StreamPlatform>("all");
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const [defaultLead, setDefaultLead] = useState<number>(15);
+  const [matchedUserIds, setMatchedUserIds] = useState<Set<string>>(new Set());
 
   // form state
   const [title, setTitle] = useState("");
@@ -190,6 +191,24 @@ const StreamSchedule = () => {
     setLoading(false);
   };
 
+  // Hardened, case-insensitive username search against profiles (no whitelist).
+  useEffect(() => {
+    const q = search.trim();
+    if (!q) { setMatchedUserIds(new Set()); return; }
+    let cancelled = false;
+    const run = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id")
+        .or(`username.ilike.%${q}%,full_name.ilike.%${q}%`)
+        .limit(50);
+      if (cancelled) return;
+      setMatchedUserIds(new Set(((data || []) as any[]).map((p) => p.id)));
+    };
+    const t = setTimeout(run, 200);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [search]);
+
   useEffect(() => {
     fetchAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -215,11 +234,11 @@ const StreamSchedule = () => {
         const u = (r.profile?.username || "").toLowerCase();
         const n = (r.profile?.full_name || "").toLowerCase();
         const t = (r.title || "").toLowerCase();
-        return u.includes(q) || n.includes(q) || t.includes(q);
+        return u.includes(q) || n.includes(q) || t.includes(q) || matchedUserIds.has(r.user_id);
       });
     }
     return list;
-  }, [rows, tab, user?.id, platformFilter, search, followingIds, reminderMap]);
+  }, [rows, tab, user?.id, platformFilter, search, followingIds, reminderMap, matchedUserIds]);
 
   const handleCreate = async () => {
     if (!user) {
