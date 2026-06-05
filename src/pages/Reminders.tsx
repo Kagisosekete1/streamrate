@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Bell, Trash2, Loader2, CalendarClock, ArrowLeft } from "lucide-react";
+import { Bell, Trash2, Loader2, CalendarClock, ArrowLeft, Clock, CheckCircle2, Settings as SettingsIcon } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +34,12 @@ interface ReminderItem {
   } | null;
   streamer?: { username: string | null; avatar_url: string | null; full_name: string | null } | null;
 }
+
+const formatLocal = (d: Date) =>
+  d.toLocaleString(undefined, {
+    weekday: "short", month: "short", day: "numeric",
+    hour: "numeric", minute: "2-digit",
+  });
 
 const Reminders = () => {
   const { user } = useAuth();
@@ -127,9 +133,29 @@ const Reminders = () => {
           <p className="text-xs text-muted-foreground">
             @{r.streamer?.username || "streamer"} • {r.schedule ? new Date(r.schedule.scheduled_at).toLocaleString() : ""}
           </p>
-          {r.sent_at && (
-            <p className="text-[11px] text-muted-foreground mt-0.5">Sent {new Date(r.sent_at).toLocaleString()}</p>
-          )}
+          {(() => {
+            if (!r.schedule) return null;
+            const fireAt = new Date(new Date(r.schedule.scheduled_at).getTime() - r.lead_minutes * 60_000);
+            if (r.sent_at) {
+              return (
+                <p className="text-[11px] text-green-500 mt-0.5 inline-flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Sent {new Date(r.sent_at).toLocaleString()}
+                </p>
+              );
+            }
+            if (fireAt.getTime() < Date.now()) {
+              return (
+                <p className="text-[11px] text-amber-500 mt-0.5 inline-flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> Sending shortly…
+                </p>
+              );
+            }
+            return (
+              <p className="text-[11px] text-primary mt-0.5 inline-flex items-center gap-1">
+                <Clock className="w-3 h-3" /> Fires at {formatLocal(fireAt)} (your time)
+              </p>
+            );
+          })()}
         </div>
       </div>
       <div className="flex items-center justify-between gap-2 pt-1 border-t border-border">
@@ -155,7 +181,13 @@ const Reminders = () => {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <Bell className="w-5 h-5 text-primary" />
-            <h1 className="font-bold text-lg text-foreground">My Reminders</h1>
+            <h1 className="font-bold text-lg text-foreground flex-1">My Reminders</h1>
+            <Link
+              to="/settings/notifications"
+              className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+            >
+              <SettingsIcon className="w-3.5 h-3.5" /> Settings
+            </Link>
           </div>
         </header>
 
