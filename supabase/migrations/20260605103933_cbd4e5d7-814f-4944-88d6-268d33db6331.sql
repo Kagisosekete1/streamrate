@@ -1,0 +1,2 @@
+ALTER TABLE public.stream_schedule_reminders ADD COLUMN IF NOT EXISTS sent_at timestamptz;
+CREATE INDEX IF NOT EXISTS idx_ssr_pending ON public.stream_schedule_reminders (schedule_id) WHERE sent_at IS NULL;

@@ -43,6 +43,7 @@ import Clips from "./pages/Clips";
 import Invite from "./pages/Invite";
 import SecurityFindings from "./pages/SecurityFindings";
 import StreamSchedule from "./pages/StreamSchedule";
+import Reminders from "./pages/Reminders";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -100,6 +101,7 @@ function AppContent() {
             <Route path="/clips" element={<Clips />} />
             <Route path="/invite" element={<Invite />} />
             <Route path="/schedule" element={<StreamSchedule />} />
+            <Route path="/reminders" element={<Reminders />} />
             <Route path="/security/findings" element={<SecurityFindings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
