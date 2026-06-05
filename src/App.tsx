@@ -44,6 +44,8 @@ import Invite from "./pages/Invite";
 import SecurityFindings from "./pages/SecurityFindings";
 import StreamSchedule from "./pages/StreamSchedule";
 import Reminders from "./pages/Reminders";
+import NotificationSettings from "./pages/NotificationSettings";
+import AdminReminderLogs from "./pages/AdminReminderLogs";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -102,6 +104,8 @@ function AppContent() {
             <Route path="/invite" element={<Invite />} />
             <Route path="/schedule" element={<StreamSchedule />} />
             <Route path="/reminders" element={<Reminders />} />
+            <Route path="/settings/notifications" element={<NotificationSettings />} />
+            <Route path="/admin/reminder-logs" element={<AdminReminderLogs />} />
             <Route path="/security/findings" element={<SecurityFindings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

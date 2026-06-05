@@ -384,6 +384,27 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_settings: {
+        Row: {
+          created_at: string
+          stream_reminders_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          stream_reminders_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          stream_reminders_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           comment_id: string | null
@@ -987,6 +1008,42 @@ export type Database = {
         }
         Relationships: []
       }
+      reminder_dispatch_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          errors: Json
+          id: string
+          run_at: string
+          scanned: number
+          sent: number
+          skipped: number
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          errors?: Json
+          id?: string
+          run_at?: string
+          scanned?: number
+          sent?: number
+          skipped?: number
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          errors?: Json
+          id?: string
+          run_at?: string
+          scanned?: number
+          sent?: number
+          skipped?: number
+          status?: string
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           created_at: string
@@ -1277,24 +1334,30 @@ export type Database = {
       }
       stream_schedule_reminders: {
         Row: {
+          attempt_count: number
           created_at: string
           id: string
+          last_error: string | null
           lead_minutes: number
           schedule_id: string
           sent_at: string | null
           user_id: string
         }
         Insert: {
+          attempt_count?: number
           created_at?: string
           id?: string
+          last_error?: string | null
           lead_minutes?: number
           schedule_id: string
           sent_at?: string | null
           user_id: string
         }
         Update: {
+          attempt_count?: number
           created_at?: string
           id?: string
+          last_error?: string | null
           lead_minutes?: number
           schedule_id?: string
           sent_at?: string | null

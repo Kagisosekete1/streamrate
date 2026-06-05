@@ -592,6 +592,26 @@ const StreamSchedule = () => {
                           {row.description}
                         </p>
                       )}
+                      {hasReminder && existing && (() => {
+                        const fireAt = new Date(
+                          new Date(row.scheduled_at).getTime() - existing.lead_minutes * 60_000,
+                        );
+                        const past = fireAt.getTime() < Date.now();
+                        return (
+                          <p className={cn(
+                            "text-[11px] mt-1 inline-flex items-center gap-1",
+                            past ? "text-amber-500" : "text-primary",
+                          )}>
+                            <Bell className="w-3 h-3" />
+                            {past
+                              ? "Reminder sending shortly…"
+                              : `Reminder fires ${fireAt.toLocaleString(undefined, {
+                                  weekday: "short", month: "short", day: "numeric",
+                                  hour: "numeric", minute: "2-digit",
+                                })} (your time)`}
+                          </p>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-2 pt-1 border-t border-border">
