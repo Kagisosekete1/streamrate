@@ -512,6 +512,7 @@ const StreamSchedule = () => {
                 </SelectContent>
               </Select>
               <span className="ml-auto">Your tz: {localTz()}</span>
+              <Link to="/reminders" className="text-primary hover:underline ml-2">Manage</Link>
             </div>
           </div>
         </header>
