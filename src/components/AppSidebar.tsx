@@ -23,6 +23,11 @@ import {
   Gamepad2,
   Scissors,
   CalendarClock,
+  Trophy,
+  Wrench,
+  Terminal,
+  Users,
+  Swords,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,6 +54,12 @@ const moreNavItems: NavItem[] = [
   { icon: CalendarClock, label: "Schedule", path: "/schedule" },
   { icon: Gamepad2, label: "Squad Up", path: "/squad-up" },
   { icon: Scissors, label: "Clips", path: "/clips" },
+  { icon: Trophy, label: "Tournaments", path: "/tournaments" },
+  { icon: Users, label: "Co-Stream", path: "/co-stream" },
+  { icon: Swords, label: "Raids", path: "/raids" },
+  { icon: Gamepad2, label: "My Games", path: "/games" },
+  { icon: Wrench, label: "My Gear", path: "/gear" },
+  { icon: Terminal, label: "Chat Commands", path: "/commands" },
   { icon: Target, label: "Missions", path: "/missions" },
   { icon: Rocket, label: "Boost", path: "/boost-profile" },
   { icon: BarChart3, label: "Dashboard", path: "/creator-dashboard" },

@@ -46,6 +46,13 @@ import StreamSchedule from "./pages/StreamSchedule";
 import Reminders from "./pages/Reminders";
 import NotificationSettings from "./pages/NotificationSettings";
 import AdminReminderLogs from "./pages/AdminReminderLogs";
+import StreamerGames from "./pages/StreamerGames";
+import StreamerGear from "./pages/StreamerGear";
+import ChatCommands from "./pages/ChatCommands";
+import CoStream from "./pages/CoStream";
+import Raids from "./pages/Raids";
+import Tournaments from "./pages/Tournaments";
+import TournamentDetail from "./pages/TournamentDetail";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -107,6 +114,13 @@ function AppContent() {
             <Route path="/settings/notifications" element={<NotificationSettings />} />
             <Route path="/admin/reminder-logs" element={<AdminReminderLogs />} />
             <Route path="/security/findings" element={<SecurityFindings />} />
+            <Route path="/games" element={<StreamerGames />} />
+            <Route path="/gear" element={<StreamerGear />} />
+            <Route path="/commands" element={<ChatCommands />} />
+            <Route path="/co-stream" element={<CoStream />} />
+            <Route path="/raids" element={<Raids />} />
+            <Route path="/tournaments" element={<Tournaments />} />
+            <Route path="/tournament/:id" element={<TournamentDetail />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLockGate>
