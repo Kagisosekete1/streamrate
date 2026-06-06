@@ -23,7 +23,6 @@ import {
   Gamepad2,
   Scissors,
   CalendarClock,
-  Trophy,
   Wrench,
   Terminal,
   Users,
