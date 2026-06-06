@@ -146,6 +146,42 @@ export type Database = {
         }
         Relationships: []
       }
+      co_stream_requests: {
+        Row: {
+          created_at: string
+          from_user_id: string
+          game: string | null
+          id: string
+          message: string | null
+          scheduled_at: string | null
+          status: string
+          to_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_user_id: string
+          game?: string | null
+          id?: string
+          message?: string | null
+          scheduled_at?: string | null
+          status?: string
+          to_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_user_id?: string
+          game?: string | null
+          id?: string
+          message?: string | null
+          scheduled_at?: string | null
+          status?: string
+          to_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coin_transactions: {
         Row: {
           amount: number
@@ -1298,36 +1334,45 @@ export type Database = {
       }
       stream_clips: {
         Row: {
+          chapter_title: string | null
           clipper_id: string
           created_at: string
+          game: string | null
           id: string
           platform: string
           reel_id: string | null
           source_streamer_id: string | null
           source_streamer_name: string | null
           stream_url: string
+          timestamp_seconds: number | null
           title: string | null
         }
         Insert: {
+          chapter_title?: string | null
           clipper_id: string
           created_at?: string
+          game?: string | null
           id?: string
           platform: string
           reel_id?: string | null
           source_streamer_id?: string | null
           source_streamer_name?: string | null
           stream_url: string
+          timestamp_seconds?: number | null
           title?: string | null
         }
         Update: {
+          chapter_title?: string | null
           clipper_id?: string
           created_at?: string
+          game?: string | null
           id?: string
           platform?: string
           reel_id?: string | null
           source_streamer_id?: string | null
           source_streamer_name?: string | null
           stream_url?: string
+          timestamp_seconds?: number | null
           title?: string | null
         }
         Relationships: []
@@ -1365,6 +1410,33 @@ export type Database = {
           streamer_id?: string
           total_coins_pool?: number
           winning_option_index?: number | null
+        }
+        Relationships: []
+      }
+      stream_raids: {
+        Row: {
+          created_at: string
+          from_user_id: string
+          id: string
+          message: string | null
+          raider_count: number
+          to_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_user_id: string
+          id?: string
+          message?: string | null
+          raider_count?: number
+          to_user_id: string
+        }
+        Update: {
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          message?: string | null
+          raider_count?: number
+          to_user_id?: string
         }
         Relationships: []
       }
@@ -1580,6 +1652,169 @@ export type Database = {
           subscriber_count?: number | null
           user_id?: string
           viewer_count?: number | null
+        }
+        Relationships: []
+      }
+      tournament_matches: {
+        Row: {
+          created_at: string
+          id: string
+          position: number
+          round: number
+          scheduled_at: string | null
+          score_a: number | null
+          score_b: number | null
+          status: string
+          team_a_id: string | null
+          team_b_id: string | null
+          tournament_id: string
+          updated_at: string
+          winner_team_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position: number
+          round: number
+          scheduled_at?: string | null
+          score_a?: number | null
+          score_b?: number | null
+          status?: string
+          team_a_id?: string | null
+          team_b_id?: string | null
+          tournament_id: string
+          updated_at?: string
+          winner_team_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position?: number
+          round?: number
+          scheduled_at?: string | null
+          score_a?: number | null
+          score_b?: number | null
+          status?: string
+          team_a_id?: string | null
+          team_b_id?: string | null
+          tournament_id?: string
+          updated_at?: string
+          winner_team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_matches_team_a_id_fkey"
+            columns: ["team_a_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_team_b_id_fkey"
+            columns: ["team_b_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_winner_team_id_fkey"
+            columns: ["winner_team_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournament_teams: {
+        Row: {
+          captain_user_id: string
+          created_at: string
+          id: string
+          seed: number | null
+          status: string
+          team_name: string
+          tournament_id: string
+        }
+        Insert: {
+          captain_user_id: string
+          created_at?: string
+          id?: string
+          seed?: number | null
+          status?: string
+          team_name: string
+          tournament_id: string
+        }
+        Update: {
+          captain_user_id?: string
+          created_at?: string
+          id?: string
+          seed?: number | null
+          status?: string
+          team_name?: string
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_teams_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournaments: {
+        Row: {
+          banner_url: string | null
+          created_at: string
+          description: string | null
+          format: string
+          game: string | null
+          host_user_id: string
+          id: string
+          max_teams: number
+          name: string
+          prize: string | null
+          starts_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          format?: string
+          game?: string | null
+          host_user_id: string
+          id?: string
+          max_teams?: number
+          name: string
+          prize?: string | null
+          starts_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          format?: string
+          game?: string | null
+          host_user_id?: string
+          id?: string
+          max_teams?: number
+          name?: string
+          prize?: string | null
+          starts_at?: string | null
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
