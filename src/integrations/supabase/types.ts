@@ -110,6 +110,42 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_commands: {
+        Row: {
+          cooldown_seconds: number
+          created_at: string
+          id: string
+          is_enabled: boolean
+          response: string
+          trigger: string
+          updated_at: string
+          user_id: string
+          uses_count: number
+        }
+        Insert: {
+          cooldown_seconds?: number
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          response: string
+          trigger: string
+          updated_at?: string
+          user_id: string
+          uses_count?: number
+        }
+        Update: {
+          cooldown_seconds?: number
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          response?: string
+          trigger?: string
+          updated_at?: string
+          user_id?: string
+          uses_count?: number
+        }
+        Relationships: []
+      }
       coin_transactions: {
         Row: {
           amount: number
@@ -1407,6 +1443,90 @@ export type Database = {
           stream_url?: string | null
           timezone?: string | null
           title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      streamer_games: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          game_name: string
+          id: string
+          notes: string | null
+          platform: string | null
+          position: number
+          rating: number | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          game_name: string
+          id?: string
+          notes?: string | null
+          platform?: string | null
+          position?: number
+          rating?: number | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          game_name?: string
+          id?: string
+          notes?: string | null
+          platform?: string | null
+          position?: number
+          rating?: number | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      streamer_gear: {
+        Row: {
+          affiliate_url: string | null
+          brand: string | null
+          category: string
+          created_at: string
+          id: string
+          image_url: string | null
+          item_name: string
+          notes: string | null
+          position: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          affiliate_url?: string | null
+          brand?: string | null
+          category: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          item_name: string
+          notes?: string | null
+          position?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          affiliate_url?: string | null
+          brand?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          item_name?: string
+          notes?: string | null
+          position?: number
           updated_at?: string
           user_id?: string
         }
