@@ -13,7 +13,6 @@ import { generateSingleElimination } from "@/lib/bracket";
 
 interface Tournament { id: string; host_user_id: string; name: string; game: string | null; max_teams: number; prize: string | null; description: string | null; banner_url: string | null; starts_at: string | null; status: string; }
 interface Team { id: string; tournament_id: string; captain_user_id: string; team_name: string; seed: number | null; status: string; }
-interface Match { id: string; tournament_id: string; round: number; position: number; team_a_id: string | null; team_b_id: string | null; winner_team_id: string | null; score_a: number | null; score_b: number | null; status: string; }
 interface Match { id: string; tournament_id: string; round: number; position: number; team_a_id: string | null; team_b_id: string | null; winner_team_id: string | null; score_a: number | null; score_b: number | null; status: string; locked?: boolean; confirmed_at?: string | null; confirmed_by?: string | null; }
 interface AuditRow { id: string; match_id: string; action: string; actor_user_id: string | null; old_winner_team_id: string | null; new_winner_team_id: string | null; note: string | null; created_at: string; }
 
