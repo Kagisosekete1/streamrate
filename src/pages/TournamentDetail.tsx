@@ -185,7 +185,7 @@ export default function TournamentDetail() {
                 <div key={rd} className="flex flex-col gap-3 min-w-[200px]">
                   <p className="text-xs font-semibold text-muted-foreground">Round {rd}</p>
                   {matches.filter(m => m.round === rd).map(m => (
-                    <Card key={m.id} className="p-2 text-sm">
+                    <Card key={m.id} className={`p-2 text-sm ${m.locked ? "border-primary/40" : ""}`}>
                       {(["a", "b"] as const).map(side => {
                         const tid = side === "a" ? m.team_a_id : m.team_b_id;
                         const isWinner = m.winner_team_id === tid;
@@ -195,12 +195,37 @@ export default function TournamentDetail() {
                               {isWinner && <Crown className="w-3 h-3 text-primary" />}
                               {tid ? teamMap[tid] || "—" : <span className="text-muted-foreground italic">BYE</span>}
                             </span>
-                            {isHost && m.status !== "completed" && tid && (
-                              <button onClick={() => setWinner(m, side)} className="text-[10px] text-primary hover:underline">Win</button>
+                            {isHost && !m.locked && tid && (
+                              <button onClick={() => pickWinner(m, side)} className="text-[10px] text-primary hover:underline">Win</button>
                             )}
                           </div>
                         );
                       })}
+                      <div className="mt-1 flex items-center justify-between border-t border-border pt-1">
+                        {m.locked ? (
+                          <span className="text-[10px] text-primary flex items-center gap-1"><Lock className="w-3 h-3" />Locked</span>
+                        ) : m.winner_team_id && isHost ? (
+                          <button onClick={() => confirmResult(m)} className="text-[10px] text-primary flex items-center gap-1 hover:underline"><ShieldCheck className="w-3 h-3" />Confirm</button>
+                        ) : m.winner_team_id ? (
+                          <span className="text-[10px] text-amber-500">Pending confirm</span>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground">—</span>
+                        )}
+                        <button onClick={() => setAuditOpen(auditOpen === m.id ? null : m.id)} className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-1">
+                          <History className="w-3 h-3" />Audit
+                        </button>
+                      </div>
+                      {auditOpen === m.id && (
+                        <div className="mt-1 text-[10px] text-muted-foreground space-y-0.5 max-h-32 overflow-auto">
+                          {audit.filter(a => a.match_id === m.id).length === 0 && <p>No audit entries yet.</p>}
+                          {audit.filter(a => a.match_id === m.id).map(a => (
+                            <div key={a.id} className="flex justify-between gap-2">
+                              <span>{a.action}{a.new_winner_team_id ? ` → ${teamMap[a.new_winner_team_id] || "?"}` : ""}</span>
+                              <span>{new Date(a.created_at).toLocaleTimeString()}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </Card>
                   ))}
                 </div>
