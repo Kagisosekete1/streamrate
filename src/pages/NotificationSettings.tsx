@@ -13,6 +13,9 @@ type PermState = "default" | "granted" | "denied" | "unsupported";
 const NotificationSettings = () => {
   const { user } = useAuth();
   const [enabled, setEnabled] = useState(true);
+  const [raids, setRaids] = useState(true);
+  const [coStream, setCoStream] = useState(true);
+  const [tourneys, setTourneys] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [perm, setPerm] = useState<PermState>("default");
@@ -27,29 +30,40 @@ const NotificationSettings = () => {
       if (!user) { setLoading(false); return; }
       const { data } = await (supabase as any)
         .from("notification_settings")
-        .select("stream_reminders_enabled")
+        .select("stream_reminders_enabled, raids_enabled, co_stream_requests_enabled, tournament_events_enabled")
         .eq("user_id", user.id)
         .maybeSingle();
-      if (data) setEnabled(!!data.stream_reminders_enabled);
+      if (data) {
+        setEnabled(!!data.stream_reminders_enabled);
+        setRaids(data.raids_enabled !== false);
+        setCoStream(data.co_stream_requests_enabled !== false);
+        setTourneys(data.tournament_events_enabled !== false);
+      }
       setLoading(false);
     };
     load();
   }, [user?.id]);
 
-  const save = async (value: boolean) => {
+  const saveField = async (
+    field: "stream_reminders_enabled" | "raids_enabled" | "co_stream_requests_enabled" | "tournament_events_enabled",
+    value: boolean,
+    setter: (v: boolean) => void,
+    prev: boolean,
+    label: string,
+  ) => {
     if (!user) return;
     setSaving(true);
-    setEnabled(value);
+    setter(value);
     const { error } = await (supabase as any)
       .from("notification_settings")
-      .upsert({ user_id: user.id, stream_reminders_enabled: value }, { onConflict: "user_id" });
+      .upsert({ user_id: user.id, [field]: value }, { onConflict: "user_id" });
     setSaving(false);
     if (error) {
       toast({ title: "Couldn't save", description: error.message, variant: "destructive" });
-      setEnabled(!value);
+      setter(prev);
       return;
     }
-    toast({ title: value ? "Reminders enabled" : "Reminders muted" });
+    toast({ title: `${label} ${value ? "enabled" : "muted"}` });
   };
 
   const requestPerm = async () => {
