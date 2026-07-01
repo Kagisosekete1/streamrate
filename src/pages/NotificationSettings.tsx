@@ -114,7 +114,31 @@ const NotificationSettings = () => {
                       Get notified before a streamer you've reminded yourself about goes live.
                     </p>
                   </div>
-                  <Switch checked={enabled} disabled={saving} onCheckedChange={save} />
+                  <Switch checked={enabled} disabled={saving} onCheckedChange={(v) => saveField("stream_reminders_enabled", v, setEnabled, enabled, "Reminders")} />
+                </div>
+              </section>
+
+              <section className="bg-card border border-border rounded-2xl p-4 divide-y divide-border">
+                <div className="flex items-start justify-between gap-3 pb-3">
+                  <div>
+                    <h2 className="font-semibold text-foreground">Raids</h2>
+                    <p className="text-sm text-muted-foreground">Alerts when a streamer raids into your channel or one you follow.</p>
+                  </div>
+                  <Switch checked={raids} disabled={saving} onCheckedChange={(v) => saveField("raids_enabled", v, setRaids, raids, "Raid alerts")} />
+                </div>
+                <div className="flex items-start justify-between gap-3 py-3">
+                  <div>
+                    <h2 className="font-semibold text-foreground">Co-stream requests</h2>
+                    <p className="text-sm text-muted-foreground">Alerts when another streamer invites you to co-stream or replies to your request.</p>
+                  </div>
+                  <Switch checked={coStream} disabled={saving} onCheckedChange={(v) => saveField("co_stream_requests_enabled", v, setCoStream, coStream, "Co-stream alerts")} />
+                </div>
+                <div className="flex items-start justify-between gap-3 pt-3">
+                  <div>
+                    <h2 className="font-semibold text-foreground">Tournament events</h2>
+                    <p className="text-sm text-muted-foreground">Bracket updates, match results, and tournaments you're registered in.</p>
+                  </div>
+                  <Switch checked={tourneys} disabled={saving} onCheckedChange={(v) => saveField("tournament_events_enabled", v, setTourneys, tourneys, "Tournament alerts")} />
                 </div>
               </section>
 
