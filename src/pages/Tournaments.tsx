@@ -26,7 +26,8 @@ interface Tournament {
 }
 
 export default function Tournaments() {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
+  const isStreamer = userRole === "streamer";
   const [list, setList] = useState<Tournament[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
@@ -76,7 +77,7 @@ export default function Tournaments() {
             <Trophy className="w-5 h-5 text-primary" />
             <h1 className="font-bold text-lg">Tournaments</h1>
           </div>
-          {user && (
+          {user && isStreamer ? (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild><Button size="sm"><Plus className="w-4 h-4 mr-1" />Host</Button></DialogTrigger>
               <DialogContent>
@@ -96,7 +97,9 @@ export default function Tournaments() {
                 </div>
               </DialogContent>
             </Dialog>
-          )}
+          ) : user ? (
+            <span className="text-[11px] text-muted-foreground">Streamers host · Fans register</span>
+          ) : null}
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-4 py-4 space-y-3">
