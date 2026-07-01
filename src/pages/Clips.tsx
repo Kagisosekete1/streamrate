@@ -165,7 +165,18 @@ const Clips = () => {
                           <span className="font-semibold">{c.source_streamer_name || "a stream"}</span>
                         )}
                       </p>
-                      {c.title && <p className="text-xs text-muted-foreground mt-1">{c.title}</p>}
+                      {c.chapter_title && (
+                        <p className="text-sm font-semibold mt-1 flex items-center gap-1">
+                          {c.chapter_title}
+                          {c.timestamp_seconds != null && (
+                            <span className="text-[10px] font-normal text-muted-foreground inline-flex items-center gap-0.5">
+                              <Clock className="w-3 h-3" />{fmtTs(c.timestamp_seconds)}
+                            </span>
+                          )}
+                        </p>
+                      )}
+                      {c.title && c.title !== c.chapter_title && <p className="text-xs text-muted-foreground mt-1">{c.title}</p>}
+                      {c.game && <p className="text-[10px] text-muted-foreground mt-0.5">🎮 {c.game}</p>}
                       <div className="flex items-center justify-between mt-2">
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary capitalize">{c.platform}</span>
                         <div className="flex items-center gap-2">
