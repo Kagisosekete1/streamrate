@@ -13,6 +13,9 @@ type PermState = "default" | "granted" | "denied" | "unsupported";
 const NotificationSettings = () => {
   const { user } = useAuth();
   const [enabled, setEnabled] = useState(true);
+  const [raids, setRaids] = useState(true);
+  const [coStream, setCoStream] = useState(true);
+  const [tourneys, setTourneys] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [perm, setPerm] = useState<PermState>("default");
@@ -27,29 +30,40 @@ const NotificationSettings = () => {
       if (!user) { setLoading(false); return; }
       const { data } = await (supabase as any)
         .from("notification_settings")
-        .select("stream_reminders_enabled")
+        .select("stream_reminders_enabled, raids_enabled, co_stream_requests_enabled, tournament_events_enabled")
         .eq("user_id", user.id)
         .maybeSingle();
-      if (data) setEnabled(!!data.stream_reminders_enabled);
+      if (data) {
+        setEnabled(!!data.stream_reminders_enabled);
+        setRaids(data.raids_enabled !== false);
+        setCoStream(data.co_stream_requests_enabled !== false);
+        setTourneys(data.tournament_events_enabled !== false);
+      }
       setLoading(false);
     };
     load();
   }, [user?.id]);
 
-  const save = async (value: boolean) => {
+  const saveField = async (
+    field: "stream_reminders_enabled" | "raids_enabled" | "co_stream_requests_enabled" | "tournament_events_enabled",
+    value: boolean,
+    setter: (v: boolean) => void,
+    prev: boolean,
+    label: string,
+  ) => {
     if (!user) return;
     setSaving(true);
-    setEnabled(value);
+    setter(value);
     const { error } = await (supabase as any)
       .from("notification_settings")
-      .upsert({ user_id: user.id, stream_reminders_enabled: value }, { onConflict: "user_id" });
+      .upsert({ user_id: user.id, [field]: value }, { onConflict: "user_id" });
     setSaving(false);
     if (error) {
       toast({ title: "Couldn't save", description: error.message, variant: "destructive" });
-      setEnabled(!value);
+      setter(prev);
       return;
     }
-    toast({ title: value ? "Reminders enabled" : "Reminders muted" });
+    toast({ title: `${label} ${value ? "enabled" : "muted"}` });
   };
 
   const requestPerm = async () => {
@@ -100,7 +114,31 @@ const NotificationSettings = () => {
                       Get notified before a streamer you've reminded yourself about goes live.
                     </p>
                   </div>
-                  <Switch checked={enabled} disabled={saving} onCheckedChange={save} />
+                  <Switch checked={enabled} disabled={saving} onCheckedChange={(v) => saveField("stream_reminders_enabled", v, setEnabled, enabled, "Reminders")} />
+                </div>
+              </section>
+
+              <section className="bg-card border border-border rounded-2xl p-4 divide-y divide-border">
+                <div className="flex items-start justify-between gap-3 pb-3">
+                  <div>
+                    <h2 className="font-semibold text-foreground">Raids</h2>
+                    <p className="text-sm text-muted-foreground">Alerts when a streamer raids into your channel or one you follow.</p>
+                  </div>
+                  <Switch checked={raids} disabled={saving} onCheckedChange={(v) => saveField("raids_enabled", v, setRaids, raids, "Raid alerts")} />
+                </div>
+                <div className="flex items-start justify-between gap-3 py-3">
+                  <div>
+                    <h2 className="font-semibold text-foreground">Co-stream requests</h2>
+                    <p className="text-sm text-muted-foreground">Alerts when another streamer invites you to co-stream or replies to your request.</p>
+                  </div>
+                  <Switch checked={coStream} disabled={saving} onCheckedChange={(v) => saveField("co_stream_requests_enabled", v, setCoStream, coStream, "Co-stream alerts")} />
+                </div>
+                <div className="flex items-start justify-between gap-3 pt-3">
+                  <div>
+                    <h2 className="font-semibold text-foreground">Tournament events</h2>
+                    <p className="text-sm text-muted-foreground">Bracket updates, match results, and tournaments you're registered in.</p>
+                  </div>
+                  <Switch checked={tourneys} disabled={saving} onCheckedChange={(v) => saveField("tournament_events_enabled", v, setTourneys, tourneys, "Tournament alerts")} />
                 </div>
               </section>
 

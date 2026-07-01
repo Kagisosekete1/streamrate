@@ -26,7 +26,8 @@ interface Req {
 interface ProfileLite { id: string; username: string | null; avatar_url: string | null; }
 
 export default function CoStream() {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
+  const isStreamer = userRole === "streamer";
   const [reqs, setReqs] = useState<Req[]>([]);
   const [profiles, setProfiles] = useState<Record<string, ProfileLite>>({});
   const [loading, setLoading] = useState(true);
@@ -148,6 +149,7 @@ export default function CoStream() {
             <Users className="w-5 h-5 text-primary" />
             <h1 className="font-bold text-lg">Co-Stream</h1>
           </div>
+          {isStreamer ? (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button size="sm"><Send className="w-4 h-4 mr-1" />Send</Button></DialogTrigger>
             <DialogContent>
@@ -171,6 +173,9 @@ export default function CoStream() {
               </div>
             </DialogContent>
           </Dialog>
+          ) : (
+            <span className="text-[11px] text-muted-foreground">Streamers only</span>
+          )}
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-4 py-4">

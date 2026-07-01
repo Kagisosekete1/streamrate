@@ -15,7 +15,8 @@ interface Raid { id: string; from_user_id: string; to_user_id: string; raider_co
 interface ProfileLite { id: string; username: string | null; avatar_url: string | null; }
 
 export default function Raids() {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
+  const isStreamer = userRole === "streamer";
   const [sent, setSent] = useState<Raid[]>([]);
   const [received, setReceived] = useState<Raid[]>([]);
   const [profiles, setProfiles] = useState<Record<string, ProfileLite>>({});
@@ -101,6 +102,7 @@ export default function Raids() {
             <Swords className="w-5 h-5 text-primary" />
             <h1 className="font-bold text-lg">Raids</h1>
           </div>
+          {isStreamer ? (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button size="sm"><Send className="w-4 h-4 mr-1" />Raid</Button></DialogTrigger>
             <DialogContent>
@@ -123,6 +125,9 @@ export default function Raids() {
               </div>
             </DialogContent>
           </Dialog>
+          ) : (
+            <span className="text-[11px] text-muted-foreground">Streamers only</span>
+          )}
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-4 py-4">

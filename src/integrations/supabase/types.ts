@@ -458,20 +458,29 @@ export type Database = {
       }
       notification_settings: {
         Row: {
+          co_stream_requests_enabled: boolean
           created_at: string
+          raids_enabled: boolean
           stream_reminders_enabled: boolean
+          tournament_events_enabled: boolean
           updated_at: string
           user_id: string
         }
         Insert: {
+          co_stream_requests_enabled?: boolean
           created_at?: string
+          raids_enabled?: boolean
           stream_reminders_enabled?: boolean
+          tournament_events_enabled?: boolean
           updated_at?: string
           user_id: string
         }
         Update: {
+          co_stream_requests_enabled?: boolean
           created_at?: string
+          raids_enabled?: boolean
           stream_reminders_enabled?: boolean
+          tournament_events_enabled?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -1655,10 +1664,76 @@ export type Database = {
         }
         Relationships: []
       }
-      tournament_matches: {
+      tournament_match_audit: {
         Row: {
+          action: string
+          actor_user_id: string | null
           created_at: string
           id: string
+          match_id: string
+          new_score_a: number | null
+          new_score_b: number | null
+          new_winner_team_id: string | null
+          note: string | null
+          old_score_a: number | null
+          old_score_b: number | null
+          old_winner_team_id: string | null
+          tournament_id: string
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          match_id: string
+          new_score_a?: number | null
+          new_score_b?: number | null
+          new_winner_team_id?: string | null
+          note?: string | null
+          old_score_a?: number | null
+          old_score_b?: number | null
+          old_winner_team_id?: string | null
+          tournament_id: string
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          match_id?: string
+          new_score_a?: number | null
+          new_score_b?: number | null
+          new_winner_team_id?: string | null
+          note?: string | null
+          old_score_a?: number | null
+          old_score_b?: number | null
+          old_winner_team_id?: string | null
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_match_audit_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_match_audit_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournament_matches: {
+        Row: {
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          id: string
+          locked: boolean
           position: number
           round: number
           scheduled_at: string | null
@@ -1672,8 +1747,11 @@ export type Database = {
           winner_team_id: string | null
         }
         Insert: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           created_at?: string
           id?: string
+          locked?: boolean
           position: number
           round: number
           scheduled_at?: string | null
@@ -1687,8 +1765,11 @@ export type Database = {
           winner_team_id?: string | null
         }
         Update: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           created_at?: string
           id?: string
+          locked?: boolean
           position?: number
           round?: number
           scheduled_at?: string | null

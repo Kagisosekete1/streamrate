@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Trophy, Users, Play, Crown } from "lucide-react";
+import { ArrowLeft, Trophy, Users, Play, Crown, Lock, ShieldCheck, History } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,8 @@ import { generateSingleElimination } from "@/lib/bracket";
 
 interface Tournament { id: string; host_user_id: string; name: string; game: string | null; max_teams: number; prize: string | null; description: string | null; banner_url: string | null; starts_at: string | null; status: string; }
 interface Team { id: string; tournament_id: string; captain_user_id: string; team_name: string; seed: number | null; status: string; }
-interface Match { id: string; tournament_id: string; round: number; position: number; team_a_id: string | null; team_b_id: string | null; winner_team_id: string | null; score_a: number | null; score_b: number | null; status: string; }
+interface Match { id: string; tournament_id: string; round: number; position: number; team_a_id: string | null; team_b_id: string | null; winner_team_id: string | null; score_a: number | null; score_b: number | null; status: string; locked?: boolean; confirmed_at?: string | null; confirmed_by?: string | null; }
+interface AuditRow { id: string; match_id: string; action: string; actor_user_id: string | null; old_winner_team_id: string | null; new_winner_team_id: string | null; note: string | null; created_at: string; }
 
 export default function TournamentDetail() {
   const { id } = useParams();
@@ -23,6 +24,8 @@ export default function TournamentDetail() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [open, setOpen] = useState(false);
   const [teamName, setTeamName] = useState("");
+  const [audit, setAudit] = useState<AuditRow[]>([]);
+  const [auditOpen, setAuditOpen] = useState<string | null>(null);
 
   const load = async () => {
     if (!id) return;
@@ -34,6 +37,8 @@ export default function TournamentDetail() {
     setT((tt as Tournament) || null);
     setTeams((ts as Team[]) || []);
     setMatches((ms as Match[]) || []);
+    const { data: aud } = await supabase.from("tournament_match_audit").select("*").eq("tournament_id", id).order("created_at", { ascending: false }).limit(200);
+    setAudit((aud as AuditRow[]) || []);
   };
   useEffect(() => { load(); }, [id]);
 
@@ -74,28 +79,49 @@ export default function TournamentDetail() {
     load();
   };
 
-  const setWinner = async (m: Match, winner: "a" | "b") => {
-    if (!isHost) return;
+  const pickWinner = async (m: Match, winner: "a" | "b") => {
+    if (!isHost || m.locked) return;
     const winnerId = winner === "a" ? m.team_a_id : m.team_b_id;
     if (!winnerId) return;
     const { error } = await supabase.from("tournament_matches").update({ winner_team_id: winnerId, status: "completed" }).eq("id", m.id);
     if (error) { toast.error(error.message); return; }
-    // Propagate winner to next round
+    await supabase.from("tournament_match_audit").insert({
+      match_id: m.id, tournament_id: m.tournament_id, actor_user_id: user!.id,
+      action: "winner_selected", old_winner_team_id: m.winner_team_id, new_winner_team_id: winnerId,
+      note: "Pending confirmation",
+    });
+    toast.success("Winner selected — confirm to lock");
+    load();
+  };
+
+  const confirmResult = async (m: Match) => {
+    if (!isHost || !m.winner_team_id || m.locked) return;
+    if (!confirm(`Lock ${teamMap[m.winner_team_id]} as the winner? This can't be changed.`)) return;
+    const { error } = await supabase.from("tournament_matches")
+      .update({ locked: true, confirmed_at: new Date().toISOString(), confirmed_by: user!.id })
+      .eq("id", m.id);
+    if (error) { toast.error(error.message); return; }
+    await supabase.from("tournament_match_audit").insert({
+      match_id: m.id, tournament_id: m.tournament_id, actor_user_id: user!.id,
+      action: "result_confirmed", new_winner_team_id: m.winner_team_id, note: "Locked — bracket advanced",
+    });
+    // Now propagate to next round
     const nextRound = m.round + 1;
     const nextPos = Math.ceil(m.position / 2);
     const next = matches.find(x => x.round === nextRound && x.position === nextPos);
     if (next) {
       const slot = m.position % 2 === 1 ? "team_a_id" : "team_b_id";
-      await supabase.from("tournament_matches").update({ [slot]: winnerId }).eq("id", next.id);
+      await supabase.from("tournament_matches").update({ [slot]: m.winner_team_id }).eq("id", next.id);
     } else {
       await supabase.from("tournaments").update({ status: "completed" }).eq("id", m.tournament_id);
     }
+    toast.success("Result confirmed and locked");
     load();
   };
 
   if (!t) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading tournament…</div>;
 
-  const teamMap = Object.fromEntries(teams.map(x => [x.id, x.team_name]));
+  const teamMap: Record<string, string> = Object.fromEntries(teams.map(x => [x.id, x.team_name]));
   const rounds = Array.from(new Set(matches.map(m => m.round))).sort((a, b) => a - b);
   const isFull = teams.length >= t.max_teams;
 
@@ -159,7 +185,7 @@ export default function TournamentDetail() {
                 <div key={rd} className="flex flex-col gap-3 min-w-[200px]">
                   <p className="text-xs font-semibold text-muted-foreground">Round {rd}</p>
                   {matches.filter(m => m.round === rd).map(m => (
-                    <Card key={m.id} className="p-2 text-sm">
+                    <Card key={m.id} className={`p-2 text-sm ${m.locked ? "border-primary/40" : ""}`}>
                       {(["a", "b"] as const).map(side => {
                         const tid = side === "a" ? m.team_a_id : m.team_b_id;
                         const isWinner = m.winner_team_id === tid;
@@ -169,12 +195,37 @@ export default function TournamentDetail() {
                               {isWinner && <Crown className="w-3 h-3 text-primary" />}
                               {tid ? teamMap[tid] || "—" : <span className="text-muted-foreground italic">BYE</span>}
                             </span>
-                            {isHost && m.status !== "completed" && tid && (
-                              <button onClick={() => setWinner(m, side)} className="text-[10px] text-primary hover:underline">Win</button>
+                            {isHost && !m.locked && tid && (
+                              <button onClick={() => pickWinner(m, side)} className="text-[10px] text-primary hover:underline">Win</button>
                             )}
                           </div>
                         );
                       })}
+                      <div className="mt-1 flex items-center justify-between border-t border-border pt-1">
+                        {m.locked ? (
+                          <span className="text-[10px] text-primary flex items-center gap-1"><Lock className="w-3 h-3" />Locked</span>
+                        ) : m.winner_team_id && isHost ? (
+                          <button onClick={() => confirmResult(m)} className="text-[10px] text-primary flex items-center gap-1 hover:underline"><ShieldCheck className="w-3 h-3" />Confirm</button>
+                        ) : m.winner_team_id ? (
+                          <span className="text-[10px] text-amber-500">Pending confirm</span>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground">—</span>
+                        )}
+                        <button onClick={() => setAuditOpen(auditOpen === m.id ? null : m.id)} className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-1">
+                          <History className="w-3 h-3" />Audit
+                        </button>
+                      </div>
+                      {auditOpen === m.id && (
+                        <div className="mt-1 text-[10px] text-muted-foreground space-y-0.5 max-h-32 overflow-auto">
+                          {audit.filter(a => a.match_id === m.id).length === 0 && <p>No audit entries yet.</p>}
+                          {audit.filter(a => a.match_id === m.id).map(a => (
+                            <div key={a.id} className="flex justify-between gap-2">
+                              <span>{a.action}{a.new_winner_team_id ? ` → ${teamMap[a.new_winner_team_id] || "?"}` : ""}</span>
+                              <span>{new Date(a.created_at).toLocaleTimeString()}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </Card>
                   ))}
                 </div>
