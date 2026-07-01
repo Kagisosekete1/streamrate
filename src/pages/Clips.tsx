@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Scissors, ExternalLink, Trash2 } from "lucide-react";
+import { Scissors, ExternalLink, Trash2, Plus, Clock } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -17,9 +20,27 @@ interface Clip {
   stream_url: string;
   title: string | null;
   created_at: string;
+  chapter_title?: string | null;
+  timestamp_seconds?: number | null;
+  game?: string | null;
   clipper_name?: string;
   clipper_avatar?: string;
 }
+
+const parseTs = (s: string): number | null => {
+  if (!s.trim()) return null;
+  const parts = s.split(":").map(x => Number(x.trim()));
+  if (parts.some(isNaN)) return null;
+  if (parts.length === 1) return parts[0];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return null;
+};
+const fmtTs = (n: number | null | undefined): string => {
+  if (n == null) return "";
+  const h = Math.floor(n / 3600), m = Math.floor((n % 3600) / 60), s = n % 60;
+  return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}` : `${m}:${String(s).padStart(2, "0")}`;
+};
 
 const Clips = () => {
   const navigate = useNavigate();
@@ -27,6 +48,32 @@ const Clips = () => {
   const [clips, setClips] = useState<Clip[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ title: "", chapter_title: "", timestamp: "", platform: "twitch", stream_url: "", source_streamer_name: "", game: "" });
+
+  const createClip = async () => {
+    if (!user) { toast.error("Sign in first"); return; }
+    if (!form.stream_url.trim() || !form.chapter_title.trim()) { toast.error("Chapter title and stream URL required"); return; }
+    const ts = parseTs(form.timestamp);
+    setSaving(true);
+    const { data, error } = await supabase.from("stream_clips").insert({
+      clipper_id: user.id,
+      platform: form.platform,
+      stream_url: form.stream_url.trim(),
+      title: form.title.trim() || form.chapter_title.trim(),
+      chapter_title: form.chapter_title.trim(),
+      timestamp_seconds: ts,
+      game: form.game.trim() || null,
+      source_streamer_name: form.source_streamer_name.trim() || null,
+    }).select("*").maybeSingle();
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Highlight saved");
+    setOpen(false);
+    setForm({ title: "", chapter_title: "", timestamp: "", platform: "twitch", stream_url: "", source_streamer_name: "", game: "" });
+    if (data) setClips(prev => [{ ...(data as Clip), clipper_name: "You" }, ...prev]);
+  };
 
   const deleteClip = async (clipId: string) => {
     if (!user) return;
@@ -62,7 +109,30 @@ const Clips = () => {
       <div className="min-h-screen bg-background pb-20 md:pb-8">
         <header className="sticky top-0 z-40 bg-background border-b border-border/50 px-4 py-4 flex items-center gap-2 transform-gpu">
           <Scissors className="w-6 h-6 text-orange-500" />
-          <h1 className="text-2xl font-bold">Stream Clips</h1>
+          <h1 className="text-2xl font-bold flex-1">Stream Clips</h1>
+          {user && (
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild><Button size="sm"><Plus className="w-4 h-4 mr-1" />New</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Create highlight</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <Input placeholder="Chapter title (e.g. 'Insane 1v5 clutch')" value={form.chapter_title} onChange={e => setForm({ ...form, chapter_title: e.target.value })} />
+                  <Input placeholder="Timestamp (e.g. 12:34 or 1:12:34)" value={form.timestamp} onChange={e => setForm({ ...form, timestamp: e.target.value })} />
+                  <Input placeholder="Stream URL (VOD, clip, or livestream)" value={form.stream_url} onChange={e => setForm({ ...form, stream_url: e.target.value })} />
+                  <Select value={form.platform} onValueChange={v => setForm({ ...form, platform: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {["twitch", "youtube", "kick", "tiktok", "other"].map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Input placeholder="Source streamer (optional)" value={form.source_streamer_name} onChange={e => setForm({ ...form, source_streamer_name: e.target.value })} />
+                  <Input placeholder="Game (optional)" value={form.game} onChange={e => setForm({ ...form, game: e.target.value })} />
+                  <Input placeholder="Extra description (optional)" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
+                  <Button className="w-full" disabled={saving} onClick={createClip}>{saving ? "Saving…" : "Save highlight"}</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
         </header>
         <main className="px-4 py-4">
           {loading ? (
