@@ -313,7 +313,7 @@ const Home = () => {
         <ComposerBar />
 
         <div className="mt-2">
-          <TrendingStreamersSection streamers={trendingStreamers} />
+          <TrendingStreamersSection trendingStreamers={trendingStreamers} />
         </div>
 
         <div className="mt-2">
