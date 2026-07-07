@@ -114,6 +114,11 @@ export const useSmartFeed = () => {
       const ageHours = (Date.now() - new Date(post.created_at!).getTime()) / (1000 * 60 * 60);
       score += Math.max(0, 100 - ageHours * 2); // decays over ~50 hours
 
+      // Fresh-post priority: anything under 24h gets a strong lift so newest sits on top
+      if (ageHours < 24) {
+        score += 800 - ageHours * 20; // 800 at t=0, ~320 at 24h
+      }
+
       // Own posts get slight boost so user sees their content
       if (post.user_id === user.id) {
         score += 50;

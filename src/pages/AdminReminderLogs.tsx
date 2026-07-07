@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { ArrowLeft, RefreshCw, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, RefreshCw, AlertTriangle, CheckCircle2, Loader2, Download } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { useIsSeenAdmin } from "@/hooks/useIsSeenAdmin";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,11 @@ interface LogRow {
   errors: Array<{ reminder_id?: string; user_id?: string; message: string }>;
   duration_ms: number | null;
 }
+
+const csvEscape = (v: unknown): string => {
+  const s = v == null ? "" : String(v);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
 
 const AdminReminderLogs = () => {
   const isAdmin = useIsSeenAdmin();
@@ -43,6 +48,29 @@ const AdminReminderLogs = () => {
     { sent: 0, errors: 0 },
   );
 
+  const exportCsv = () => {
+    const header = ["run_at", "status", "scanned", "sent", "skipped", "duration_ms", "error_count", "reminder_id", "user_id", "error_message"];
+    const lines: string[] = [header.join(",")];
+    rows.forEach((r) => {
+      if (!r.errors || r.errors.length === 0) {
+        lines.push([r.run_at, r.status, r.scanned, r.sent, r.skipped, r.duration_ms ?? "", 0, "", "", ""].map(csvEscape).join(","));
+      } else {
+        r.errors.forEach((e) => {
+          lines.push([r.run_at, r.status, r.scanned, r.sent, r.skipped, r.duration_ms ?? "", r.errors.length, e.reminder_id || "", e.user_id || "", e.message || ""].map(csvEscape).join(","));
+        });
+      }
+    });
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `reminder-dispatch-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <AppLayout>
       <div className="min-h-screen bg-background pb-24 md:pb-8">
@@ -52,6 +80,9 @@ const AdminReminderLogs = () => {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <h1 className="font-bold text-lg text-foreground flex-1">Reminder dispatch logs</h1>
+            <Button size="sm" variant="outline" onClick={exportCsv} disabled={rows.length === 0}>
+              <Download className="w-4 h-4 mr-1" /> CSV
+            </Button>
             <Button size="sm" variant="ghost" onClick={load} disabled={loading}>
               <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
             </Button>
