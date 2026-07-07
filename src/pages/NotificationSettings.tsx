@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Bell, ShieldAlert, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, Bell, ShieldAlert, CheckCircle2, Loader2, Send } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -86,6 +86,31 @@ const NotificationSettings = () => {
     }
   };
 
+  const sendTest = async (category: "reminder" | "raid" | "co_stream" | "tournament", label: string, enabledFlag: boolean) => {
+    if (!enabledFlag) {
+      toast({ title: `${label} muted`, description: `Enable ${label.toLowerCase()} above to receive this alert.` });
+      return;
+    }
+    if (typeof Notification === "undefined") {
+      toast({ title: "Notifications unsupported in this browser", variant: "destructive" });
+      return;
+    }
+    if (Notification.permission !== "granted") {
+      toast({ title: "Grant browser permission first", description: "Use the Allow notifications button below." });
+      return;
+    }
+    try {
+      new Notification(`Test: ${label}`, {
+        body: `This is a test ${label.toLowerCase()} notification. Category: ${category}.`,
+        icon: "/logo.png",
+        tag: `test-${category}`,
+      });
+      toast({ title: `Sent test ${label.toLowerCase()}` });
+    } catch (e: any) {
+      toast({ title: "Couldn't send test", description: e?.message, variant: "destructive" });
+    }
+  };
+
   return (
     <AppLayout>
       <div className="min-h-screen bg-background pb-24 md:pb-8">
@@ -116,6 +141,9 @@ const NotificationSettings = () => {
                   </div>
                   <Switch checked={enabled} disabled={saving} onCheckedChange={(v) => saveField("stream_reminders_enabled", v, setEnabled, enabled, "Reminders")} />
                 </div>
+                <Button size="sm" variant="outline" className="mt-3" onClick={() => sendTest("reminder", "Reminder", enabled)}>
+                  <Send className="w-3.5 h-3.5 mr-1" /> Send test
+                </Button>
               </section>
 
               <section className="bg-card border border-border rounded-2xl p-4 divide-y divide-border">
@@ -124,21 +152,30 @@ const NotificationSettings = () => {
                     <h2 className="font-semibold text-foreground">Raids</h2>
                     <p className="text-sm text-muted-foreground">Alerts when a streamer raids into your channel or one you follow.</p>
                   </div>
-                  <Switch checked={raids} disabled={saving} onCheckedChange={(v) => saveField("raids_enabled", v, setRaids, raids, "Raid alerts")} />
+                  <div className="flex flex-col items-end gap-2">
+                    <Switch checked={raids} disabled={saving} onCheckedChange={(v) => saveField("raids_enabled", v, setRaids, raids, "Raid alerts")} />
+                    <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => sendTest("raid", "Raid alert", raids)}><Send className="w-3 h-3 mr-1" />Test</Button>
+                  </div>
                 </div>
                 <div className="flex items-start justify-between gap-3 py-3">
                   <div>
                     <h2 className="font-semibold text-foreground">Co-stream requests</h2>
                     <p className="text-sm text-muted-foreground">Alerts when another streamer invites you to co-stream or replies to your request.</p>
                   </div>
-                  <Switch checked={coStream} disabled={saving} onCheckedChange={(v) => saveField("co_stream_requests_enabled", v, setCoStream, coStream, "Co-stream alerts")} />
+                  <div className="flex flex-col items-end gap-2">
+                    <Switch checked={coStream} disabled={saving} onCheckedChange={(v) => saveField("co_stream_requests_enabled", v, setCoStream, coStream, "Co-stream alerts")} />
+                    <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => sendTest("co_stream", "Co-stream alert", coStream)}><Send className="w-3 h-3 mr-1" />Test</Button>
+                  </div>
                 </div>
                 <div className="flex items-start justify-between gap-3 pt-3">
                   <div>
                     <h2 className="font-semibold text-foreground">Tournament events</h2>
                     <p className="text-sm text-muted-foreground">Bracket updates, match results, and tournaments you're registered in.</p>
                   </div>
-                  <Switch checked={tourneys} disabled={saving} onCheckedChange={(v) => saveField("tournament_events_enabled", v, setTourneys, tourneys, "Tournament alerts")} />
+                  <div className="flex flex-col items-end gap-2">
+                    <Switch checked={tourneys} disabled={saving} onCheckedChange={(v) => saveField("tournament_events_enabled", v, setTourneys, tourneys, "Tournament alerts")} />
+                    <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => sendTest("tournament", "Tournament alert", tourneys)}><Send className="w-3 h-3 mr-1" />Test</Button>
+                  </div>
                 </div>
               </section>
 

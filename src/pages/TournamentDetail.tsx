@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Trophy, Users, Play, Crown, Lock, ShieldCheck, History } from "lucide-react";
+import { ArrowLeft, Trophy, Users, Play, Crown, Lock, ShieldCheck, History, Search, Filter } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ interface Tournament { id: string; host_user_id: string; name: string; game: str
 interface Team { id: string; tournament_id: string; captain_user_id: string; team_name: string; seed: number | null; status: string; }
 interface Match { id: string; tournament_id: string; round: number; position: number; team_a_id: string | null; team_b_id: string | null; winner_team_id: string | null; score_a: number | null; score_b: number | null; status: string; locked?: boolean; confirmed_at?: string | null; confirmed_by?: string | null; }
 interface AuditRow { id: string; match_id: string; action: string; actor_user_id: string | null; old_winner_team_id: string | null; new_winner_team_id: string | null; note: string | null; created_at: string; }
+interface ActorProfile { id: string; username: string | null; full_name: string | null; }
 
 export default function TournamentDetail() {
   const { id } = useParams();
@@ -26,6 +27,12 @@ export default function TournamentDetail() {
   const [teamName, setTeamName] = useState("");
   const [audit, setAudit] = useState<AuditRow[]>([]);
   const [auditOpen, setAuditOpen] = useState<string | null>(null);
+  const [actors, setActors] = useState<Record<string, ActorProfile>>({});
+  const [auditSearch, setAuditSearch] = useState("");
+  const [auditActor, setAuditActor] = useState<string>("all");
+  const [auditAction, setAuditAction] = useState<string>("all");
+  const [auditFrom, setAuditFrom] = useState<string>("");
+  const [auditTo, setAuditTo] = useState<string>("");
 
   const load = async () => {
     if (!id) return;
@@ -39,6 +46,13 @@ export default function TournamentDetail() {
     setMatches((ms as Match[]) || []);
     const { data: aud } = await supabase.from("tournament_match_audit").select("*").eq("tournament_id", id).order("created_at", { ascending: false }).limit(200);
     setAudit((aud as AuditRow[]) || []);
+    const actorIds = [...new Set(((aud as AuditRow[]) || []).map(a => a.actor_user_id).filter(Boolean))] as string[];
+    if (actorIds.length > 0) {
+      const { data: profs } = await supabase.from("profiles").select("id, username, full_name").in("id", actorIds);
+      setActors(Object.fromEntries(((profs as ActorProfile[]) || []).map(p => [p.id, p])));
+    } else {
+      setActors({});
+    }
   };
   useEffect(() => { load(); }, [id]);
 
@@ -124,6 +138,23 @@ export default function TournamentDetail() {
   const teamMap: Record<string, string> = Object.fromEntries(teams.map(x => [x.id, x.team_name]));
   const rounds = Array.from(new Set(matches.map(m => m.round))).sort((a, b) => a - b);
   const isFull = teams.length >= t.max_teams;
+
+  const actorLabel = (uid: string | null) => uid ? (actors[uid]?.username || actors[uid]?.full_name || uid.slice(0, 6)) : "system";
+  const uniqueActions = Array.from(new Set(audit.map(a => a.action)));
+  const uniqueActors = Array.from(new Set(audit.map(a => a.actor_user_id).filter(Boolean))) as string[];
+
+  const filteredAudit = audit.filter(a => {
+    if (auditActor !== "all" && a.actor_user_id !== auditActor) return false;
+    if (auditAction !== "all" && a.action !== auditAction) return false;
+    if (auditFrom && new Date(a.created_at) < new Date(auditFrom)) return false;
+    if (auditTo && new Date(a.created_at) > new Date(auditTo)) return false;
+    if (auditSearch) {
+      const q = auditSearch.toLowerCase();
+      const hay = [a.action, a.note || "", actorLabel(a.actor_user_id), teamMap[a.new_winner_team_id || ""] || "", teamMap[a.old_winner_team_id || ""] || ""].join(" ").toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-background pb-32">
@@ -230,6 +261,59 @@ export default function TournamentDetail() {
                   ))}
                 </div>
               ))}
+            </div>
+          </section>
+        )}
+
+        {audit.length > 0 && (
+          <section className="bg-card border border-border rounded-xl p-3 space-y-3">
+            <div className="flex items-center gap-2">
+              <History className="w-4 h-4 text-primary" />
+              <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">Match audit history</h2>
+              <Badge variant="secondary" className="text-[10px] ml-auto">{filteredAudit.length}/{audit.length}</Badge>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+              <div className="relative md:col-span-2">
+                <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input placeholder="Search actor, action, note, team" value={auditSearch} onChange={e => setAuditSearch(e.target.value)} className="h-9 pl-7 text-xs" />
+              </div>
+              <select value={auditActor} onChange={e => setAuditActor(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-xs">
+                <option value="all">All actors</option>
+                {uniqueActors.map(u => <option key={u} value={u}>{actorLabel(u)}</option>)}
+              </select>
+              <select value={auditAction} onChange={e => setAuditAction(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-xs">
+                <option value="all">All actions</option>
+                {uniqueActions.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+              <div className="flex gap-1">
+                <Input type="datetime-local" value={auditFrom} onChange={e => setAuditFrom(e.target.value)} className="h-9 text-xs" title="From" />
+                <Input type="datetime-local" value={auditTo} onChange={e => setAuditTo(e.target.value)} className="h-9 text-xs" title="To" />
+              </div>
+            </div>
+            {(auditSearch || auditActor !== "all" || auditAction !== "all" || auditFrom || auditTo) && (
+              <button onClick={() => { setAuditSearch(""); setAuditActor("all"); setAuditAction("all"); setAuditFrom(""); setAuditTo(""); }} className="text-[11px] text-primary hover:underline flex items-center gap-1"><Filter className="w-3 h-3" />Clear filters</button>
+            )}
+            <div className="max-h-96 overflow-auto divide-y divide-border">
+              {filteredAudit.length === 0 && <p className="text-xs text-muted-foreground py-4 text-center">No audit entries match these filters.</p>}
+              {filteredAudit.map(a => {
+                const matchIdx = matches.findIndex(m => m.id === a.match_id);
+                const matchLabel = matchIdx >= 0 ? `R${matches[matchIdx].round}·M${matches[matchIdx].position}` : a.match_id.slice(0, 6);
+                return (
+                  <div key={a.id} className="py-2 text-xs flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="text-muted-foreground font-mono">{new Date(a.created_at).toLocaleString()}</span>
+                    <Badge variant="outline" className="text-[10px]">{a.action}</Badge>
+                    <span className="text-muted-foreground">by <b className="text-foreground">{actorLabel(a.actor_user_id)}</b></span>
+                    <span className="text-muted-foreground">match <b className="text-foreground">{matchLabel}</b></span>
+                    {a.new_winner_team_id && (
+                      <span className="text-muted-foreground">
+                        {a.old_winner_team_id ? `${teamMap[a.old_winner_team_id] || "?"} → ` : "→ "}
+                        <b className="text-foreground">{teamMap[a.new_winner_team_id] || "?"}</b>
+                      </span>
+                    )}
+                    {a.note && <span className="text-muted-foreground italic">"{a.note}"</span>}
+                  </div>
+                );
+              })}
             </div>
           </section>
         )}

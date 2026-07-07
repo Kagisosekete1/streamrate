@@ -309,10 +309,18 @@ const Home = () => {
           </div>
         </header>
 
-        <UnderratedCreators />
+        {/* Facebook-style order: Composer first, then discovery strips, then feed */}
         <ComposerBar />
 
-        <main className="max-w-xl mx-auto">
+        <div className="mt-2">
+          <TrendingStreamersSection trendingStreamers={trendingStreamers} />
+        </div>
+
+        <div className="mt-2">
+          <UnderratedCreators />
+        </div>
+
+        <main className="max-w-xl mx-auto mt-2 space-y-3">
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
