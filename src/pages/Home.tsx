@@ -19,6 +19,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { useOnAppRefresh } from "@/hooks/useAppVisibility";
 import { IOSInstallBanner } from "@/components/IOSInstallBanner";
 import { UnderratedCreators } from "@/components/UnderratedCreators";
+import { ComposerBar } from "@/components/ComposerBar";
 
 interface Streamer {
   id: string;
@@ -309,6 +310,7 @@ const Home = () => {
         </header>
 
         <UnderratedCreators />
+        <ComposerBar />
 
         <main className="max-w-xl mx-auto">
           {loading ? (

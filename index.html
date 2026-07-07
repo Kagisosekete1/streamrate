@@ -30,6 +30,17 @@
   <meta name="twitter:title" content="StreamRate">
   <meta property="og:description" content="StreamRate is the ultimate platform for fans to rate, review, and follow their favorite streamers. Join the gaming community today! Rate, Review Your Favorites">
   <meta name="twitter:description" content="StreamRate is the ultimate platform for fans to rate, review, and follow their favorite streamers. Join the gaming community today! Rate, Review Your Favorites">
+
+  <!-- OneSignal Web Push SDK -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({
+        appId: "447ab0ac-d32a-4aa8-bb29-d4b50c562672",
+      });
+    });
+  </script>
 </head>
 
   <body>
