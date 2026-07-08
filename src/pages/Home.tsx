@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
-import { TrendingStreamersSection } from "@/components/TrendingStreamersSection";
 import { PostCard } from "@/components/PostCard";
 import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 import { NewPostsBanner } from "@/components/NewPostsBanner";
@@ -309,18 +308,14 @@ const Home = () => {
           </div>
         </header>
 
-        {/* Facebook-style order: Composer first, then discovery strips, then feed */}
-        <ComposerBar />
-
-        <div className="mt-2">
-          <TrendingStreamersSection trendingStreamers={trendingStreamers} />
-        </div>
-
+        {/* Order: Underrated Creators → Composer → Feed */}
         <div className="mt-2">
           <UnderratedCreators />
         </div>
 
-        <main className="max-w-xl mx-auto mt-2 space-y-3">
+        <ComposerBar />
+
+        <main className="max-w-xl mx-auto mt-3 px-3 md:px-0 space-y-4">
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
