@@ -306,7 +306,7 @@ export const PostCard = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: index * 0.05 }}
-      className="bg-card border-b border-border"
+      className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm"
     >
       {/* Header - Instagram style */}
       <div className="flex items-center justify-between px-4 py-3">
