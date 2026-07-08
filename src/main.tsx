@@ -10,11 +10,12 @@ applyChromePwaRenderingGuards();
 
 // Register service worker for PWA, but immediately activate fresh builds so
 // installed Chrome Android PWAs do not keep serving a stale bugged shell.
-const updateSW = registerSW({
+// Register the PWA service worker. We deliberately do NOT auto-call
+// updateSW(true) on every new build — that caused the app to reload multiple
+// times in a row on desktop/mobile PWAs. The <UpdateBanner /> surfaces a
+// user-controlled refresh instead.
+registerSW({
   immediate: true,
-  onNeedRefresh() {
-    updateSW(true);
-  },
   onOfflineReady() {
     console.log("App ready to work offline");
   },
