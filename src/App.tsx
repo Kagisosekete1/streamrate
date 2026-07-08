@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { useAppVisibility } from "@/hooks/useAppVisibility";
 import { useNativePushNotifications } from "@/hooks/useNativePushNotifications";
+import { useOneSignalIdentity } from "@/hooks/useOneSignalIdentity";
 import { CookieConsent } from "@/components/CookieConsent";
 import { PWAInstallBanner } from "@/components/PWAInstallBanner";
 import { IOSInstallBanner } from "@/components/IOSInstallBanner";
@@ -66,6 +67,7 @@ const queryClient = new QueryClient({
 
 function AuthenticatedFeatures() {
   useNativePushNotifications();
+  useOneSignalIdentity();
   return null;
 }
 
