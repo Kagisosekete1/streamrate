@@ -31,13 +31,34 @@
   <meta property="og:description" content="StreamRate is the ultimate platform for fans to rate, review, and follow their favorite streamers. Join the gaming community today! Rate, Review Your Favorites">
   <meta name="twitter:description" content="StreamRate is the ultimate platform for fans to rate, review, and follow their favorite streamers. Join the gaming community today! Rate, Review Your Favorites">
 
-  <!-- OneSignal Web Push SDK -->
+  <!-- OneSignal Web Push SDK (scoped to /push/ so it does not clash with the PWA service worker) -->
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <script>
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(OneSignal) {
       await OneSignal.init({
         appId: "447ab0ac-d32a-4aa8-bb29-d4b50c562672",
+        serviceWorkerPath: "push/OneSignalSDKWorker.js",
+        serviceWorkerParam: { scope: "/push/" },
+        notifyButton: { enable: false },
+        allowLocalhostAsSecureOrigin: true,
+      });
+
+      // Deep-link: open the exact page from the notification payload.
+      OneSignal.Notifications.addEventListener("click", function (event) {
+        try {
+          var data = event?.notification?.additionalData || {};
+          var url = data.url || event?.notification?.launchURL;
+          if (!url) return;
+          var target = new URL(url, window.location.origin);
+          if (target.origin === window.location.origin) {
+            window.location.assign(target.pathname + target.search + target.hash);
+          } else {
+            window.location.assign(target.toString());
+          }
+        } catch (e) {
+          console.warn("OneSignal click handler failed", e);
+        }
       });
     });
   </script>
