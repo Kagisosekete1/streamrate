@@ -358,6 +358,27 @@ export type Database = {
         }
         Relationships: []
       }
+      device_tokens: {
+        Row: {
+          created_at: string | null
+          id: string
+          token: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          token: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          token?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       draft_posts: {
         Row: {
           content: string | null
@@ -488,43 +509,34 @@ export type Database = {
       }
       notifications: {
         Row: {
-          comment_id: string | null
-          created_at: string
+          created_at: string | null
           from_user_id: string | null
           id: string
-          is_read: boolean
-          message: string
+          message: string | null
           post_id: string | null
-          reel_id: string | null
-          title: string
-          type: string
-          user_id: string
+          title: string | null
+          type: string | null
+          user_id: string | null
         }
         Insert: {
-          comment_id?: string | null
-          created_at?: string
+          created_at?: string | null
           from_user_id?: string | null
           id?: string
-          is_read?: boolean
-          message: string
+          message?: string | null
           post_id?: string | null
-          reel_id?: string | null
-          title: string
-          type?: string
-          user_id: string
+          title?: string | null
+          type?: string | null
+          user_id?: string | null
         }
         Update: {
-          comment_id?: string | null
-          created_at?: string
+          created_at?: string | null
           from_user_id?: string | null
           id?: string
-          is_read?: boolean
-          message?: string
+          message?: string | null
           post_id?: string | null
-          reel_id?: string | null
-          title?: string
-          type?: string
-          user_id?: string
+          title?: string | null
+          type?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -631,31 +643,49 @@ export type Database = {
       }
       posts: {
         Row: {
+          comment_count: number | null
           content: string
           created_at: string | null
           id: string
           image_url: string | null
           is_private: boolean
+          like_count: number | null
+          reply_count: number | null
+          share_count: number | null
+          title: string | null
           updated_at: string | null
           user_id: string
+          view_count: number | null
         }
         Insert: {
+          comment_count?: number | null
           content: string
           created_at?: string | null
           id?: string
           image_url?: string | null
           is_private?: boolean
+          like_count?: number | null
+          reply_count?: number | null
+          share_count?: number | null
+          title?: string | null
           updated_at?: string | null
           user_id: string
+          view_count?: number | null
         }
         Update: {
+          comment_count?: number | null
           content?: string
           created_at?: string | null
           id?: string
           image_url?: string | null
           is_private?: boolean
+          like_count?: number | null
+          reply_count?: number | null
+          share_count?: number | null
+          title?: string | null
           updated_at?: string | null
           user_id?: string
+          view_count?: number | null
         }
         Relationships: []
       }
@@ -1124,6 +1154,48 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      replies: {
+        Row: {
+          comment_id: string | null
+          content: string | null
+          created_at: string | null
+          id: string
+          post_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          comment_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          post_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          comment_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          post_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "replies_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "replies_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reports: {
         Row: {
@@ -2136,6 +2208,27 @@ export type Database = {
           total_xp?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          username: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          username?: string
         }
         Relationships: []
       }
