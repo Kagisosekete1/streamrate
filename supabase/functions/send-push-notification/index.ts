@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,6 +10,21 @@ const ONESIGNAL_APP_ID = "447ab0ac-d32a-4aa8-bb29-d4b50c562672";
 const ONESIGNAL_REST_API_KEY = Deno.env.get("ONESIGNAL_REST_API_KEY") ?? "";
 const APP_ORIGIN = "https://www.streamrateapp.com";
 const LOGO_URL = `${APP_ORIGIN}/logo.png`;
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const admin = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+  : null;
+
+async function logDispatch(row: Record<string, unknown>) {
+  if (!admin) return;
+  try {
+    await admin.from("push_dispatch_logs").insert(row);
+  } catch (e) {
+    console.warn("push_dispatch_logs insert failed", e);
+  }
+}
 
 function buildDeepLink(data: Record<string, any>): string {
   const type = String(data?.type ?? "");
@@ -51,6 +67,15 @@ serve(async (req) => {
     const { userId, title, message, data = {} } = body ?? {};
 
     if (!userId || !title || !message) {
+      await logDispatch({
+        user_id: null,
+        notification_type: (data as any)?.type ?? null,
+        title: title ?? null,
+        message: message ?? null,
+        status: "invalid_input",
+        error: "userId, title and message are required",
+        payload: body ?? {},
+      });
       return new Response(
         JSON.stringify({ error: "userId, title and message are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -87,6 +112,20 @@ serve(async (req) => {
     const result = await response.json();
     console.log("OneSignal response:", response.status, JSON.stringify(result));
 
+    await logDispatch({
+      user_id: userId,
+      notification_type: (data as any)?.type ?? null,
+      title,
+      message,
+      deep_link: url,
+      status: response.ok ? "sent" : "failed",
+      http_status: response.status,
+      error: response.ok ? null : (typeof result === "object" ? JSON.stringify(result).slice(0, 2000) : String(result)),
+      onesignal_id: (result as any)?.id ?? null,
+      payload,
+      response: result,
+    });
+
     if (!response.ok) {
       return new Response(
         JSON.stringify({ error: "OneSignal request failed", result }),
@@ -100,6 +139,10 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("Error sending OneSignal push:", error);
+    await logDispatch({
+      status: "exception",
+      error: (error as Error).message,
+    });
     return new Response(
       JSON.stringify({ error: (error as Error).message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
