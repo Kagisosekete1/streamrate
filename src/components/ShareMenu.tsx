@@ -8,6 +8,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ShareMenuProps {
   postId: string;
@@ -19,12 +21,26 @@ interface ShareMenuProps {
 
 export const ShareMenu = ({ postId, title = "Check out this post", imageUrl, authorUsername, authorName }: ShareMenuProps) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [copied, setCopied] = useState(false);
 
   const shareUrl = `${window.location.origin}/post/${postId}`;
   const handle = authorUsername ? `@${authorUsername}` : authorName || "";
   const attribution = handle ? ` by ${handle}` : "";
   const shareText = `${title}${attribution} – StreamRate`;
+
+  const recordShare = async (destination: string) => {
+    if (!user) return;
+    try {
+      await (supabase as any).from("post_shares").insert({
+        post_id: postId,
+        user_id: user.id,
+        destination,
+      });
+    } catch {
+      /* non-blocking */
+    }
+  };
 
   const handleCopyLink = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -33,6 +49,7 @@ export const ShareMenu = ({ postId, title = "Check out this post", imageUrl, aut
       setCopied(true);
       toast({ title: "Link copied to clipboard!" });
       setTimeout(() => setCopied(false), 2000);
+      recordShare("copy_link");
     } catch {
       toast({ title: "Failed to copy link", variant: "destructive" });
     }
@@ -42,24 +59,28 @@ export const ShareMenu = ({ postId, title = "Check out this post", imageUrl, aut
     e.stopPropagation();
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
     window.open(url, "_blank", "noopener,noreferrer,width=550,height=450");
+    recordShare("twitter");
   };
 
   const handleShareFacebook = (e: React.MouseEvent) => {
     e.stopPropagation();
     const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`;
     window.open(url, "_blank", "noopener,noreferrer,width=550,height=450");
+    recordShare("facebook");
   };
 
   const handleShareWhatsApp = (e: React.MouseEvent) => {
     e.stopPropagation();
     const url = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${shareUrl}`)}`;
     window.open(url, "_blank", "noopener,noreferrer");
+    recordShare("whatsapp");
   };
 
   const handleShareTelegram = (e: React.MouseEvent) => {
     e.stopPropagation();
     const url = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
     window.open(url, "_blank", "noopener,noreferrer");
+    recordShare("telegram");
   };
 
   const handleNativeShare = async (e: React.MouseEvent) => {
@@ -71,6 +92,7 @@ export const ShareMenu = ({ postId, title = "Check out this post", imageUrl, aut
           text: shareText,
           url: shareUrl,
         });
+        recordShare("native");
       } catch {
         // User cancelled
       }

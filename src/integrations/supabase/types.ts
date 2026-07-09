@@ -509,31 +509,40 @@ export type Database = {
       }
       notifications: {
         Row: {
+          comment_id: string | null
           created_at: string | null
           from_user_id: string | null
           id: string
+          is_read: boolean
           message: string | null
           post_id: string | null
+          reel_id: string | null
           title: string | null
           type: string | null
           user_id: string | null
         }
         Insert: {
+          comment_id?: string | null
           created_at?: string | null
           from_user_id?: string | null
           id?: string
+          is_read?: boolean
           message?: string | null
           post_id?: string | null
+          reel_id?: string | null
           title?: string | null
           type?: string | null
           user_id?: string | null
         }
         Update: {
+          comment_id?: string | null
           created_at?: string | null
           from_user_id?: string | null
           id?: string
+          is_read?: boolean
           message?: string | null
           post_id?: string | null
+          reel_id?: string | null
           title?: string | null
           type?: string | null
           user_id?: string | null
@@ -605,6 +614,38 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_shares: {
+        Row: {
+          created_at: string
+          destination: string | null
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          destination?: string | null
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          destination?: string | null
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_shares_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "posts"
@@ -884,6 +925,54 @@ export type Database = {
           username?: string | null
           who_can_comment?: string
           youtube_gaming_url?: string | null
+        }
+        Relationships: []
+      }
+      push_dispatch_logs: {
+        Row: {
+          created_at: string
+          deep_link: string | null
+          error: string | null
+          http_status: number | null
+          id: string
+          message: string | null
+          notification_type: string | null
+          onesignal_id: string | null
+          payload: Json | null
+          response: Json | null
+          status: string
+          title: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          deep_link?: string | null
+          error?: string | null
+          http_status?: number | null
+          id?: string
+          message?: string | null
+          notification_type?: string | null
+          onesignal_id?: string | null
+          payload?: Json | null
+          response?: Json | null
+          status: string
+          title?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          deep_link?: string | null
+          error?: string | null
+          http_status?: number | null
+          id?: string
+          message?: string | null
+          notification_type?: string | null
+          onesignal_id?: string | null
+          payload?: Json | null
+          response?: Json | null
+          status?: string
+          title?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

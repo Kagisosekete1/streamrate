@@ -47,6 +47,7 @@ import StreamSchedule from "./pages/StreamSchedule";
 import Reminders from "./pages/Reminders";
 import NotificationSettings from "./pages/NotificationSettings";
 import AdminReminderLogs from "./pages/AdminReminderLogs";
+import AdminPushLogs from "./pages/AdminPushLogs";
 import StreamerGames from "./pages/StreamerGames";
 import StreamerGear from "./pages/StreamerGear";
 import ChatCommands from "./pages/ChatCommands";
@@ -115,6 +116,7 @@ function AppContent() {
             <Route path="/reminders" element={<Reminders />} />
             <Route path="/settings/notifications" element={<NotificationSettings />} />
             <Route path="/admin/reminder-logs" element={<AdminReminderLogs />} />
+            <Route path="/admin/push-logs" element={<AdminPushLogs />} />
             <Route path="/security/findings" element={<SecurityFindings />} />
             <Route path="/games" element={<StreamerGames />} />
             <Route path="/gear" element={<StreamerGear />} />
