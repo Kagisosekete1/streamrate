@@ -243,20 +243,28 @@ export const PostCard = ({
     }
 
     if (isLiked) {
-      await supabase
+      const { error } = await supabase
         .from("post_likes")
         .delete()
         .eq("post_id", id)
         .eq("user_id", user.id);
+      if (error) {
+        toast({ title: "Couldn't remove like", variant: "destructive" });
+        return;
+      }
       setIsLiked(false);
-      setLikes(likes - 1);
+      setLikes((prev) => Math.max(0, prev - 1));
     } else {
-      await supabase.from("post_likes").insert({
+      const { error } = await supabase.from("post_likes").insert({
         post_id: id,
         user_id: user.id,
       });
+      if (error) {
+        toast({ title: "Couldn't save like", variant: "destructive" });
+        return;
+      }
       setIsLiked(true);
-      setLikes(likes + 1);
+      setLikes((prev) => prev + 1);
 
       // Award XP for liking
       try {
@@ -279,12 +287,17 @@ export const PostCard = ({
     setShowHeartAnimation(true);
     setTimeout(() => setShowHeartAnimation(false), 1000);
 
-    await supabase.from("post_likes").insert({
+    const { error } = await supabase.from("post_likes").insert({
       post_id: id,
       user_id: user.id,
     });
+    if (error) {
+      setShowHeartAnimation(false);
+      toast({ title: "Couldn't save like", variant: "destructive" });
+      return;
+    }
     setIsLiked(true);
-    setLikes(likes + 1);
+    setLikes((prev) => prev + 1);
   };
 
   const handleCommentClick = (e: React.MouseEvent) => {

@@ -6,6 +6,7 @@ import { useIsSeenAdmin } from "@/hooks/useIsSeenAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface PushLogRow {
   id: string;
@@ -18,6 +19,9 @@ interface PushLogRow {
   http_status: number | null;
   error: string | null;
   onesignal_id: string | null;
+  payload: Record<string, any> | null;
+  retry_count: number;
+  last_retry_at: string | null;
   created_at: string;
 }
 
@@ -31,6 +35,7 @@ const AdminPushLogs = () => {
   const [rows, setRows] = useState<PushLogRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "sent" | "failed">("all");
+  const [retryingId, setRetryingId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -71,6 +76,37 @@ const AdminPushLogs = () => {
     a.download = `push-dispatch-logs-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const retryDispatch = async (row: PushLogRow) => {
+    if (!row.user_id || !row.title || !row.message) {
+      toast.error("This log is missing required notification details.");
+      return;
+    }
+
+    setRetryingId(row.id);
+    const retryBody = {
+      userId: row.user_id,
+      title: row.title,
+      message: row.message,
+      data: row.payload?.data ?? { type: row.notification_type },
+    };
+    const { error } = await supabase.functions.invoke("send-push-notification", {
+      body: retryBody,
+    });
+
+    await (supabase as any)
+      .from("push_dispatch_logs")
+      .update({ retry_count: (row.retry_count || 0) + 1, last_retry_at: new Date().toISOString() })
+      .eq("id", row.id);
+
+    setRetryingId(null);
+    if (error) {
+      toast.error("Retry failed. Check the newest log row for details.");
+    } else {
+      toast.success("Retry sent. A new delivery log was created.");
+    }
+    load();
   };
 
   return (
@@ -122,10 +158,24 @@ const AdminPushLogs = () => {
                           <span className={cn("text-xs px-2 py-0.5 rounded-full", ok ? "bg-green-500/10 text-green-500" : "bg-destructive/10 text-destructive")}>
                             {r.status}{r.http_status ? ` (${r.http_status})` : ""}
                           </span>
+                          {r.retry_count > 0 && (
+                            <span className="text-xs text-muted-foreground">Retried {r.retry_count}x</span>
+                          )}
                         </div>
                         {r.message && <p className="text-xs text-muted-foreground line-clamp-2">{r.message}</p>}
                         {r.deep_link && <p className="text-xs text-primary break-all">{r.deep_link}</p>}
                         {r.error && <p className="text-xs text-destructive break-all mt-1">{r.error}</p>}
+                        {!ok && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="mt-2 h-8"
+                            onClick={() => retryDispatch(r)}
+                            disabled={retryingId === r.id}
+                          >
+                            <RefreshCw className={cn("w-3.5 h-3.5 mr-1", retryingId === r.id && "animate-spin")} /> Retry
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>

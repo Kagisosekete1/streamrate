@@ -935,11 +935,13 @@ export type Database = {
           error: string | null
           http_status: number | null
           id: string
+          last_retry_at: string | null
           message: string | null
           notification_type: string | null
           onesignal_id: string | null
           payload: Json | null
           response: Json | null
+          retry_count: number
           status: string
           title: string | null
           user_id: string | null
@@ -950,11 +952,13 @@ export type Database = {
           error?: string | null
           http_status?: number | null
           id?: string
+          last_retry_at?: string | null
           message?: string | null
           notification_type?: string | null
           onesignal_id?: string | null
           payload?: Json | null
           response?: Json | null
+          retry_count?: number
           status: string
           title?: string | null
           user_id?: string | null
@@ -965,11 +969,13 @@ export type Database = {
           error?: string | null
           http_status?: number | null
           id?: string
+          last_retry_at?: string | null
           message?: string | null
           notification_type?: string | null
           onesignal_id?: string | null
           payload?: Json | null
           response?: Json | null
+          retry_count?: number
           status?: string
           title?: string | null
           user_id?: string | null

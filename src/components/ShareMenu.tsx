@@ -32,7 +32,7 @@ export const ShareMenu = ({ postId, title = "Check out this post", imageUrl, aut
   const recordShare = async (destination: string) => {
     if (!user) return;
     try {
-      await (supabase as any).from("post_shares").insert({
+      await supabase.from("post_shares").insert({
         post_id: postId,
         user_id: user.id,
         destination,

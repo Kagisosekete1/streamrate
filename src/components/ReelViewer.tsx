@@ -737,9 +737,10 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
           <motion.div
             drag={showComments ? false : "y"}
             dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={0.2}
+            dragElastic={0.12}
+            dragMomentum={false}
             onDragEnd={handleDragEnd}
-            className="relative w-full h-full"
+            className="relative w-full h-full touch-pan-y select-none"
           >
             <AnimatePresence mode="sync" initial={false} custom={slideDirection}>
               <motion.div

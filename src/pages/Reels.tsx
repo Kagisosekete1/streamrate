@@ -22,7 +22,7 @@ interface Reel {
 const Reels = () => {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
-  const reelIdFromQuery = searchParams.get("reelId");
+  const reelIdFromQuery = searchParams.get("reelId") || searchParams.get("id");
   const targetReelId = id || reelIdFromQuery;
   const { user } = useAuth();
   const [reels, setReels] = useState<Reel[]>([]);
@@ -33,25 +33,6 @@ const Reels = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const REELS_PER_PAGE = 20;
   const { getForYouFeed } = useForYouAlgorithm();
-
-  useEffect(() => {
-    const clearReelRelatedCaches = async () => {
-      if (!("caches" in window)) return;
-      const cacheKeys = await caches.keys();
-      const targetCaches = cacheKeys.filter(
-        (key) =>
-          key.includes("supabase-api") ||
-          key.includes("workbox-runtime") ||
-          key.toLowerCase().includes("reel")
-      );
-
-      await Promise.all(targetCaches.map((key) => caches.delete(key)));
-    };
-
-    clearReelRelatedCaches().catch(() => {
-      // Ignore cache API failures (unsupported contexts)
-    });
-  }, []);
 
   const fetchReels = useCallback(async () => {
     try {
