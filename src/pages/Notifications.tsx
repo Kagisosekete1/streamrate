@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Bell, Users, FileText, Star, TrendingUp, Check, Eye, X, Gamepad2, Gift, Share2, RefreshCw, Code2 } from "lucide-react";
+import { ChevronLeft, Bell, Users, FileText, Star, TrendingUp, Check, Eye, X, Gamepad2, Gift, Share2, RefreshCw, Code2, Heart, MessageCircle, Reply } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
+import { getNotificationRoute } from "@/lib/notificationDeepLinks";
 
 interface Notification {
   id: string;
@@ -28,10 +29,14 @@ interface Notification {
   };
 }
 
-type FilterType = "all" | "follows" | "posts" | "ratings" | "trending" | "referrals";
+type FilterType = "all" | "unread" | "likes" | "comments" | "replies" | "follows" | "posts" | "ratings" | "trending" | "referrals";
 
 const filterOptions: { value: FilterType; label: string; icon: React.ElementType }[] = [
   { value: "all", label: "All", icon: Bell },
+  { value: "unread", label: "Unread", icon: Check },
+  { value: "likes", label: "Likes", icon: Heart },
+  { value: "comments", label: "Comments", icon: MessageCircle },
+  { value: "replies", label: "Replies", icon: Reply },
   { value: "follows", label: "Follows", icon: Users },
   { value: "posts", label: "Posts", icon: FileText },
   { value: "ratings", label: "Ratings", icon: Star },
@@ -175,72 +180,12 @@ const Notifications = () => {
       markAsRead(notification.id);
     }
 
-    // Profile view → go to viewer's profile
-    if (notification.type === "profile_view" && notification.from_user_id) {
-      navigate(`/streamer/${notification.from_user_id}`);
-      return;
-    }
-
-    // Reel interactions → open reel
-    if (notification.reel_id && (notification.type === "reel_like" || notification.type === "reel_comment" || notification.type === "mention")) {
-      navigate(`/reels?reelId=${notification.reel_id}`);
-      return;
-    }
-
-    // Watch party join → go to watch parties page
-    if (notification.type === "party_join") {
-      navigate("/watch-parties");
-      return;
-    }
-
-    // Poll vote → go to live page
-    if (notification.type === "poll_vote") {
-      navigate("/live");
-      return;
-    }
-
-    // LFG response → go to squad up & open requester profile
-    if (notification.type === "lfg_response") {
-      if (notification.from_user_id) {
-        navigate(`/streamer/${notification.from_user_id}`);
-      } else {
-        navigate("/squad-up");
-      }
-      return;
-    }
-
-    // Comment/mention notifications deep-link to the specific comment
-    if (notification.post_id && (notification.type === "comment" || notification.type === "comment_reply" || notification.type === "comment_like" || notification.type === "mention")) {
-      const commentParam = notification.comment_id ? `?commentId=${notification.comment_id}` : "";
-      navigate(`/post/${notification.post_id}${commentParam}`);
-      return;
-    }
-
-    if (notification.type === "post_like" && notification.post_id) {
-      navigate(`/post/${notification.post_id}`);
-      return;
-    }
-
-    if (notification.post_id && notification.type === "new_post") {
-      navigate(`/post/${notification.post_id}`);
-      return;
-    }
-
     if (notification.type === "new_follower") {
       setShowFollowersModal(true);
       return;
     }
 
-    // Fallback: if there's a from_user_id, go to their profile
-    if (notification.from_user_id) {
-      navigate(`/streamer/${notification.from_user_id}`);
-      return;
-    }
-
-    // Fallback: if there's a post_id, go to the post
-    if (notification.post_id) {
-      navigate(`/post/${notification.post_id}`);
-    }
+    navigate(getNotificationRoute(notification));
   };
 
   const getNotificationIcon = (type: string) => {
@@ -258,11 +203,14 @@ const Notifications = () => {
         return <span className="text-sm font-bold text-purple-400">@</span>;
       case "post_like":
       case "reel_like":
-        return <Bell className="w-4 h-4 text-red-400" />;
+        return <Heart className="w-4 h-4 text-red-400" />;
+      case "post_share":
+        return <Share2 className="w-4 h-4 text-cyan-400" />;
       case "comment":
-      case "comment_reply":
       case "reel_comment":
-        return <Bell className="w-4 h-4 text-blue-400" />;
+        return <MessageCircle className="w-4 h-4 text-blue-400" />;
+      case "comment_reply":
+        return <Reply className="w-4 h-4 text-blue-400" />;
       case "profile_view":
         return <Eye className="w-4 h-4 text-cyan-400" />;
       case "lfg_response":
@@ -283,6 +231,10 @@ const Notifications = () => {
     const filtered = notifications.filter((n) => {
       if (n.type === "reel_view") return false;
       if (activeFilter === "all") return true;
+      if (activeFilter === "unread") return !n.is_read;
+      if (activeFilter === "likes") return n.type === "post_like" || n.type === "reel_like" || n.type === "comment_like";
+      if (activeFilter === "comments") return n.type === "comment" || n.type === "reel_comment" || n.type === "mention";
+      if (activeFilter === "replies") return n.type === "comment_reply";
       if (activeFilter === "follows") return n.type === "follow" || n.type === "new_follower";
       if (activeFilter === "posts") return n.type === "new_post";
       if (activeFilter === "ratings") return n.type === "rating";
@@ -352,7 +304,11 @@ const Notifications = () => {
               filter.value === "all"
                 ? notifications.length
                 : notifications.filter((n) => {
-                    if (filter.value === "follows") return n.type === "follow";
+                    if (filter.value === "unread") return !n.is_read;
+                    if (filter.value === "likes") return n.type === "post_like" || n.type === "reel_like" || n.type === "comment_like";
+                    if (filter.value === "comments") return n.type === "comment" || n.type === "reel_comment" || n.type === "mention";
+                    if (filter.value === "replies") return n.type === "comment_reply";
+                    if (filter.value === "follows") return n.type === "follow" || n.type === "new_follower";
                     if (filter.value === "posts") return n.type === "new_post";
                     if (filter.value === "ratings") return n.type === "rating";
                     if (filter.value === "trending") return n.type === "trending";

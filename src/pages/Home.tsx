@@ -298,12 +298,18 @@ const Home = () => {
         {/* Header */}
         <header className="sticky top-0 z-40 bg-background border-b border-border md:hidden">
           <div className="flex items-center justify-between px-4 h-14">
-            <img
-              src="/logo.png"
-              alt="StreamRate"
-              className="h-8 w-auto cursor-pointer"
+            <button
               onClick={() => navigate("/home")}
-            />
+              className="flex items-center gap-2 min-w-0"
+              aria-label="Go to StreamRate home"
+            >
+              <img
+                src="/logo.png"
+                alt="StreamRate"
+                className="h-8 w-auto"
+              />
+              <span className="text-xl font-bold gradient-text leading-none">StreamRate</span>
+            </button>
             <NotificationBell />
           </div>
         </header>

@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
+import { getNotificationRoute } from "@/lib/notificationDeepLinks";
 
 interface Notification {
   id: string;
@@ -130,63 +131,7 @@ export const NotificationBell = () => {
       markAsRead(notification.id);
     }
     setIsOpen(false);
-
-    // Profile view → go to viewer's profile
-    if (notification.type === "profile_view" && notification.from_user_id) {
-      navigate(`/streamer/${notification.from_user_id}`);
-      return;
-    }
-
-    // Reel interactions → open reel
-    if (notification.reel_id && (notification.type === "reel_like" || notification.type === "reel_comment" || notification.type === "mention")) {
-      navigate(`/reels?reelId=${notification.reel_id}`);
-      return;
-    }
-
-    if (notification.type === "party_join") {
-      navigate("/watch-parties");
-      return;
-    }
-    if (notification.type === "poll_vote") {
-      navigate("/live");
-      return;
-    }
-    if (notification.type === "lfg_response") {
-      navigate(notification.from_user_id ? `/streamer/${notification.from_user_id}` : "/squad-up");
-      return;
-    }
-
-    // Comment/mention notifications deep-link to the specific comment
-    if (notification.post_id && (notification.type === "comment" || notification.type === "comment_reply" || notification.type === "comment_like" || notification.type === "mention")) {
-      navigate(`/post/${notification.post_id}`);
-      return;
-    }
-
-    if (notification.type === "post_like" && notification.post_id) {
-      navigate(`/post/${notification.post_id}`);
-      return;
-    }
-
-    if (notification.post_id && notification.type === "new_post") {
-      navigate(`/post/${notification.post_id}`);
-      return;
-    }
-
-    if (notification.type === "new_follower" && notification.from_user_id) {
-      navigate(`/streamer/${notification.from_user_id}`);
-      return;
-    }
-
-    // Fallback: if there's a from_user_id, go to their profile
-    if (notification.from_user_id) {
-      navigate(`/streamer/${notification.from_user_id}`);
-      return;
-    }
-
-    // Fallback: if there's a post_id, go to the post
-    if (notification.post_id) {
-      navigate(`/post/${notification.post_id}`);
-    }
+    navigate(getNotificationRoute(notification));
   };
 
   if (!user) return null;
