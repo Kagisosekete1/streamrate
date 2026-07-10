@@ -35,12 +35,14 @@ function buildDeepLink(data: Record<string, any>): string {
 
   // Reel-based notifications
   if (reelId || type.startsWith("reel_")) {
-    return `${APP_ORIGIN}/reels?id=${reelId ?? ""}`;
+    return `${APP_ORIGIN}/reels?reelId=${reelId ?? ""}`;
   }
   // Post/comment-based notifications
-  if (postId || ["post_like", "comment", "comment_like", "comment_reply", "mention", "new_post"].includes(type)) {
-    const hash = commentId ? `#comment-${commentId}` : "";
-    return `${APP_ORIGIN}/post/${postId ?? ""}${hash}`;
+  if (postId || ["post_like", "post_share", "comment", "comment_like", "comment_reply", "mention", "new_post"].includes(type)) {
+    const commentQuery = commentId && ["comment", "comment_like", "comment_reply", "mention"].includes(type)
+      ? `?commentId=${commentId}`
+      : "";
+    return `${APP_ORIGIN}/post/${postId ?? ""}${commentQuery}`;
   }
   // Follower / profile-view / referral / raid / poll / party — link to source user
   if (fromUserId) {

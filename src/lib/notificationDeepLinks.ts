@@ -17,6 +17,7 @@ const POST_TYPES = new Set([
 ]);
 
 const REEL_TYPES = new Set(["reel_like", "reel_comment", "reel_share"]);
+const COMMENT_TYPES = new Set(["comment", "comment_like", "comment_reply", "mention"]);
 
 export const getNotificationRoute = (notification: NotificationRouteInput): string => {
   const type = notification.type ?? "";
@@ -26,7 +27,7 @@ export const getNotificationRoute = (notification: NotificationRouteInput): stri
   }
 
   if (notification.post_id && POST_TYPES.has(type)) {
-    const commentQuery = notification.comment_id
+    const commentQuery = notification.comment_id && COMMENT_TYPES.has(type)
       ? `?commentId=${encodeURIComponent(notification.comment_id)}`
       : "";
     return `/post/${encodeURIComponent(notification.post_id)}${commentQuery}`;
