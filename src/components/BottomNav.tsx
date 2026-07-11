@@ -84,6 +84,7 @@ export const BottomNav = () => {
                     <img
                       src={profile?.avatar_url || getDefaultAvatar()}
                       alt="Profile"
+                      onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}
                       className={cn(
                         "w-7 h-7 rounded-full object-cover transition-all",
                         isActive ? "ring-2 ring-primary" : "opacity-70"

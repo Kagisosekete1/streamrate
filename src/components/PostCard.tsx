@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Heart, MessageSquareText, Bookmark, MoreHorizontal, Trash2, Edit2, Flag, Eye } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -142,6 +142,26 @@ export const PostCard = ({
   const isOwner = user?.id === streamerId;
   const canSeePostViews = profile?.email?.toLowerCase() === "kagisosekete5@gmail.com";
 
+  useEffect(() => setLikes(initialLikes), [id, initialLikes]);
+  useEffect(() => setCommentsCount(comments), [id, comments]);
+  useEffect(() => setIsLiked(initialIsLiked), [id, initialIsLiked]);
+  useEffect(() => setIsBookmarked(initialIsBookmarked), [id, initialIsBookmarked]);
+  useEffect(() => setContent(initialContent), [id, initialContent]);
+  useEffect(() => setImageUrl(initialImageUrl), [id, initialImageUrl]);
+
+  const refreshEngagement = useCallback(async () => {
+    const [{ count: likeCount }, { count: commentCount }, likedResult] = await Promise.all([
+      supabase.from("post_likes").select("*", { count: "exact", head: true }).eq("post_id", id),
+      supabase.from("comments").select("*", { count: "exact", head: true }).eq("post_id", id),
+      user
+        ? supabase.from("post_likes").select("id").eq("post_id", id).eq("user_id", user.id).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+    setLikes(likeCount || 0);
+    setCommentsCount(commentCount || 0);
+    setIsLiked(!!likedResult.data);
+  }, [id, user?.id]);
+
   // Realtime likes & comments count
   useEffect(() => {
     const channel = supabase
@@ -149,39 +169,17 @@ export const PostCard = ({
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "post_likes", filter: `post_id=eq.${id}` },
-        async () => {
-          const { count } = await supabase
-            .from("post_likes")
-            .select("*", { count: "exact", head: true })
-            .eq("post_id", id);
-          setLikes(count || 0);
-          // Also re-check if current user liked
-          if (user) {
-            const { data } = await supabase
-              .from("post_likes")
-              .select("id")
-              .eq("post_id", id)
-              .eq("user_id", user.id)
-              .maybeSingle();
-            setIsLiked(!!data);
-          }
-        }
+        refreshEngagement
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "comments", filter: `post_id=eq.${id}` },
-        async () => {
-          const { count } = await supabase
-            .from("comments")
-            .select("*", { count: "exact", head: true })
-            .eq("post_id", id);
-          setCommentsCount(count || 0);
-        }
+        refreshEngagement
       )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [id, user]);
+  }, [id, refreshEngagement]);
 
   useEffect(() => {
     if (!canSeePostViews) return;
@@ -243,6 +241,8 @@ export const PostCard = ({
     }
 
     if (isLiked) {
+      setIsLiked(false);
+      setLikes((prev) => Math.max(0, prev - 1));
       const { error } = await supabase
         .from("post_likes")
         .delete()
@@ -250,21 +250,23 @@ export const PostCard = ({
         .eq("user_id", user.id);
       if (error) {
         toast({ title: "Couldn't remove like", variant: "destructive" });
+        refreshEngagement();
         return;
       }
-      setIsLiked(false);
-      setLikes((prev) => Math.max(0, prev - 1));
+      refreshEngagement();
     } else {
-      const { error } = await supabase.from("post_likes").insert({
-        post_id: id,
-        user_id: user.id,
-      });
-      if (error) {
-        toast({ title: "Couldn't save like", variant: "destructive" });
-        return;
-      }
       setIsLiked(true);
       setLikes((prev) => prev + 1);
+      const { error } = await supabase.from("post_likes").upsert(
+        { post_id: id, user_id: user.id },
+        { onConflict: "post_id,user_id", ignoreDuplicates: true }
+      );
+      if (error) {
+        toast({ title: "Couldn't save like", variant: "destructive" });
+        refreshEngagement();
+        return;
+      }
+      refreshEngagement();
 
       // Award XP for liking
       try {
@@ -287,17 +289,19 @@ export const PostCard = ({
     setShowHeartAnimation(true);
     setTimeout(() => setShowHeartAnimation(false), 1000);
 
-    const { error } = await supabase.from("post_likes").insert({
-      post_id: id,
-      user_id: user.id,
-    });
+    const { error } = await supabase.from("post_likes").upsert(
+      { post_id: id, user_id: user.id },
+      { onConflict: "post_id,user_id", ignoreDuplicates: true }
+    );
     if (error) {
       setShowHeartAnimation(false);
       toast({ title: "Couldn't save like", variant: "destructive" });
+      refreshEngagement();
       return;
     }
     setIsLiked(true);
     setLikes((prev) => prev + 1);
+    refreshEngagement();
   };
 
   const handleCommentClick = (e: React.MouseEvent) => {

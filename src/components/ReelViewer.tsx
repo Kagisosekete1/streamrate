@@ -17,6 +17,7 @@ import { ReelComments } from "@/components/ReelComments";
 import { AvatarViewModal } from "@/components/AvatarViewModal";
 import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 import { ReportBlockModal } from "@/components/ReportBlockModal";
+import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
 interface Reel {
   id: string;
@@ -79,6 +80,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastReelChangeRef = useRef(0);
 
   useEffect(() => {
     return () => {
@@ -446,6 +448,9 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   // Navigate to next/prev reel
   const goToReel = useCallback((direction: -1 | 1) => {
     if (showComments) return;
+    const now = Date.now();
+    if (now - lastReelChangeRef.current < 260) return;
+    lastReelChangeRef.current = now;
     setCaptionExpanded(false);
     if (direction === -1 && currentIndex < reels.length - 1) {
       setSlideDirection(-1);
@@ -464,6 +469,16 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
       triggerHaptic();
     }
   }, [showComments, currentIndex, reels.length, onLoadMore, triggerHaptic]);
+
+  useEffect(() => {
+    if (!currentReel?.id || showComments) return;
+    const channel = supabase
+      .channel(`reel-engagement-${currentReel.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "reel_likes", filter: `reel_id=eq.${currentReel.id}` }, () => fetchReelData(currentReel.id))
+      .on("postgres_changes", { event: "*", schema: "public", table: "reel_comments", filter: `reel_id=eq.${currentReel.id}` }, () => fetchReelData(currentReel.id))
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [currentReel?.id, fetchReelData, showComments]);
 
   // Keyboard support (Arrow keys)
   useEffect(() => {
@@ -523,10 +538,15 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
 
   // Handle swipe
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const threshold = 50;
-    if (info.offset.y < -threshold) {
+    const threshold = 60;
+    const velocityThreshold = 520;
+    const absY = Math.abs(info.offset.y);
+    const absX = Math.abs(info.offset.x);
+    const verticalIntent = absY > absX * 1.25;
+    if (!verticalIntent) return;
+    if (info.offset.y < -threshold || info.velocity.y < -velocityThreshold) {
       goToReel(-1);
-    } else if (info.offset.y > threshold) {
+    } else if (info.offset.y > threshold || info.velocity.y > velocityThreshold) {
       goToReel(1);
     }
   };
@@ -542,16 +562,26 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     const currentLikeState = likesData[reelId];
 
     if (currentLikeState?.isLiked) {
-      await supabase
+      setLikesData(prev => ({
+        ...prev,
+        [reelId]: { count: Math.max(0, (currentLikeState?.count || 0) - 1), isLiked: false }
+      }));
+      const { error } = await supabase
         .from("reel_likes")
         .delete()
         .eq("reel_id", reelId)
         .eq("user_id", user.id);
+      if (error) toast({ title: "Couldn't remove like", variant: "destructive" });
     } else {
-      await supabase.from("reel_likes").insert({
-        reel_id: reelId,
-        user_id: user.id
-      });
+      setLikesData(prev => ({
+        ...prev,
+        [reelId]: { count: (currentLikeState?.count || 0) + 1, isLiked: true }
+      }));
+      const { error } = await supabase.from("reel_likes").upsert(
+        { reel_id: reelId, user_id: user.id },
+        { onConflict: "reel_id,user_id", ignoreDuplicates: true }
+      );
+      if (error) toast({ title: "Couldn't save like", variant: "destructive" });
       // Update user interest for liking
       updateUserInterest("creator", currentReel.user_id, "like");
     }
@@ -736,11 +766,12 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
 
           <motion.div
             drag={showComments ? false : "y"}
+            dragDirectionLock
             dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={0.12}
+            dragElastic={0.08}
             dragMomentum={false}
             onDragEnd={handleDragEnd}
-            className="relative w-full h-full touch-pan-y select-none"
+            className="relative w-full h-full touch-none select-none"
           >
             <AnimatePresence mode="sync" initial={false} custom={slideDirection}>
               <motion.div
@@ -858,7 +889,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
               {/* User avatar with follow button and online indicator */}
               <div className="relative mb-1">
                 <img
-                  src={currentReel.user?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+                  src={currentReel.user?.avatar_url || getDefaultAvatar()}
                   alt={currentReel.user?.username || "User"}
                   className="w-10 h-10 rounded-full object-cover border-2 border-white cursor-pointer"
                   onClick={(e) => {
@@ -1064,7 +1095,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
           <AvatarViewModal
             isOpen={showAvatarView}
             onClose={() => setShowAvatarView(false)}
-            imageUrl={currentReel.user?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop&crop=face"}
+            imageUrl={currentReel.user?.avatar_url || getDefaultAvatar()}
             username={currentReel.user?.username || undefined}
           />
 

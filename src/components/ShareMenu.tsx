@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { ExternalLink, Link, Copy, Check, MessageCircle, Instagram, Twitter, Facebook, Download } from "lucide-react";
+import { useState } from "react";
+import { ExternalLink, Link, Check, MessageCircle, Twitter, Facebook } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +10,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { getCanonicalPostUrl, getShareDestinationUrl, getPostShareTargetUrl, type ShareDestination } from "@/lib/shareLinks";
 
 interface ShareMenuProps {
   postId: string;
@@ -24,7 +25,9 @@ export const ShareMenu = ({ postId, title = "Check out this post", imageUrl, aut
   const { user } = useAuth();
   const [copied, setCopied] = useState(false);
 
-  const shareUrl = `${window.location.origin}/post/${postId}`;
+  const appOrigin = window.location.origin;
+  const functionsOrigin = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const shareUrl = getCanonicalPostUrl(appOrigin, postId);
   const handle = authorUsername ? `@${authorUsername}` : authorName || "";
   const attribution = handle ? ` by ${handle}` : "";
   const shareText = `${title}${attribution} – StreamRate`;
@@ -42,6 +45,9 @@ export const ShareMenu = ({ postId, title = "Check out this post", imageUrl, aut
     }
   };
 
+  const getTarget = (destination: ShareDestination) =>
+    getPostShareTargetUrl({ destination, postId, origin: appOrigin, functionsOrigin });
+
   const handleCopyLink = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
@@ -57,28 +63,28 @@ export const ShareMenu = ({ postId, title = "Check out this post", imageUrl, aut
 
   const handleShareTwitter = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+    const url = getShareDestinationUrl({ destination: "twitter", postId, origin: appOrigin, functionsOrigin, shareText });
     window.open(url, "_blank", "noopener,noreferrer,width=550,height=450");
     recordShare("twitter");
   };
 
   const handleShareFacebook = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`;
+    const url = getShareDestinationUrl({ destination: "facebook", postId, origin: appOrigin, functionsOrigin, shareText });
     window.open(url, "_blank", "noopener,noreferrer,width=550,height=450");
     recordShare("facebook");
   };
 
   const handleShareWhatsApp = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${shareUrl}`)}`;
+    const url = getShareDestinationUrl({ destination: "whatsapp", postId, origin: appOrigin, functionsOrigin, shareText });
     window.open(url, "_blank", "noopener,noreferrer");
     recordShare("whatsapp");
   };
 
   const handleShareTelegram = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
+    const url = getShareDestinationUrl({ destination: "telegram", postId, origin: appOrigin, functionsOrigin, shareText });
     window.open(url, "_blank", "noopener,noreferrer");
     recordShare("telegram");
   };
@@ -90,7 +96,7 @@ export const ShareMenu = ({ postId, title = "Check out this post", imageUrl, aut
         await navigator.share({
           title: "StreamRate",
           text: shareText,
-          url: shareUrl,
+          url: getTarget("native"),
         });
         recordShare("native");
       } catch {
