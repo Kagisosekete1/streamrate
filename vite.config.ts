@@ -71,7 +71,7 @@ export default defineConfig(({ mode }) => ({
         display: "standalone",
         display_override: ["standalone"],
         background_color: "#ffffff",
-        theme_color: "#0a0c10",
+        theme_color: "#ffffff",
         orientation: "portrait-primary",
         icons: [
           {

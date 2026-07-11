@@ -225,6 +225,7 @@ export const ReelComments = ({
           <img
             src={comment.profiles?.avatar_url || getDefaultAvatar()}
             alt={comment.profiles?.username || "User"}
+            onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}
             className={cn(
               "rounded-full object-cover cursor-pointer flex-shrink-0",
               depth === 0 ? "w-9 h-9" : "w-7 h-7"

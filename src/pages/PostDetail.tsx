@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { LinkPreview } from "@/components/LinkPreview";
 import { extractFirstUrl } from "@/lib/urlPreview";
 import { HashtagText } from "@/components/HashtagText";
+import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
 interface Post {
   id: string;
@@ -177,8 +178,9 @@ const PostDetail = () => {
           </button>
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
             <img
-              src={post.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+              src={post.profiles?.avatar_url || getDefaultAvatar()}
               alt={post.profiles?.full_name || "User"}
+              onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}
               className="w-9 h-9 rounded-full object-cover ring-1 ring-border"
             />
             <div className="min-w-0">
@@ -200,8 +202,9 @@ const PostDetail = () => {
           {/* Author header */}
           <div className="flex items-center gap-3 px-4 pt-4 pb-2">
             <img
-              src={post.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+              src={post.profiles?.avatar_url || getDefaultAvatar()}
               alt={post.profiles?.full_name || "User"}
+              onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}
               className="w-11 h-11 rounded-full object-cover ring-2 ring-primary/10"
             />
             <div className="flex-1 min-w-0">

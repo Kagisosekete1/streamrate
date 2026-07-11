@@ -20,6 +20,7 @@ import { VerificationBadge } from "@/utils/verificationBadge";
 import { HashtagText } from "@/components/HashtagText";
 import { LinkPreview } from "@/components/LinkPreview";
 import { extractFirstUrl } from "@/lib/urlPreview";
+import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
 const CaptionWithSeeMore = ({ streamerName, streamerId, content, hasImage }: { streamerName: string; streamerId: string; content: string; hasImage?: boolean }) => {
   const [expanded, setExpanded] = useState(false);
@@ -161,6 +162,10 @@ export const PostCard = ({
     setCommentsCount(commentCount || 0);
     setIsLiked(!!likedResult.data);
   }, [id, user?.id]);
+
+  useEffect(() => {
+    refreshEngagement();
+  }, [refreshEngagement]);
 
   // Realtime likes & comments count
   useEffect(() => {
@@ -332,8 +337,9 @@ export const PostCard = ({
             <div className="p-[2px] rounded-full story-ring">
               <div className="p-[1px] rounded-full bg-background">
                 <img
-                  src={streamerPicture}
+                  src={streamerPicture || getDefaultAvatar()}
                   alt={streamerName}
+                  onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}
                   className="w-9 h-9 rounded-full object-cover cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
