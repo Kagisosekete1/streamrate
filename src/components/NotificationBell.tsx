@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { getNotificationRoute } from "@/lib/notificationDeepLinks";
+import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
 interface Notification {
   id: string;
@@ -21,6 +22,7 @@ interface Notification {
   message: string;
   post_id: string | null;
   reel_id: string | null;
+  comment_id: string | null;
   from_user_id: string | null;
   is_read: boolean;
   created_at: string;
@@ -80,10 +82,12 @@ export const NotificationBell = () => {
     if (data) {
       // Fetch from_user profiles
       const fromUserIds = [...new Set(data.filter(n => n.from_user_id).map(n => n.from_user_id))];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name, avatar_url")
-        .in("id", fromUserIds as string[]);
+      const { data: profiles } = fromUserIds.length > 0
+        ? await supabase
+            .from("profiles")
+            .select("id, full_name, avatar_url")
+            .in("id", fromUserIds as string[])
+        : { data: [] };
 
       const profilesMap = new Map(
         (profiles || []).map((p) => [p.id, p])
@@ -190,13 +194,16 @@ export const NotificationBell = () => {
                     {notification.from_user?.avatar_url ? (
                       <img
                         src={notification.from_user.avatar_url}
-                        alt=""
+                        alt="Notification sender"
                         className="w-10 h-10 rounded-full object-cover"
+                        onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                        <Bell className="w-5 h-5 text-primary" />
-                      </div>
+                      <img
+                        src={getDefaultAvatar()}
+                        alt="StreamRate"
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">{notification.title}</p>
