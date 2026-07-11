@@ -179,12 +179,6 @@ const Notifications = () => {
     if (!notification.is_read) {
       markAsRead(notification.id);
     }
-
-    if (notification.type === "new_follower") {
-      setShowFollowersModal(true);
-      return;
-    }
-
     navigate(getNotificationRoute(notification));
   };
 

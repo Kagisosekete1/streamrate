@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Heart, ThumbsUp, Share2, Globe } from "lucide-react";
@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { LinkPreview } from "@/components/LinkPreview";
 import { extractFirstUrl } from "@/lib/urlPreview";
 import { HashtagText } from "@/components/HashtagText";
+import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
 interface Post {
   id: string;
@@ -51,6 +52,20 @@ const PostDetail = () => {
     }
   };
 
+  const refreshEngagement = useCallback(async () => {
+    if (!id) return;
+    const [{ count: likes }, { count: comments }, likedResult] = await Promise.all([
+      supabase.from("post_likes").select("*", { count: "exact", head: true }).eq("post_id", id),
+      supabase.from("comments").select("*", { count: "exact", head: true }).eq("post_id", id),
+      user
+        ? supabase.from("post_likes").select("id").eq("post_id", id).eq("user_id", user.id).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+    setLikesCount(likes || 0);
+    setCommentsCount(comments || 0);
+    setIsLiked(!!likedResult.data);
+  }, [id, user?.id]);
+
   const fetchPost = async () => {
     if (!id) return;
 
@@ -77,35 +92,24 @@ const PostDetail = () => {
       profiles: profileData,
     });
 
-    const { count: likes } = await supabase
-      .from("post_likes")
-      .select("*", { count: "exact", head: true })
-      .eq("post_id", id);
-
-    const { count: comments } = await supabase
-      .from("comments")
-      .select("*", { count: "exact", head: true })
-      .eq("post_id", id);
-
-    setLikesCount(likes || 0);
-    setCommentsCount(comments || 0);
-
-    if (user) {
-      const { data: likeData } = await supabase
-        .from("post_likes")
-        .select("id")
-        .eq("post_id", id)
-        .eq("user_id", user.id)
-        .maybeSingle();
-      setIsLiked(!!likeData);
-    }
+    await refreshEngagement();
 
     setLoading(false);
   };
 
   useEffect(() => {
     fetchPost();
-  }, [id, user]);
+  }, [id, user, refreshEngagement]);
+
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`post-detail-engagement-${id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "post_likes", filter: `post_id=eq.${id}` }, refreshEngagement)
+      .on("postgres_changes", { event: "*", schema: "public", table: "comments", filter: `post_id=eq.${id}` }, refreshEngagement)
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id, refreshEngagement]);
 
   const handleLike = async () => {
     if (!user) {
@@ -115,14 +119,19 @@ const PostDetail = () => {
     if (!id) return;
 
     if (isLiked) {
-      await supabase.from("post_likes").delete().eq("post_id", id).eq("user_id", user.id);
       setIsLiked(false);
-      setLikesCount((prev) => prev - 1);
+      setLikesCount((prev) => Math.max(0, prev - 1));
+      const { error } = await supabase.from("post_likes").delete().eq("post_id", id).eq("user_id", user.id);
+      if (error) toast({ title: "Couldn't remove like", variant: "destructive" });
     } else {
-      await supabase.from("post_likes").insert({ post_id: id, user_id: user.id });
       setIsLiked(true);
       setLikesCount((prev) => prev + 1);
+      const { error } = await supabase
+        .from("post_likes")
+        .upsert({ post_id: id, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
+      if (error) toast({ title: "Couldn't save like", variant: "destructive" });
     }
+    refreshEngagement();
   };
 
   const formatCount = (count: number) => {
@@ -169,8 +178,9 @@ const PostDetail = () => {
           </button>
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
             <img
-              src={post.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+              src={post.profiles?.avatar_url || getDefaultAvatar()}
               alt={post.profiles?.full_name || "User"}
+              onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}
               className="w-9 h-9 rounded-full object-cover ring-1 ring-border"
             />
             <div className="min-w-0">
@@ -192,8 +202,9 @@ const PostDetail = () => {
           {/* Author header */}
           <div className="flex items-center gap-3 px-4 pt-4 pb-2">
             <img
-              src={post.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+              src={post.profiles?.avatar_url || getDefaultAvatar()}
               alt={post.profiles?.full_name || "User"}
+              onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}
               className="w-11 h-11 rounded-full object-cover ring-2 ring-primary/10"
             />
             <div className="flex-1 min-w-0">

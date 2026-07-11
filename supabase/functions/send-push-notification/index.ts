@@ -9,7 +9,7 @@ const corsHeaders = {
 const ONESIGNAL_APP_ID = "447ab0ac-d32a-4aa8-bb29-d4b50c562672";
 const ONESIGNAL_REST_API_KEY = Deno.env.get("ONESIGNAL_REST_API_KEY") ?? "";
 const APP_ORIGIN = "https://www.streamrateapp.com";
-const LOGO_URL = `${APP_ORIGIN}/logo.png`;
+const LOGO_URL = `${APP_ORIGIN}/__l5e/assets-v1/1036deb6-3d8c-4d5b-a934-92d6863b45db/streamrate-notification-logo.png`;
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -33,25 +33,28 @@ function buildDeepLink(data: Record<string, any>): string {
   const commentId = data?.commentId;
   const fromUserId = data?.fromUserId;
 
-  // Reel-based notifications
-  if (reelId || type.startsWith("reel_")) {
-    return `${APP_ORIGIN}/reels?reelId=${reelId ?? ""}`;
+  if (reelId && (type.startsWith("reel_") || ["reel_like", "reel_comment", "reel_share"].includes(type))) {
+    return `${APP_ORIGIN}/reels?reelId=${encodeURIComponent(reelId)}`;
   }
-  // Post/comment-based notifications
-  if (postId || ["post_like", "post_share", "comment", "comment_like", "comment_reply", "mention", "new_post"].includes(type)) {
+
+  if (postId && ["post_like", "post_share", "comment", "comment_like", "comment_reply", "mention", "new_post"].includes(type)) {
     const commentQuery = commentId && ["comment", "comment_like", "comment_reply", "mention"].includes(type)
-      ? `?commentId=${commentId}`
+      ? `?commentId=${encodeURIComponent(commentId)}`
       : "";
-    return `${APP_ORIGIN}/post/${postId ?? ""}${commentQuery}`;
+    return `${APP_ORIGIN}/post/${encodeURIComponent(postId)}${commentQuery}`;
   }
-  // Follower / profile-view / referral / raid / poll / party — link to source user
-  if (fromUserId) {
-    return `${APP_ORIGIN}/streamer/${fromUserId}`;
+
+  if (["follow", "new_follower", "profile_view"].includes(type) && fromUserId) {
+    return `${APP_ORIGIN}/streamer/${encodeURIComponent(fromUserId)}`;
   }
-  // Fallbacks by type
+
+  if (type === "party_join") return `${APP_ORIGIN}/watch-parties`;
+  if (type === "poll_vote" || type === "raid" || type === "co_stream") return `${APP_ORIGIN}/live`;
+  if (type === "lfg_response") return fromUserId ? `${APP_ORIGIN}/streamer/${encodeURIComponent(fromUserId)}` : `${APP_ORIGIN}/squad-up`;
   if (type === "tournament") return `${APP_ORIGIN}/tournaments`;
-  if (type === "raid" || type === "co_stream") return `${APP_ORIGIN}/live`;
   if (type === "reminder" || type.includes("stream")) return `${APP_ORIGIN}/reminders`;
+  if (fromUserId) return `${APP_ORIGIN}/streamer/${encodeURIComponent(fromUserId)}`;
+  if (postId) return `${APP_ORIGIN}/post/${encodeURIComponent(postId)}`;
   return `${APP_ORIGIN}/notifications`;
 }
 

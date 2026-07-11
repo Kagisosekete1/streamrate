@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { PushNotifications, PushNotificationSchema, Token, PermissionStatus } from "@capacitor/push-notifications";
 import { Capacitor } from "@capacitor/core";
 import { useAuth } from "./useAuth";
+import { getNotificationRoute } from "@/lib/notificationDeepLinks";
 
 type PushPermissionState = "prompt" | "prompt-with-rationale" | "granted" | "denied";
 
@@ -74,8 +75,15 @@ export const usePushNotifications = () => {
           console.log("Push notification action performed:", notification);
           // Handle navigation based on notification data
           const data = notification.notification.data;
-          if (data?.postId) {
-            window.location.href = `/post/${data.postId}`;
+          const targetPath = data?.url || getNotificationRoute({
+            type: data?.type,
+            post_id: data?.postId,
+            reel_id: data?.reelId,
+            comment_id: data?.commentId,
+            from_user_id: data?.fromUserId,
+          });
+          if (targetPath) {
+            window.location.assign(targetPath);
           }
         }
       );

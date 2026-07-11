@@ -70,8 +70,8 @@ export default defineConfig(({ mode }) => ({
         scope: "/",
         display: "standalone",
         display_override: ["standalone"],
-        background_color: "#0a0c10",
-        theme_color: "#0a0c10",
+        background_color: "#ffffff",
+        theme_color: "#ffffff",
         orientation: "portrait-primary",
         icons: [
           {

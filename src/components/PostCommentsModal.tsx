@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { EmojiPicker } from "@/components/EmojiPicker";
 import { HashtagText } from "@/components/HashtagText";
+import { getDefaultAvatar } from "@/utils/defaultAvatar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -243,9 +244,20 @@ export const PostCommentsModal = ({
     }
 
     if (isLiked) {
-      await supabase.from("comment_likes").delete().eq("comment_id", commentId).eq("user_id", user.id);
+      const { error } = await supabase.from("comment_likes").delete().eq("comment_id", commentId).eq("user_id", user.id);
+      if (error) {
+        toast({ title: "Couldn't remove like", variant: "destructive" });
+        return;
+      }
     } else {
-      await supabase.from("comment_likes").insert({ comment_id: commentId, user_id: user.id });
+      const { error } = await supabase.from("comment_likes").upsert(
+        { comment_id: commentId, user_id: user.id },
+        { onConflict: "comment_id,user_id", ignoreDuplicates: true }
+      );
+      if (error) {
+        toast({ title: "Couldn't save like", variant: "destructive" });
+        return;
+      }
     }
 
     fetchComments();
@@ -284,9 +296,10 @@ export const PostCommentsModal = ({
           )}
         >
           <img
-            src={comment.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+            src={comment.profiles?.avatar_url || getDefaultAvatar()}
             alt={comment.profiles?.username || "User"}
             className={cn("rounded-full object-cover cursor-pointer flex-shrink-0", depth > 0 ? "w-6 h-6" : "w-8 h-8")}
+            onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}
             onClick={() => { onClose(); navigate(`/streamer/${comment.user_id}`); }}
           />
           <div className="flex-1 min-w-0">
@@ -407,7 +420,7 @@ export const PostCommentsModal = ({
           {/* Post Preview */}
           {postImage && (
             <div className="flex items-start gap-3 p-4 border-b border-border bg-secondary/30">
-              <img src={authorAvatar} alt={authorName} className="w-8 h-8 rounded-full object-cover" />
+              <img src={authorAvatar || getDefaultAvatar()} alt={authorName} className="w-8 h-8 rounded-full object-cover" onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }} />
               <div className="flex-1 min-w-0">
                 <span className="font-semibold text-sm text-foreground">{authorName}</span>
                 <p className="text-sm text-muted-foreground line-clamp-2">{postContent}</p>

@@ -7,11 +7,11 @@
     <meta name="description" content="StreamRate is the ultimate platform for fans to rate, review, and follow their favorite streamers. Join the gaming community today! Rate, Review Your Favorites">
     <meta name="author" content="StreamRate" />
     <meta name="keywords" content="streamers, gaming, twitch, youtube, ratings, reviews, esports, content creators">
-    <meta name="theme-color" content="#0a0c10" />
+    <meta name="theme-color" content="#ffffff" />
     
     <!-- Mobile App Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="StreamRate" />
     <link rel="apple-touch-icon" href="/logo.png" />
     
@@ -36,6 +36,10 @@
   <script>
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(OneSignal) {
+      var allowedOneSignalHosts = ["streamrateapp.com", "www.streamrateapp.com", "streamrate.lovable.app"];
+      if (allowedOneSignalHosts.indexOf(window.location.hostname) === -1) {
+        return;
+      }
       await OneSignal.init({
         appId: "447ab0ac-d32a-4aa8-bb29-d4b50c562672",
         serviceWorkerPath: "push/OneSignalSDKWorker.js",

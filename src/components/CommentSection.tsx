@@ -13,6 +13,7 @@ import { LinkPreview } from "@/components/LinkPreview";
 import { MentionInput } from "@/components/MentionInput";
 import { HashtagText } from "@/components/HashtagText";
 import { extractFirstUrl } from "@/lib/urlPreview";
+import { getDefaultAvatar } from "@/utils/defaultAvatar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -299,9 +300,20 @@ export const CommentSection = ({ postId, postOwnerId, highlightCommentId }: Comm
     }
 
     if (isLiked) {
-      await supabase.from("comment_likes").delete().eq("comment_id", commentId).eq("user_id", user.id);
+      const { error } = await supabase.from("comment_likes").delete().eq("comment_id", commentId).eq("user_id", user.id);
+      if (error) {
+        toast({ title: "Couldn't remove like", variant: "destructive" });
+        return;
+      }
     } else {
-      await supabase.from("comment_likes").insert({ comment_id: commentId, user_id: user.id });
+      const { error } = await supabase.from("comment_likes").upsert(
+        { comment_id: commentId, user_id: user.id },
+        { onConflict: "comment_id,user_id", ignoreDuplicates: true }
+      );
+      if (error) {
+        toast({ title: "Couldn't save like", variant: "destructive" });
+        return;
+      }
     }
 
     fetchComments();
@@ -401,8 +413,9 @@ export const CommentSection = ({ postId, postOwnerId, highlightCommentId }: Comm
         >
           <div className="flex items-start gap-3">
             <img
-              src={comment.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+              src={comment.profiles?.avatar_url || getDefaultAvatar()}
               alt={comment.profiles?.username || "User"}
+              onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}
               className="w-8 h-8 rounded-full object-cover cursor-pointer flex-shrink-0"
               onClick={() => navigate(`/streamer/${comment.user_id}`)}
             />

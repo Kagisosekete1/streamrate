@@ -31,6 +31,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
 interface NavItem {
   icon: React.ElementType;
@@ -310,11 +311,9 @@ export const AppSidebar = () => {
             )}
           >
             <img
-              src={
-                profile?.avatar_url ||
-                "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"
-              }
+              src={profile?.avatar_url || getDefaultAvatar()}
               alt={profile?.username || "User"}
+              onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}
               className="w-10 h-10 rounded-full object-cover ring-2 ring-border"
             />
             <AnimatePresence>

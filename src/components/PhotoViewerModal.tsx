@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { EmojiPicker } from "@/components/EmojiPicker";
+import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
 interface Comment {
   id: string;
@@ -90,11 +91,22 @@ export const PhotoViewerModal = ({
       return;
     }
     if (isLiked) {
-      await supabase.from("post_likes").delete().eq("post_id", postId).eq("user_id", user.id);
+      const { error } = await supabase.from("post_likes").delete().eq("post_id", postId).eq("user_id", user.id);
+      if (error) {
+        toast({ title: "Couldn't remove like", variant: "destructive" });
+        return;
+      }
       setIsLiked(false);
-      setCurrentLikes((p) => p - 1);
+      setCurrentLikes((p) => Math.max(0, p - 1));
     } else {
-      await supabase.from("post_likes").insert({ post_id: postId, user_id: user.id });
+      const { error } = await supabase.from("post_likes").upsert(
+        { post_id: postId, user_id: user.id },
+        { onConflict: "post_id,user_id", ignoreDuplicates: true }
+      );
+      if (error) {
+        toast({ title: "Couldn't save like", variant: "destructive" });
+        return;
+      }
       setIsLiked(true);
       setCurrentLikes((p) => p + 1);
     }
@@ -171,14 +183,22 @@ export const PhotoViewerModal = ({
   const handleAddComment = async () => {
     if (!user) { toast({ title: "Please sign in to comment", variant: "destructive" }); return; }
     if (!newComment.trim()) return;
-    await supabase.from("comments").insert({ post_id: postId, user_id: user.id, content: newComment.trim() });
+    const { error } = await supabase.from("comments").insert({ post_id: postId, user_id: user.id, content: newComment.trim() });
+    if (error) {
+      toast({ title: "Failed to add comment", variant: "destructive" });
+      return;
+    }
     setNewComment("");
     fetchComments();
   };
 
   const handleAddReply = async (parentId: string) => {
     if (!user || !replyText.trim()) return;
-    await supabase.from("comments").insert({ post_id: postId, user_id: user.id, content: replyText.trim(), parent_id: parentId });
+    const { error } = await supabase.from("comments").insert({ post_id: postId, user_id: user.id, content: replyText.trim(), parent_id: parentId });
+    if (error) {
+      toast({ title: "Failed to add reply", variant: "destructive" });
+      return;
+    }
     setReplyText("");
     setReplyingTo(null);
     fetchReplies(parentId);
@@ -188,9 +208,20 @@ export const PhotoViewerModal = ({
   const handleLikeComment = async (commentId: string, commentIsLiked: boolean) => {
     if (!user) return;
     if (commentIsLiked) {
-      await supabase.from("comment_likes").delete().eq("comment_id", commentId).eq("user_id", user.id);
+      const { error } = await supabase.from("comment_likes").delete().eq("comment_id", commentId).eq("user_id", user.id);
+      if (error) {
+        toast({ title: "Couldn't remove like", variant: "destructive" });
+        return;
+      }
     } else {
-      await supabase.from("comment_likes").insert({ comment_id: commentId, user_id: user.id });
+      const { error } = await supabase.from("comment_likes").upsert(
+        { comment_id: commentId, user_id: user.id },
+        { onConflict: "comment_id,user_id", ignoreDuplicates: true }
+      );
+      if (error) {
+        toast({ title: "Couldn't save like", variant: "destructive" });
+        return;
+      }
     }
     fetchComments();
     expandedReplies.forEach((id) => fetchReplies(id));
@@ -251,9 +282,10 @@ export const PhotoViewerModal = ({
             {/* Author header */}
             <div className="flex items-center gap-3 p-4 border-b border-border">
               <img
-                src={authorAvatar}
+                src={authorAvatar || getDefaultAvatar()}
                 alt={authorName}
                 className="w-10 h-10 rounded-full object-cover cursor-pointer"
+                onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}
                 onClick={() => { onClose(); navigate(`/streamer/${authorId}`); }}
               />
               <div className="flex-1 min-w-0">
@@ -295,9 +327,10 @@ export const PhotoViewerModal = ({
                   <div key={comment.id}>
                     <div className="flex items-start gap-2">
                       <img
-                        src={comment.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
+                        src={comment.profiles?.avatar_url || getDefaultAvatar()}
                         alt={comment.profiles?.username || "User"}
                         className="w-8 h-8 rounded-full object-cover cursor-pointer"
+                        onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}
                         onClick={() => { onClose(); navigate(`/streamer/${comment.user_id}`); }}
                       />
                       <div className="flex-1 min-w-0">
@@ -329,7 +362,7 @@ export const PhotoViewerModal = ({
 
                         {expandedReplies.has(comment.id) && replies[comment.id]?.map((reply) => (
                           <div key={reply.id} className="flex items-start gap-2 mt-3 ml-4 border-l-2 border-border pl-3">
-                            <img src={reply.profiles?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"} alt="" className="w-6 h-6 rounded-full object-cover" />
+                            <img src={reply.profiles?.avatar_url || getDefaultAvatar()} alt="" className="w-6 h-6 rounded-full object-cover" onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }} />
                             <div className="flex-1">
                               <span className="font-medium text-xs text-foreground">{reply.profiles?.username || "Anonymous"}</span>
                               <p className="text-xs text-foreground">{reply.content}</p>

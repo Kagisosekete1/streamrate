@@ -3,6 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
+import { getNotificationRoute } from "@/lib/notificationDeepLinks";
+
+const NOTIFICATION_ICON = "/__l5e/assets-v1/1036deb6-3d8c-4d5b-a934-92d6863b45db/streamrate-notification-logo.png";
 
 export const useNativePushNotifications = () => {
   const { user } = useAuth();
@@ -38,14 +41,14 @@ export const useNativePushNotifications = () => {
       try {
         const registration = await navigator.serviceWorker.ready;
         registration.showNotification(title, {
-          icon: "/pwa-192x192.png",
-          badge: "/pwa-192x192.png",
+          icon: NOTIFICATION_ICON,
+          badge: NOTIFICATION_ICON,
           ...options,
         });
       } catch (error) {
         // Fallback to regular Notification
         new Notification(title, {
-          icon: "/pwa-192x192.png",
+          icon: NOTIFICATION_ICON,
           ...options,
         });
       }
@@ -75,6 +78,7 @@ export const useNativePushNotifications = () => {
             type: string;
             post_id?: string;
             reel_id?: string;
+            comment_id?: string;
             from_user_id?: string;
           };
 
@@ -94,7 +98,7 @@ export const useNativePushNotifications = () => {
                   <ToastAction
                     altText="Watch now"
                     onClick={() => {
-                      const targetPath = notification.from_user_id ? `/streamer/${notification.from_user_id}` : "/live";
+                      const targetPath = getNotificationRoute(notification);
                       window.location.assign(targetPath);
                     }}
                   >
@@ -112,6 +116,8 @@ export const useNativePushNotifications = () => {
             data: {
               postId: notification.post_id,
               reelId: notification.reel_id,
+              commentId: notification.comment_id,
+              url: getNotificationRoute(notification),
             },
           });
         }
