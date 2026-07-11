@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Plus, Trash2, Terminal } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,7 @@ interface Cmd {
 
 export default function ChatCommands() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [params] = useSearchParams();
   const viewUserId = params.get("u") || user?.id || null;
   const isOwner = !!user && viewUserId === user.id;
@@ -80,9 +81,9 @@ export default function ChatCommands() {
     <div className="min-h-screen bg-background pb-32">
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Link to="/profile" className="p-2 -ml-2 rounded-lg hover:bg-secondary">
+          <button type="button" onClick={() => window.history.length > 1 ? navigate(-1) : navigate("/profile")} className="p-2 -ml-2 rounded-lg hover:bg-secondary">
             <ArrowLeft className="w-5 h-5" />
-          </Link>
+          </button>
           <div className="flex items-center gap-2 flex-1">
             <Terminal className="w-5 h-5 text-primary" />
             <h1 className="font-bold text-lg">Chat Commands</h1>

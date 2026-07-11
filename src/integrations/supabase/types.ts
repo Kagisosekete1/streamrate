@@ -2610,6 +2610,7 @@ export type Database = {
         Args: { _fallback_id?: string; _value: string }
         Returns: string
       }
+      notification_actor_name: { Args: { _user_id: string }; Returns: string }
       redeem_referral: { Args: { _code: string }; Returns: Json }
       verify_app_lock_pin: { Args: { _pin_hash: string }; Returns: boolean }
       xp_for_level: { Args: { lvl: number }; Returns: number }

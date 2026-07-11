@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Trophy, Users, Play, Crown, Lock, ShieldCheck, History, Search, Filter } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,7 @@ interface ActorProfile { id: string; username: string | null; full_name: string 
 
 export default function TournamentDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [t, setT] = useState<Tournament | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -160,7 +161,7 @@ export default function TournamentDetail() {
     <div className="min-h-screen bg-background pb-32">
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Link to="/tournaments" className="p-2 -ml-2 rounded-lg hover:bg-secondary"><ArrowLeft className="w-5 h-5" /></Link>
+          <button type="button" onClick={() => window.history.length > 1 ? navigate(-1) : navigate("/tournaments")} className="p-2 -ml-2 rounded-lg hover:bg-secondary"><ArrowLeft className="w-5 h-5" /></button>
           <Trophy className="w-5 h-5 text-primary" />
           <h1 className="font-bold text-lg truncate flex-1">{t.name}</h1>
           <Badge variant="secondary" className="text-[10px]">{t.status}</Badge>

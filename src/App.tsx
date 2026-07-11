@@ -15,6 +15,7 @@ import { IOSInstallBanner } from "@/components/IOSInstallBanner";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { AppLockGate } from "@/components/AppLockGate";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { NavigationMemory } from "@/components/NavigationMemory";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
@@ -77,6 +78,7 @@ function AppContent() {
   
   return (
     <BrowserRouter>
+      <NavigationMemory />
       <AuthProvider>
         <AuthenticatedFeatures />
         <ErrorBoundary>

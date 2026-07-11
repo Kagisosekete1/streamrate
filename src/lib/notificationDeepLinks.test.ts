@@ -29,6 +29,12 @@ describe("notification deep links", () => {
     expect(getNotificationRoute({ type, from_user_id: ids.user })).toBe(`/streamer/${ids.user}`);
   });
 
+  it("routes comment-like notifications to the exact comment", () => {
+    expect(getNotificationRoute({ type: "comment_like", post_id: ids.post, comment_id: ids.comment })).toBe(
+      `/post/${ids.post}?commentId=${ids.comment}`,
+    );
+  });
+
   it("builds the same absolute URL shape used by push payloads", () => {
     expect(
       getNotificationAbsoluteUrl("https://www.streamrateapp.com/", {

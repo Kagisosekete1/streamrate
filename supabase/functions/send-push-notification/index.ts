@@ -9,7 +9,9 @@ const corsHeaders = {
 const ONESIGNAL_APP_ID = "447ab0ac-d32a-4aa8-bb29-d4b50c562672";
 const ONESIGNAL_REST_API_KEY = Deno.env.get("ONESIGNAL_REST_API_KEY") ?? "";
 const APP_ORIGIN = "https://www.streamrateapp.com";
-const LOGO_URL = `${APP_ORIGIN}/__l5e/assets-v1/1036deb6-3d8c-4d5b-a934-92d6863b45db/streamrate-notification-logo.png`;
+const LOGO_URL = `${APP_ORIGIN}/__l5e/assets-v1/5ea8df93-d0c4-4a86-8733-1650d2859ab0/streamrate-push-logo.png`;
+const WEB_ICON_URL = `${APP_ORIGIN}/__l5e/assets-v1/29ab3d65-7964-4f3f-a4d7-9fea62411606/streamrate-push-icon-192.png`;
+const WEB_BADGE_URL = `${APP_ORIGIN}/__l5e/assets-v1/ce739aca-2329-46b8-ad6a-1e1ecbcc729d/streamrate-push-badge-96.png`;
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -97,11 +99,11 @@ serve(async (req) => {
       contents: { en: message },
       url,
       web_url: url,
-      chrome_web_icon: LOGO_URL,
-      chrome_web_badge: LOGO_URL,
-      firefox_icon: LOGO_URL,
+      chrome_web_icon: WEB_ICON_URL,
+      chrome_web_badge: WEB_BADGE_URL,
+      firefox_icon: WEB_ICON_URL,
       large_icon: LOGO_URL,
-      small_icon: LOGO_URL,
+      small_icon: WEB_BADGE_URL,
       data: { ...data, url },
     };
 

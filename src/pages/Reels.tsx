@@ -163,7 +163,7 @@ const Reels = () => {
       reels={currentReelsList}
       initialIndex={initialIndex}
       isOpen={true}
-      onClose={() => window.history.back()}
+      onClose={() => window.history.length > 1 ? window.history.back() : window.location.assign("/home")}
       onLoadMore={activeTab === "latest" ? loadMoreReels : undefined}
       showTabs={true}
       activeTab={activeTab}

@@ -26,6 +26,7 @@ import { ReviewsModal } from "@/components/ReviewsModal";
 import { TwitchLiveEmbed } from "@/components/TwitchLiveEmbed";
 import { buildProfileQrUrl, checkQrHandleAvailable, sanitizeQrHandle } from "@/lib/profileQr";
 import { cn } from "@/lib/utils";
+import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
 interface Post {
   id: string;
@@ -870,7 +871,8 @@ const Profile = () => {
           >
             <div className="relative">
               <img
-                src={profile.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&crop=face"}
+                src={profile.avatar_url || getDefaultAvatar((profile as any)?.gender)}
+                onError={(event) => { event.currentTarget.src = getDefaultAvatar((profile as any)?.gender); }}
                 alt={profile.full_name || "User"}
                 className="w-28 h-28 rounded-full object-cover ring-4 ring-background shadow-xl"
               />

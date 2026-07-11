@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Users, Check, X, Send } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +27,7 @@ interface ProfileLite { id: string; username: string | null; avatar_url: string 
 
 export default function CoStream() {
   const { user, userRole } = useAuth();
+  const navigate = useNavigate();
   const isStreamer = userRole === "streamer";
   const [reqs, setReqs] = useState<Req[]>([]);
   const [profiles, setProfiles] = useState<Record<string, ProfileLite>>({});
@@ -144,7 +145,7 @@ export default function CoStream() {
     <div className="min-h-screen bg-background pb-32">
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Link to="/profile" className="p-2 -ml-2 rounded-lg hover:bg-secondary"><ArrowLeft className="w-5 h-5" /></Link>
+          <button type="button" onClick={() => window.history.length > 1 ? navigate(-1) : navigate("/profile")} className="p-2 -ml-2 rounded-lg hover:bg-secondary"><ArrowLeft className="w-5 h-5" /></button>
           <div className="flex items-center gap-2 flex-1">
             <Users className="w-5 h-5 text-primary" />
             <h1 className="font-bold text-lg">Co-Stream</h1>
