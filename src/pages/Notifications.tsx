@@ -95,22 +95,18 @@ const Notifications = () => {
 
     fetchNotifications();
 
-    // Subscribe to new notifications
+    // Subscribe to notification changes so badge counts and read state stay live everywhere.
     const channel = supabase
       .channel("notifications-page")
       .on(
         "postgres_changes",
         {
-          event: "INSERT",
+          event: "*",
           schema: "public",
           table: "notifications",
           filter: `user_id=eq.${user.id}`,
         },
-        (payload) => {
-          const newNotification = payload.new as Notification;
-          if (newNotification.type === "reel_view") return;
-          setNotifications((prev) => [newNotification, ...prev]);
-        }
+        fetchNotifications
       )
       .subscribe();
 
@@ -276,7 +272,7 @@ const Notifications = () => {
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate(-1)}>
+            <button onClick={() => window.history.length > 1 ? navigate(-1) : navigate("/home")}>
               <ChevronLeft className="w-6 h-6 text-foreground" />
             </button>
             <h1 className="text-xl font-bold text-foreground">Notifications</h1>

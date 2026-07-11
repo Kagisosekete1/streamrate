@@ -34,4 +34,11 @@ describe("post share links", () => {
   it("native sharing keeps the clean exact post route", () => {
     expect(getShareDestinationUrl({ destination: "native", postId, origin, functionsOrigin, shareText: "Watch this" })).toBe(canonical);
   });
+
+  it.each(["copy", "native"] as ShareDestination[])("%s opens the exact post route", (destination) => {
+    const target = getPostShareTargetUrl({ destination, postId, origin, functionsOrigin });
+    const parsed = new URL(target);
+    expect(parsed.origin).toBe("https://www.streamrateapp.com");
+    expect(parsed.pathname).toBe(`/post/${postId}`);
+  });
 });

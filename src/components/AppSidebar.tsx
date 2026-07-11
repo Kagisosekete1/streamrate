@@ -73,6 +73,7 @@ export const AppSidebar = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showMore, setShowMore] = useState(false);
   const [isAnyoneLive, setIsAnyoneLive] = useState(false);
+  const profileAvatar = profile?.avatar_url || getDefaultAvatar((profile as any)?.gender);
 
   // Check if anyone has streaming links (lightweight live indicator)
   const checkLiveStatus = useCallback(async () => {
@@ -113,16 +114,12 @@ export const AppSidebar = () => {
       .on(
         "postgres_changes",
         {
-          event: "INSERT",
+          event: "*",
           schema: "public",
           table: "notifications",
           filter: `user_id=eq.${user.id}`,
         },
-        (payload) => {
-          if ((payload.new as any).type !== "reel_view") {
-            setUnreadCount((prev) => prev + 1);
-          }
-        }
+        fetchUnread
       )
       .subscribe();
 
@@ -311,9 +308,9 @@ export const AppSidebar = () => {
             )}
           >
             <img
-              src={profile?.avatar_url || getDefaultAvatar()}
+              src={profileAvatar}
               alt={profile?.username || "User"}
-              onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}
+              onError={(event) => { event.currentTarget.src = getDefaultAvatar((profile as any)?.gender); }}
               className="w-10 h-10 rounded-full object-cover ring-2 ring-border"
             />
             <AnimatePresence>

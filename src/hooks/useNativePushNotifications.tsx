@@ -5,7 +5,8 @@ import { toast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { getNotificationRoute } from "@/lib/notificationDeepLinks";
 
-const NOTIFICATION_ICON = "/__l5e/assets-v1/1036deb6-3d8c-4d5b-a934-92d6863b45db/streamrate-notification-logo.png";
+const NOTIFICATION_ICON = "/__l5e/assets-v1/29ab3d65-7964-4f3f-a4d7-9fea62411606/streamrate-push-icon-192.png";
+const NOTIFICATION_BADGE = "/__l5e/assets-v1/ce739aca-2329-46b8-ad6a-1e1ecbcc729d/streamrate-push-badge-96.png";
 
 export const useNativePushNotifications = () => {
   const { user } = useAuth();
@@ -42,13 +43,14 @@ export const useNativePushNotifications = () => {
         const registration = await navigator.serviceWorker.ready;
         registration.showNotification(title, {
           icon: NOTIFICATION_ICON,
-          badge: NOTIFICATION_ICON,
+          badge: NOTIFICATION_BADGE,
           ...options,
         });
       } catch (error) {
         // Fallback to regular Notification
         new Notification(title, {
           icon: NOTIFICATION_ICON,
+          badge: NOTIFICATION_BADGE,
           ...options,
         });
       }

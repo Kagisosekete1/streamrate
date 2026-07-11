@@ -20,6 +20,7 @@ export const BottomNav = () => {
   const { profile } = useAuth();
   const [hasNewReels, setHasNewReels] = useState(false);
   const [isAnyoneLive, setIsAnyoneLive] = useState(false);
+  const profileAvatar = profile?.avatar_url || getDefaultAvatar((profile as any)?.gender);
 
   // Check for new reels
   useEffect(() => {
@@ -82,9 +83,9 @@ export const BottomNav = () => {
                 >
                   {item.path === "/profile" ? (
                     <img
-                      src={profile?.avatar_url || getDefaultAvatar()}
+                      src={profileAvatar}
                       alt="Profile"
-                      onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}
+                      onError={(event) => { event.currentTarget.src = getDefaultAvatar((profile as any)?.gender); }}
                       className={cn(
                         "w-7 h-7 rounded-full object-cover transition-all",
                         isActive ? "ring-2 ring-primary" : "opacity-70"
