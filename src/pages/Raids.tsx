@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Swords, Send } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,7 @@ interface ProfileLite { id: string; username: string | null; avatar_url: string 
 
 export default function Raids() {
   const { user, userRole } = useAuth();
+  const navigate = useNavigate();
   const isStreamer = userRole === "streamer";
   const [sent, setSent] = useState<Raid[]>([]);
   const [received, setReceived] = useState<Raid[]>([]);
@@ -97,7 +98,7 @@ export default function Raids() {
     <div className="min-h-screen bg-background pb-32">
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Link to="/profile" className="p-2 -ml-2 rounded-lg hover:bg-secondary"><ArrowLeft className="w-5 h-5" /></Link>
+          <button type="button" onClick={() => window.history.length > 1 ? navigate(-1) : navigate("/profile")} className="p-2 -ml-2 rounded-lg hover:bg-secondary"><ArrowLeft className="w-5 h-5" /></button>
           <div className="flex items-center gap-2 flex-1">
             <Swords className="w-5 h-5 text-primary" />
             <h1 className="font-bold text-lg">Raids</h1>
