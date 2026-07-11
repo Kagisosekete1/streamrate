@@ -80,9 +80,11 @@ serve(async (req) => {
 </html>`;
 
   return new Response(html, {
+    status: 200,
     headers: {
-      "content-type": "text/html; charset=utf-8",
-      "cache-control": "public, max-age=300, s-maxage=600",
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "public, max-age=300, s-maxage=600",
+      "X-StreamRate-Preview": "post-og-v2",
     },
   });
 });
