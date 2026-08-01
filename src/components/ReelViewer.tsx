@@ -571,7 +571,11 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
         .delete()
         .eq("reel_id", reelId)
         .eq("user_id", user.id);
-      if (error) toast({ title: "Couldn't remove like", variant: "destructive" });
+      if (error) {
+        toast({ title: "Couldn't remove like", variant: "destructive" });
+        await fetchReelData(reelId);
+        return;
+      }
     } else {
       setLikesData(prev => ({
         ...prev,
@@ -581,7 +585,11 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
         { reel_id: reelId, user_id: user.id },
         { onConflict: "reel_id,user_id", ignoreDuplicates: true }
       );
-      if (error) toast({ title: "Couldn't save like", variant: "destructive" });
+      if (error) {
+        toast({ title: "Couldn't save like", variant: "destructive" });
+        await fetchReelData(reelId);
+        return;
+      }
       // Update user interest for liking
       updateUserInterest("creator", currentReel.user_id, "like");
     }
@@ -618,17 +626,32 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     }
   };
 
-  // Handle share - use OG preview URL for social platforms
+  // Share the stable app route; record successful shares for counts and alerts.
   const handleShare = async () => {
-    const ogUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reel-og-preview?id=${currentReel.id}`;
+    const shareUrl = `${window.location.origin}/reels?id=${encodeURIComponent(currentReel.id)}`;
+    let destination = "copy_link";
     try {
-      await navigator.share({
-        title: currentReel.caption || "Check out this reel on StreamRate!",
-        url: ogUrl
-      });
+      if (navigator.share) {
+        await navigator.share({
+          title: currentReel.caption || "Check out this reel on StreamRate!",
+          url: shareUrl
+        });
+        destination = "native";
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        toast({ title: "Link copied!" });
+      }
     } catch {
-      navigator.clipboard.writeText(ogUrl);
-      toast({ title: "Link copied!" });
+      return;
+    }
+
+    if (user) {
+      const { error } = await supabase.from("reel_shares" as never).insert({
+        reel_id: currentReel.id,
+        user_id: user.id,
+        destination,
+      } as never);
+      if (error) console.error("Unable to record reel share:", error.message);
     }
   };
 
