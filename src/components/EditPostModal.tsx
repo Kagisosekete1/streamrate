@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Save, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,10 +26,23 @@ export const EditPostModal = ({
   const [content, setContent] = useState(initialContent);
   const [imageUrl, setImageUrl] = useState<string | null>(initialImageUrl || null);
   const [isSaving, setIsSaving] = useState(false);
+  const trimmedContent = content.trim();
+  const hasChanges = trimmedContent !== initialContent.trim() || imageUrl !== (initialImageUrl || null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setContent(initialContent);
+    setImageUrl(initialImageUrl || null);
+  }, [isOpen, initialContent, initialImageUrl]);
 
   const handleSave = async () => {
-    if (!content.trim()) {
+    if (!trimmedContent) {
       toast({ title: "Content cannot be empty", variant: "destructive" });
+      return;
+    }
+
+    if (!hasChanges) {
+      onClose();
       return;
     }
 
@@ -37,7 +50,7 @@ export const EditPostModal = ({
 
     const { error } = await supabase
       .from("posts")
-      .update({ content: content.trim(), image_url: imageUrl })
+      .update({ content: trimmedContent, image_url: imageUrl })
       .eq("id", postId);
 
     if (error) {
@@ -47,7 +60,7 @@ export const EditPostModal = ({
     }
 
     toast({ title: "Post updated!" });
-    onSave(content.trim(), imageUrl);
+    onSave(trimmedContent, imageUrl);
     onClose();
     setIsSaving(false);
   };
@@ -106,7 +119,7 @@ export const EditPostModal = ({
               <Button
                 variant="gaming"
                 onClick={handleSave}
-                disabled={isSaving}
+                disabled={isSaving || !hasChanges}
                 className="flex-1"
               >
                 <Save className="w-4 h-4" />

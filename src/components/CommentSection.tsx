@@ -192,6 +192,22 @@ export const CommentSection = ({ postId, postOwnerId, highlightCommentId }: Comm
     return () => { supabase.removeChannel(channel); };
   }, [postId, fetchComments]);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel(`comment-likes-${postId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "comment_likes" },
+        () => {
+          fetchComments();
+          expandedReplies.forEach((commentId) => fetchReplies(commentId));
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [postId, fetchComments, fetchReplies, expandedReplies]);
+
   // Deep-link: find comment and scroll/highlight
   useEffect(() => {
     if (!highlightCommentId || loading) return;
