@@ -130,9 +130,9 @@ export const PostCard = ({
   const [showAvatarView, setShowAvatarView] = useState(false);
   const [content, setContent] = useState(initialContent);
   const [imageUrl, setImageUrl] = useState(initialImageUrl);
-  const [wasEdited, setWasEdited] = useState(
-    updatedAt && createdAt && updatedAt.getTime() > createdAt.getTime() + 1000
-  );
+  // `updated_at` is also touched by engagement counters, so it cannot prove
+  // that the author edited the post. Only mark it after a real content edit.
+  const [wasEdited, setWasEdited] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [showReportBlock, setShowReportBlock] = useState(false);
   const [showCommentsModal, setShowCommentsModal] = useState(false);

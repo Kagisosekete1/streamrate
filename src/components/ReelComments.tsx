@@ -120,6 +120,20 @@ export const ReelComments = ({
     }
   }, [isOpen, fetchComments]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const channel = supabase
+      .channel(`reel-comments-${reelId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "reel_comments", filter: `reel_id=eq.${reelId}` },
+        () => fetchComments()
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [isOpen, reelId, fetchComments]);
+
   const handleAddComment = async () => {
     if (!user) {
       toast({ title: "Please sign in to comment", variant: "destructive" });
