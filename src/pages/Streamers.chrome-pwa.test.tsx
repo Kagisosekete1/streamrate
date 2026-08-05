@@ -16,6 +16,10 @@ vi.mock("@/components/TrendingStreamersSection", () => ({
   TrendingStreamersSection: () => <div data-testid="trending-streamers" />,
 }));
 
+vi.mock("@/hooks/useIsSeenAdmin", () => ({
+  useIsSeenAdmin: () => ({ isSeenAdmin: false, loading: false }),
+}));
+
 const emptyQuery = {
   select: vi.fn(() => emptyQuery),
   eq: vi.fn(() => emptyQuery),
