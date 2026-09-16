@@ -138,7 +138,7 @@ const StreamerProfile = () => {
     // Fetch streamer profile
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
-      .select("id, full_name, username, qr_handle, avatar_url, bio, country, signup_number, email, twitch_url, discord_url, kick_url, youtube_gaming_url, show_twitch, show_discord, show_kick, show_youtube_gaming, profile_visibility")
+      .select("id, full_name, username, qr_handle, avatar_url, bio, country, signup_number, manual_verification_badge, manual_verification_expires_at, twitch_url, discord_url, kick_url, youtube_gaming_url, show_twitch, show_discord, show_kick, show_youtube_gaming, profile_visibility")
       .eq("id", profileId)
       .maybeSingle();
 
@@ -157,7 +157,7 @@ const StreamerProfile = () => {
       bio: profileData.bio,
       country: profileData.country,
       signup_number: (profileData as any).signup_number || null,
-      email: (profileData as any).email || null,
+      email: null,
       twitch_url: (profileData as any).twitch_url || null,
       discord_url: (profileData as any).discord_url || null,
       kick_url: (profileData as any).kick_url || null,
@@ -454,7 +454,7 @@ const StreamerProfile = () => {
             <div className="flex items-center gap-2 mt-4">
               <h1 className="text-2xl font-bold text-foreground inline-flex items-center gap-1">
                 {streamer.username || streamer.full_name || "Anonymous"}
-                <VerificationBadge email={streamer.email} signupNumber={streamer.signup_number} className="w-5 h-5" />
+                <VerificationBadge email={null} manualBadge={(streamer as any).manual_verification_badge} manualExpiresAt={(streamer as any).manual_verification_expires_at} signupNumber={streamer.signup_number} className="w-5 h-5" />
               </h1>
               {isSeenAdmin && streamer.signup_number && (
                 <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-xs font-bold">

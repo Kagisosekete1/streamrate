@@ -41,14 +41,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .maybeSingle();
+    const [{ data: profileData }, { data: ownEmail }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select(
+          "id, username, qr_handle, full_name, avatar_url, bio, country, header_url, last_seen, last_seen_visibility, twitch_url, discord_url, kick_url, youtube_gaming_url, show_twitch, show_discord, show_kick, show_youtube_gaming, signup_number, gender, profile_visibility, who_can_comment, is_deactivated, scheduled_deletion_at, deactivated_at, games, rank, playstyle, region, looking_for_squad, manual_verification_badge, manual_verification_expires_at, manual_verification_reason, referral_code, created_at, updated_at"
+        )
+        .eq("id", userId)
+        .maybeSingle(),
+      supabase.rpc("get_my_email"),
+    ]);
 
     if (profileData) {
-      setProfile(profileData);
+      // email is never exposed for other users; only the signed-in user's own
+      // address is resolved server-side via the get_my_email() function.
+      setProfile({ ...profileData, email: (ownEmail as string | null) ?? null });
     }
 
     const { data: roleData } = await supabase

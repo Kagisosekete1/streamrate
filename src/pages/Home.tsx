@@ -353,6 +353,8 @@ const Home = () => {
                   isBookmarked={post.is_bookmarked}
                   isPrivate={post.is_private}
                   streamerEmail={post.profiles?.email}
+                  manualBadge={(post.profiles as any)?.manual_verification_badge}
+                  manualExpiresAt={(post.profiles as any)?.manual_verification_expires_at}
                   signupNumber={post.profiles?.signup_number}
                   index={index}
                   onDelete={() => setPosts((prev) => prev.filter((p) => p.id !== post.id))}
