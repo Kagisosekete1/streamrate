@@ -17,6 +17,12 @@ buildscript {
 
 apply from: "variables.gradle"
 
+// Keep Gradle output outside the previously locked generated build directory.
+rootProject.buildDir = "../build-output"
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+
 allprojects {
     repositories {
         google()

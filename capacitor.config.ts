@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.streamrate.app',
+  appId: 'com.semogrouptech.streamrateapp',
   appName: 'streamrate',
   webDir: 'dist',
   plugins: {
