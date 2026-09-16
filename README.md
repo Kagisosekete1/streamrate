@@ -1,73 +1,22 @@
-# Welcome to your Lovable project
+# StreamRate
 
-## Project info
+StreamRate is a React and Supabase app for discovering, rating, and following streamers.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Local development
 
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+Copy `.env.example` to `.env` if you need a separate local configuration, then install and run:
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The production Supabase project is `oczrdiyvubwxttrrajhe`; the app's public address is [streamrateapp.com](https://streamrateapp.com).
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Supabase
 
-**Use GitHub Codespaces**
+Use the migrations in `supabase/migrations` for database changes. The final compatibility migration restores the role and admin helper functions needed by the app and its RLS policies.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Deploy only the Edge Functions you intend to operate. AI writing, StreamiiAi, and custom authentication email delivery are intentionally disabled until replacement providers are configured.
 
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+For Google login, configure `https://streamrateapp.com/home` as an allowed redirect URL in Supabase Auth and in your Google OAuth client.

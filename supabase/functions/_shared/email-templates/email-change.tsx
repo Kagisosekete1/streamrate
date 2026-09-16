@@ -33,7 +33,7 @@ export const EmailChangeEmail = ({
     <Preview>Confirm your new email for StreamRate</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src="https://eqgouykzakjdmgmbnsca.supabase.co/storage/v1/object/public/email-assets/logo.png" width="48" height="48" alt="StreamRate" style={logo} />
+        <Img src="https://oczrdiyvubwxttrrajhe.supabase.co/storage/v1/object/public/email-assets/logo.png" width="48" height="48" alt="StreamRate" style={logo} />
         <Heading style={h1}>Confirm your email change</Heading>
         <Text style={text}>
           You requested to change your StreamRate email from{' '}

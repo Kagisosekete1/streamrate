@@ -44,7 +44,7 @@ serve(async (req) => {
 <body style="margin:0;padding:0;background-color:#ffffff;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
   <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
     <div style="text-align:center;margin-bottom:30px;">
-      <img src="https://streamrate.lovable.app/logo.png" alt="StreamRate" style="width:60px;height:60px;border-radius:12px;" />
+      <img src="https://streamrateapp.com/logo.png" alt="StreamRate" style="width:60px;height:60px;border-radius:12px;" />
     </div>
     <div style="background:linear-gradient(135deg,#0066ff,#6633ff);border-radius:16px;padding:40px 30px;text-align:center;color:#ffffff;">
       <h1 style="margin:0 0 10px;font-size:28px;font-weight:700;">We Miss You! 💜</h1>
@@ -56,7 +56,7 @@ serve(async (req) => {
       <p style="margin:0 0 30px;font-size:15px;line-height:1.6;opacity:0.9;">
         Come back and check out what you've been missing — new reels, posts, and conversations are waiting for you. 🎮
       </p>
-      <a href="https://streamrate.lovable.app/home" style="display:inline-block;background:#ffffff;color:#0066ff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">
+      <a href="https://streamrateapp.com/home" style="display:inline-block;background:#ffffff;color:#0066ff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">
         Open StreamRate
       </a>
     </div>
@@ -91,8 +91,8 @@ serve(async (req) => {
         body: JSON.stringify({
           title: "We Miss You! 💜",
           message: "It's been a while! Come back and see what's new on StreamRate 🎮",
-          target_url: "https://streamrate.lovable.app/home",
-          icon: "https://streamrate.lovable.app/logo.png",
+          target_url: "https://streamrateapp.com/home",
+          icon: "https://streamrateapp.com/logo.png",
         }),
       });
       const pushResult = await pushResponse.json();

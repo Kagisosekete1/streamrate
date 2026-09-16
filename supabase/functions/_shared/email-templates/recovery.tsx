@@ -28,7 +28,7 @@ export const RecoveryEmail = ({
     <Preview>Reset your StreamRate password</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src="https://eqgouykzakjdmgmbnsca.supabase.co/storage/v1/object/public/email-assets/logo.png" width="48" height="48" alt="StreamRate" style={logo} />
+        <Img src="https://oczrdiyvubwxttrrajhe.supabase.co/storage/v1/object/public/email-assets/logo.png" width="48" height="48" alt="StreamRate" style={logo} />
         <Heading style={h1}>Reset your password</Heading>
         <Text style={text}>
           We got a request to reset your StreamRate password. Tap the button below to choose a new one.

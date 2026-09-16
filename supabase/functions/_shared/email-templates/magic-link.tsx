@@ -28,7 +28,7 @@ export const MagicLinkEmail = ({
     <Preview>Your StreamRate login link</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src="https://eqgouykzakjdmgmbnsca.supabase.co/storage/v1/object/public/email-assets/logo.png" width="48" height="48" alt="StreamRate" style={logo} />
+        <Img src="https://oczrdiyvubwxttrrajhe.supabase.co/storage/v1/object/public/email-assets/logo.png" width="48" height="48" alt="StreamRate" style={logo} />
         <Heading style={h1}>Your login link</Heading>
         <Text style={text}>
           Tap the button below to sign in to StreamRate. This link expires shortly.

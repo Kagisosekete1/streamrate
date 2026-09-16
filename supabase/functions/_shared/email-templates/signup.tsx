@@ -33,7 +33,7 @@ export const SignupEmail = ({
     <Preview>Welcome to StreamRate — verify your email</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src="https://eqgouykzakjdmgmbnsca.supabase.co/storage/v1/object/public/email-assets/logo.png" width="48" height="48" alt="StreamRate" style={logo} />
+        <Img src="https://oczrdiyvubwxttrrajhe.supabase.co/storage/v1/object/public/email-assets/logo.png" width="48" height="48" alt="StreamRate" style={logo} />
         <Heading style={h1}>Welcome to StreamRate! 🎮</Heading>
         <Text style={text}>
           Thanks for joining the community! You're one step away from rating and discovering your favorite streamers.

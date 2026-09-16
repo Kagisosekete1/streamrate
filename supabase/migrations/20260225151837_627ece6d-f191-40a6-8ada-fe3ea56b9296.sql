@@ -26,7 +26,7 @@ BEGIN
 
   -- Call the edge function using net extension
   PERFORM net.http_post(
-    url := 'https://eqgouykzakjdmgmbnsca.supabase.co/functions/v1/send-push-notification',
+    url := 'https://oczrdiyvubwxttrrajhe.supabase.co/functions/v1/send-push-notification',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'Authorization', 'Bearer ' || current_setting('supabase.service_role_key', true)

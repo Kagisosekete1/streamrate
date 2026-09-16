@@ -26,7 +26,7 @@ BEGIN
 
   BEGIN
     PERFORM net.http_post(
-      url := 'https://eqgouykzakjdmgmbnsca.supabase.co/functions/v1/send-push-notification',
+    url := 'https://oczrdiyvubwxttrrajhe.supabase.co/functions/v1/send-push-notification',
       headers := jsonb_build_object('Content-Type', 'application/json'),
       body := payload
     );

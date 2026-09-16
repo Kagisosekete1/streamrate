@@ -40,7 +40,7 @@ export const TwitchLiveEmbed = ({ twitchUrl, showTwitch }: TwitchLiveEmbedProps)
         // We'll just attempt to embed and show it — Twitch embed handles live detection
         // For a quick check, we use the Twitch API via our edge function
         const response = await fetch(
-          `https://eqgouykzakjdmgmbnsca.supabase.co/functions/v1/check-twitch-live`,
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-twitch-live`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },

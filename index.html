@@ -36,7 +36,7 @@
   <script>
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(OneSignal) {
-      var allowedOneSignalHosts = ["streamrateapp.com", "www.streamrateapp.com", "streamrate.lovable.app"];
+      var allowedOneSignalHosts = ["streamrateapp.com", "www.streamrateapp.com"];
       if (allowedOneSignalHosts.indexOf(window.location.hostname) === -1) {
         return;
       }

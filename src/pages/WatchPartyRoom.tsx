@@ -96,8 +96,6 @@ const WatchPartyRoom = () => {
     // plus the Lovable preview/published domains so laptop previews work.
     const parents = Array.from(new Set([
       host,
-      "lovable.app",
-      "lovableproject.com",
       "streamrateapp.com",
       "www.streamrateapp.com",
     ].filter(Boolean)));

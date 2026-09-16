@@ -34,7 +34,7 @@ serve(async (req) => {
     : "Check out this reel on StreamRate!";
   const description = `@${profile?.username || "streamer"} · ${reel.view_count || 0} views`;
   const videoUrl = reel.video_url;
-  const siteUrl = "https://streamrate.lovable.app";
+  const siteUrl = "https://streamrateapp.com";
   const reelUrl = `${siteUrl}/reel/${reel.id}`;
 
   const html = `<!DOCTYPE html>
