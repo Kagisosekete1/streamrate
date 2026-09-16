@@ -365,7 +365,7 @@ export const PostCard = ({
               className="font-semibold text-sm text-foreground hover:text-muted-foreground inline-flex items-center gap-1"
             >
               {streamerName}
-              <VerificationBadge email={streamerEmail} signupNumber={signupNumber} />
+              <VerificationBadge email={streamerEmail} signupNumber={signupNumber} manualBadge={manualBadge} manualExpiresAt={manualExpiresAt} />
             </Link>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span>{formatDistanceToNow(createdAt, { addSuffix: false })}</span>
