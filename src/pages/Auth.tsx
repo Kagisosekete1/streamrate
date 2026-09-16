@@ -21,6 +21,11 @@ const Auth = () => {
   const [showRoleSelect, setShowRoleSelect] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showVerifyEmail, setShowVerifyEmail] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [passwordRecovery, setPasswordRecovery] = useState(
+    () => new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery",
+  );
+  const [resetEmailSent, setResetEmailSent] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -29,10 +34,20 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    if (user && !authLoading) {
+    if (user && !authLoading && !passwordRecovery) {
       navigate("/home");
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, passwordRecovery, navigate]);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setPasswordRecovery(true);
+        setShowPasswordReset(true);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Capture referral code from URL (?ref=CODE) for later redemption
   useEffect(() => {
@@ -55,6 +70,35 @@ const Auth = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handlePasswordResetRequest = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+      redirectTo: `${window.location.origin}/auth`,
+    });
+    setIsSubmitting(false);
+    if (error) {
+      toast({ title: "Password reset failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    setResetEmailSent(true);
+  };
+
+  const handleNewPassword = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+    const { error } = await supabase.auth.updateUser({ password: formData.password });
+    setIsSubmitting(false);
+    if (error) {
+      toast({ title: "Could not update password", description: error.message, variant: "destructive" });
+      return;
+    }
+    setPasswordRecovery(false);
+    setShowPasswordReset(false);
+    toast({ title: "Password updated", description: "You can now sign in with your new password." });
+    navigate("/home");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -178,6 +222,40 @@ const Auth = () => {
           >
             Go to Sign In
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (showPasswordReset) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col justify-center px-6 py-12">
+        <div className="max-w-sm mx-auto w-full">
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <img src="/logo.png" alt="StreamRate" className="h-12 w-auto" />
+            <span className="text-2xl font-bold gradient-text">StreamRate</span>
+          </div>
+          <h1 className="text-3xl font-bold text-foreground mb-2 text-center">
+            {passwordRecovery ? "Choose a new password" : "Reset your password"}
+          </h1>
+          <p className="text-muted-foreground mb-8 text-center">
+            {passwordRecovery ? "Set a new password for your StreamRate account." : "Enter your account email and we’ll send a secure reset link."}
+          </p>
+          <form onSubmit={passwordRecovery ? handleNewPassword : handlePasswordResetRequest} className="space-y-4">
+            {!passwordRecovery && <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input type="email" placeholder="Email address" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="pl-10" required />
+            </div>}
+            {passwordRecovery && <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input type="password" placeholder="New password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="pl-10" minLength={6} required />
+            </div>}
+            <Button type="submit" variant="gaming" size="lg" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Please wait..." : passwordRecovery ? "Save new password" : "Send reset link"}
+            </Button>
+          </form>
+          {resetEmailSent && <p className="text-center text-sm text-primary mt-5">If an account exists for this email, a reset link has been sent.</p>}
+          {!passwordRecovery && <button type="button" onClick={() => { setShowPasswordReset(false); setResetEmailSent(false); }} className="w-full text-center text-sm text-primary hover:underline mt-6">Back to sign in</button>}
         </div>
       </div>
     );
@@ -343,6 +421,14 @@ const Auth = () => {
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               </form>
+
+              {mode === "login" && <button
+                type="button"
+                onClick={() => { setShowPasswordReset(true); setResetEmailSent(false); }}
+                className="w-full text-center text-sm text-primary hover:underline mt-5"
+              >
+                Forgot your password?
+              </button>}
 
               {mode === "signup" && (
                 <p className="text-center text-xs text-muted-foreground mt-4">
