@@ -92,6 +92,8 @@ interface PostCardProps {
   isBookmarked?: boolean;
   isPrivate?: boolean;
   streamerEmail?: string | null;
+  manualBadge?: string | null;
+  manualExpiresAt?: string | null;
   signupNumber?: number | null;
   index?: number;
   onDelete?: () => void;
@@ -113,6 +115,8 @@ export const PostCard = ({
   isBookmarked: initialIsBookmarked = false,
   isPrivate = false,
   streamerEmail,
+  manualBadge,
+  manualExpiresAt,
   signupNumber,
   index = 0,
   onDelete,
