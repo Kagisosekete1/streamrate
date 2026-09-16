@@ -12,6 +12,7 @@ dist
 android/.gradle/
 android/build/
 android/app/build/
+build-output/
 android/local.properties
 dist
 dist-ssr
