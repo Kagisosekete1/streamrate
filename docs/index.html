@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>StreamRate</title>
+    <meta name="description" content="StreamRate is the ultimate platform for fans to rate, review, and follow their favorite streamers. Join the gaming community today! Rate, Review Your Favorites">
+    <meta name="author" content="StreamRate" />
+    <meta name="keywords" content="streamers, gaming, twitch, youtube, ratings, reviews, esports, content creators">
+    <meta name="theme-color" content="#ffffff" />
+    
+    <!-- Mobile App Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="StreamRate" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+    
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/JufBpzwDVwWOGCwdK5dzM52EQNB2/social-images/social-1771453150248-Streamers_Logo_New_Real.webp">
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@StreamRate" />
+    <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/JufBpzwDVwWOGCwdK5dzM52EQNB2/social-images/social-1771453150248-Streamers_Logo_New_Real.webp">
+    
+    
+    
+    
+    
+    <meta property="og:title" content="StreamRate">
+  <meta name="twitter:title" content="StreamRate">
+  <meta property="og:description" content="StreamRate is the ultimate platform for fans to rate, review, and follow their favorite streamers. Join the gaming community today! Rate, Review Your Favorites">
+  <meta name="twitter:description" content="StreamRate is the ultimate platform for fans to rate, review, and follow their favorite streamers. Join the gaming community today! Rate, Review Your Favorites">
+
+  <!-- OneSignal Web Push SDK (scoped to /push/ so it does not clash with the PWA service worker) -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      var allowedOneSignalHosts = ["streamrateapp.com", "www.streamrateapp.com"];
+      if (allowedOneSignalHosts.indexOf(window.location.hostname) === -1) {
+        return;
+      }
+      await OneSignal.init({
+        appId: "447ab0ac-d32a-4aa8-bb29-d4b50c562672",
+        serviceWorkerPath: "push/OneSignalSDKWorker.js",
+        serviceWorkerParam: { scope: "/push/" },
+        notifyButton: { enable: false },
+        allowLocalhostAsSecureOrigin: true,
+      });
+
+      // Deep-link: open the exact page from the notification payload.
+      OneSignal.Notifications.addEventListener("click", function (event) {
+        try {
+          var data = event?.notification?.additionalData || {};
+          var url = data.url || event?.notification?.launchURL;
+          if (!url) return;
+          var target = new URL(url, window.location.origin);
+          if (target.origin === window.location.origin) {
+            window.location.assign(target.pathname + target.search + target.hash);
+          } else {
+            window.location.assign(target.toString());
+          }
+        } catch (e) {
+          console.warn("OneSignal click handler failed", e);
+        }
+      });
+    });
+  </script>
+  <script type="module" crossorigin src="/assets/index-CsEm_Mhf.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-B9--Cgu1.css">
+<link rel="manifest" href="/manifest.webmanifest"></head>
+
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
