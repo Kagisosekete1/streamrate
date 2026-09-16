@@ -52,7 +52,7 @@ export const ReviewsModal = ({ isOpen, onClose, userId, userName }: ReviewsModal
       const fanIds = [...new Set(ratingsData.map((r) => r.fan_id))];
       const { data: profilesData } = await supabase
         .from("profiles")
-        .select("id, full_name, username, avatar_url, email")
+        .select("id, full_name, username, avatar_url, manual_verification_badge, manual_verification_expires_at")
         .in("id", fanIds);
 
       const profilesMap = new Map((profilesData || []).map((p) => [p.id, p]));
@@ -62,7 +62,7 @@ export const ReviewsModal = ({ isOpen, onClose, userId, userName }: ReviewsModal
         return {
           ...r,
           profiles: profile
-            ? { full_name: profile.full_name, username: profile.username, avatar_url: profile.avatar_url, email: (profile as any).email }
+            ? { full_name: profile.full_name, username: profile.username, avatar_url: profile.avatar_url, email: null, manual_verification_badge: (profile as any).manual_verification_badge, manual_verification_expires_at: (profile as any).manual_verification_expires_at }
             : null,
         };
       });
@@ -149,7 +149,7 @@ export const ReviewsModal = ({ isOpen, onClose, userId, userName }: ReviewsModal
                             }}
                           >
                             {review.profiles?.username || review.profiles?.full_name || "Anonymous"}
-                            <VerificationBadge email={review.profiles?.email} />
+                            <VerificationBadge email={null} manualBadge={(review.profiles as any)?.manual_verification_badge} manualExpiresAt={(review.profiles as any)?.manual_verification_expires_at} />
                           </button>
                           <StarRating rating={review.stars} size="sm" />
                         </div>

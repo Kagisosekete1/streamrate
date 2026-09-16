@@ -145,7 +145,7 @@ export const useSmartFeed = () => {
       { data: userLikes },
       { data: userBookmarks },
     ] = await Promise.all([
-      supabase.from("profiles").select("id, username, avatar_url, email, signup_number").in("id", userIds),
+      supabase.from("profiles").select("id, username, avatar_url, signup_number, manual_verification_badge, manual_verification_expires_at").in("id", userIds),
       supabase.from("post_likes").select("post_id").in("post_id", postIds),
       supabase.from("comments").select("post_id").in("post_id", postIds),
       supabase.from("post_likes").select("post_id").in("post_id", postIds).eq("user_id", user.id),
@@ -175,7 +175,7 @@ export const useSmartFeed = () => {
         user_id: post.user_id,
         is_private: post.is_private,
         profiles: profile
-          ? { username: profile.username, avatar_url: profile.avatar_url, email: profile.email, signup_number: profile.signup_number }
+          ? { username: profile.username, avatar_url: profile.avatar_url, email: null, manual_verification_badge: (profile as any).manual_verification_badge ?? null, manual_verification_expires_at: (profile as any).manual_verification_expires_at ?? null, signup_number: profile.signup_number }
           : null,
         likes_count: likesCount[post.id] || 0,
         comments_count: commentsCount[post.id] || 0,
