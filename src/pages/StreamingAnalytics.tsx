@@ -99,7 +99,7 @@ const StreamingAnalytics = () => {
     setLoading(true);
 
     const [{ data: platformsData }, { data: analyticsData }] = await Promise.all([
-      supabase.from("connected_platforms").select("*").eq("user_id", user.id),
+      supabase.from("connected_platforms").select("id, user_id, platform, platform_username, platform_user_id, connected_at, last_synced_at, is_active").eq("user_id", user.id),
       supabase.from("streaming_analytics").select("*").eq("user_id", user.id)
         .order("recorded_at", { ascending: false }).limit(100),
     ]);
