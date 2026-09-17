@@ -87,7 +87,9 @@ export const useForYouAlgorithm = () => {
         .from("user_interests")
         .insert({
           user_id: user.id,
-          [column]: targetId,
+          ...(column === "hashtag_id"
+            ? { hashtag_id: targetId }
+            : { creator_id: targetId }),
           interest_score: scoreIncrease,
           last_interaction: new Date().toISOString()
         });
