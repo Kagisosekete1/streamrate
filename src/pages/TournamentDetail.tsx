@@ -126,7 +126,11 @@ export default function TournamentDetail() {
     const next = matches.find(x => x.round === nextRound && x.position === nextPos);
     if (next) {
       const slot = m.position % 2 === 1 ? "team_a_id" : "team_b_id";
-      await supabase.from("tournament_matches").update({ [slot]: m.winner_team_id }).eq("id", next.id);
+      await supabase.from("tournament_matches").update(
+        (slot === "team_a_id"
+          ? { team_a_id: m.winner_team_id }
+          : { team_b_id: m.winner_team_id })
+      ).eq("id", next.id);
     } else {
       await supabase.from("tournaments").update({ status: "completed" }).eq("id", m.tournament_id);
     }

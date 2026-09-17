@@ -134,9 +134,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error("Error inserting role:", roleError);
       }
 
-      const profileUpdates: Record<string, any> = { full_name: fullName };
+      const profileUpdates: { full_name: string; gender?: string } = { full_name: fullName };
       if (gender) profileUpdates.gender = gender;
-      
+
       const { error: profileError } = await supabase
         .from("profiles")
         .update(profileUpdates)
