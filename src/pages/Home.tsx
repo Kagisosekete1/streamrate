@@ -273,7 +273,63 @@ const Home = () => {
   };
 
   const fetchPosts = async () => {
-    const postsWithCounts = await fetchPostsWithProfiles(null, 0);
+    let postsWithCounts = await fetchPostsWithProfiles(null, 0);
+
+    // A personalized feed can be temporarily unavailable while a new OAuth
+    // session is being restored. Never leave the home screen empty when
+    // public posts already exist: fall back to the latest public posts.
+    if (postsWithCounts.length === 0) {
+      const { data: publicPosts, error } = await supabase
+        .from("posts")
+        .select("id, content, image_url, created_at, updated_at, user_id, is_private")
+        .eq("is_private", false)
+        .order("created_at", { ascending: false })
+        .limit(POSTS_PER_PAGE);
+
+      if (error) {
+        console.error("Unable to load public posts:", error);
+      } else if (publicPosts && publicPosts.length > 0) {
+        const userIds = [...new Set(publicPosts.map((post) => post.user_id))];
+        const postIds = publicPosts.map((post) => post.id);
+        const [{ data: profiles }, { data: likes }, { data: comments }] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("id, username, avatar_url, signup_number, manual_verification_badge, manual_verification_expires_at")
+            .in("id", userIds),
+          supabase.from("post_likes").select("post_id").in("post_id", postIds),
+          supabase.from("comments").select("post_id").in("post_id", postIds),
+        ]);
+        const profilesById = new Map((profiles || []).map((item) => [item.id, item]));
+        const countByPost = (rows: { post_id: string }[] | null) =>
+          (rows || []).reduce<Record<string, number>>((counts, row) => {
+            counts[row.post_id] = (counts[row.post_id] || 0) + 1;
+            return counts;
+          }, {});
+        const likesByPost = countByPost(likes);
+        const commentsByPost = countByPost(comments);
+
+        postsWithCounts = publicPosts.map((post) => {
+          const postProfile = profilesById.get(post.user_id);
+          return {
+            ...post,
+            profiles: postProfile
+              ? {
+                  username: postProfile.username,
+                  avatar_url: postProfile.avatar_url,
+                  email: null,
+                  signup_number: postProfile.signup_number,
+                  manual_verification_badge: (postProfile as any).manual_verification_badge ?? null,
+                  manual_verification_expires_at: (postProfile as any).manual_verification_expires_at ?? null,
+                }
+              : null,
+            likes_count: likesByPost[post.id] || 0,
+            comments_count: commentsByPost[post.id] || 0,
+            is_liked: false,
+            is_bookmarked: false,
+          };
+        });
+      }
+    }
     setPosts(postsWithCounts);
     setHasMorePosts(postsWithCounts.length >= POSTS_PER_PAGE);
     if (postsWithCounts.length > 0) {

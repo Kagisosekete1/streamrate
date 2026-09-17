@@ -41,16 +41,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const [{ data: profileData }, { data: ownEmail }] = await Promise.all([
+    const [{ data: profileData, error: profileError }, { data: ownEmail, error: emailError }] = await Promise.all([
       supabase
         .from("profiles")
         .select(
-          "id, username, qr_handle, full_name, avatar_url, bio, country, header_url, last_seen, last_seen_visibility, twitch_url, discord_url, kick_url, youtube_gaming_url, show_twitch, show_discord, show_kick, show_youtube_gaming, signup_number, gender, profile_visibility, who_can_comment, is_deactivated, scheduled_deletion_at, deactivated_at, games, rank, playstyle, region, looking_for_squad, manual_verification_badge, manual_verification_expires_at, manual_verification_reason, referral_code, created_at, updated_at"
+          "id, username, qr_handle, full_name, avatar_url, bio, country, referral_code, manual_verification_badge, manual_verification_expires_at"
         )
         .eq("id", userId)
         .maybeSingle(),
       supabase.rpc("get_my_email"),
     ]);
+
+    if (profileError) {
+      console.error("Unable to load the signed-in profile:", profileError);
+    }
+    if (emailError) {
+      console.error("Unable to load the signed-in email:", emailError);
+    }
 
     if (profileData) {
       // email is never exposed for other users; only the signed-in user's own
@@ -58,13 +65,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setProfile({ ...profileData, email: (ownEmail as string | null) ?? null });
     }
 
-    const { data: roleData } = await supabase
+    const { data: roleData, error: roleError } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId)
       .maybeSingle();
 
-    if (roleData) {
+    if (roleError) {
+      console.error("Unable to load the signed-in role:", roleError);
+    } else if (roleData) {
       setUserRole(roleData.role as "fan" | "streamer" | "seller");
     }
   };
