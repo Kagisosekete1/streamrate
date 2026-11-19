@@ -54,7 +54,10 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [slideDirection, setSlideDirection] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
+  // Android WebView blocks autoplay when video starts with audio enabled and
+  // can display its native grey play prompt over every newly-swiped reel.
+  // Start muted so reels autoplay; viewers can turn sound on with the control.
+  const [isMuted, setIsMuted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isReelReady, setIsReelReady] = useState(false);
   const [showComments, setShowComments] = useState(false);

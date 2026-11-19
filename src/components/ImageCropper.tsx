@@ -93,7 +93,6 @@ export const ImageCropper = ({
       (blob) => {
         if (blob) {
           onCropComplete(blob);
-          onClose();
         } else {
           toast({ title: "Couldn't crop this image", description: "Try a different photo or save it as JPG or PNG.", variant: "destructive" });
         }
