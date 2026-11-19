@@ -9,7 +9,7 @@ const corsHeaders = {
 const ONESIGNAL_APP_ID = "447ab0ac-d32a-4aa8-bb29-d4b50c562672";
 const ONESIGNAL_REST_API_KEY = Deno.env.get("ONESIGNAL_REST_API_KEY") ?? "";
 const APP_ORIGIN = "https://streamrateapp.com";
-const LOGO_URL = `${APP_ORIGIN}/pwa-512x512.png`;
+const LOGO_URL = `${APP_ORIGIN}/logo.png`;
 const WEB_ICON_URL = `${APP_ORIGIN}/__l5e/assets-v1/29ab3d65-7964-4f3f-a4d7-9fea62411606/streamrate-push-icon-192.png`;
 const WEB_BADGE_URL = `${APP_ORIGIN}/__l5e/assets-v1/ce739aca-2329-46b8-ad6a-1e1ecbcc729d/streamrate-push-badge-96.png`;
 

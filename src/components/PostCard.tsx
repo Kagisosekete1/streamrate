@@ -406,7 +406,7 @@ export const PostCard = ({
                   <AlertDialogTrigger asChild>
                     <DropdownMenuItem
                       onSelect={(e) => e.preventDefault()}
-                      className="text-destructive focus:text-destructive gap-3"
+                      className="text-primary focus:text-primary gap-3"
                     >
                       <Trash2 className="w-4 h-4" />
                       Delete Post
@@ -424,7 +424,7 @@ export const PostCard = ({
                       <AlertDialogAction
                         onClick={handleDelete}
                         disabled={isDeleting}
-                        className="bg-destructive hover:bg-destructive/90"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
                       >
                         {isDeleting ? "Deleting..." : "Delete"}
                       </AlertDialogAction>

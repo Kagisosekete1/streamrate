@@ -442,7 +442,7 @@ export const ProfileContentGrid = ({
                               <AlertDialogTrigger asChild>
                                 <DropdownMenuItem
                                   onSelect={(e) => e.preventDefault()}
-                                  className="text-destructive focus:text-destructive cursor-pointer"
+                                  className="text-primary focus:text-primary cursor-pointer"
                                 >
                                   <Trash2 className="w-4 h-4 mr-2" />
                                   Delete Reel
@@ -460,7 +460,7 @@ export const ProfileContentGrid = ({
                                   <AlertDialogAction
                                     onClick={() => handleDeleteReel(reel.id)}
                                     disabled={deletingId === reel.id}
-                                    className="bg-destructive hover:bg-destructive/90"
+                                    className="bg-primary text-primary-foreground hover:bg-primary/90"
                                   >
                                     {deletingId === reel.id ? "Deleting..." : "Delete"}
                                   </AlertDialogAction>
@@ -565,7 +565,7 @@ export const ProfileContentGrid = ({
                           <AlertDialogTrigger asChild>
                             <button
                               onClick={(e) => e.stopPropagation()}
-                              className="p-1.5 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              className="p-1.5 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -581,7 +581,7 @@ export const ProfileContentGrid = ({
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={() => onPostDelete(post.id)}
-                                className="bg-destructive hover:bg-destructive/90"
+                                className="bg-primary text-primary-foreground hover:bg-primary/90"
                               >
                                 Delete
                               </AlertDialogAction>
