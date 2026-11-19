@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">streamrate</string>
-    <string name="title_activity_main">streamrate</string>
+    <string name="app_name">StreamRate Updated</string>
+    <string name="title_activity_main">StreamRate Updated</string>
     <string name="package_name">com.semogrouptech.streamrateapp</string>
     <string name="custom_url_scheme">com.semogrouptech.streamrateapp</string>
 </resources>

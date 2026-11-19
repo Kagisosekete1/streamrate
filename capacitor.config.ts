@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.semogrouptech.streamrateapp',
-  appName: 'streamrate',
+  appName: 'StreamRate Updated',
   webDir: 'dist',
   plugins: {
     SplashScreen: {
