@@ -22,6 +22,8 @@ import { LinkPreview } from "@/components/LinkPreview";
 import { extractFirstUrl } from "@/lib/urlPreview";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 const CaptionWithSeeMore = ({ streamerName, streamerId, content, hasImage }: { streamerName: string; streamerId: string; content: string; hasImage?: boolean }) => {
   const [expanded, setExpanded] = useState(false);
   const shouldTruncate = hasImage ? content.length > 80 : content.length > 250;
@@ -340,7 +342,7 @@ export const PostCard = ({
           <div className="relative">
             <div className="p-[2px] rounded-full story-ring">
               <div className="p-[1px] rounded-full bg-background">
-                <img
+                <ProfileAvatarImage
                   src={streamerPicture || getDefaultAvatar()}
                   alt={streamerName}
                   onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}
@@ -526,7 +528,7 @@ export const PostCard = ({
                 ) : (
                   postViewers.slice(0, 20).map((viewer) => (
                     <div key={`${viewer.user_id}-${viewer.viewed_at}`} className="flex items-center gap-2 text-xs">
-                      <img src={viewer.avatar_url || "/placeholder.svg"} alt="" className="w-6 h-6 rounded-full object-cover" />
+                      <ProfileAvatarImage src={viewer.avatar_url || "/placeholder.svg"} alt="" className="w-6 h-6 rounded-full object-cover" />
                       <span className="font-medium text-foreground truncate">{viewer.username || viewer.full_name || "User"}</span>
                       <span className="ml-auto text-muted-foreground">{formatDistanceToNow(new Date(viewer.viewed_at), { addSuffix: true })}</span>
                     </div>

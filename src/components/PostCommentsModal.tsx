@@ -11,6 +11,8 @@ import { useNavigate } from "react-router-dom";
 import { EmojiPicker } from "@/components/EmojiPicker";
 import { HashtagText } from "@/components/HashtagText";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -295,7 +297,7 @@ export const PostCommentsModal = ({
             depth > maxIndent && "ml-3 border-l-2 border-border/30 pl-2 mt-2"
           )}
         >
-          <img
+          <ProfileAvatarImage
             src={comment.profiles?.avatar_url || getDefaultAvatar()}
             alt={comment.profiles?.username || "User"}
             className={cn("rounded-full object-cover cursor-pointer flex-shrink-0", depth > 0 ? "w-6 h-6" : "w-8 h-8")}
@@ -420,7 +422,7 @@ export const PostCommentsModal = ({
           {/* Post Preview */}
           {postImage && (
             <div className="flex items-start gap-3 p-4 border-b border-border bg-secondary/30">
-              <img src={authorAvatar || getDefaultAvatar()} alt={authorName} className="w-8 h-8 rounded-full object-cover" onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }} />
+              <ProfileAvatarImage src={authorAvatar || getDefaultAvatar()} alt={authorName} className="w-8 h-8 rounded-full object-cover" onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }} />
               <div className="flex-1 min-w-0">
                 <span className="font-semibold text-sm text-foreground">{authorName}</span>
                 <p className="text-sm text-muted-foreground line-clamp-2">{postContent}</p>

@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 import { Star } from "lucide-react";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface Streamer {
   id: string;
   username: string | null;
@@ -36,7 +38,7 @@ export const TrendingStreamersSection = ({ trendingStreamers }: TrendingStreamer
                   {/* Square rounded avatar */}
                   <div className="p-[3px] rounded-2xl story-ring">
                     <div className="p-[2px] rounded-[14px] bg-background">
-                      <img
+                      <ProfileAvatarImage
                         src={streamer.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
                         alt={streamer.username || "Streamer"}
                         className="w-16 h-16 rounded-xl object-cover"

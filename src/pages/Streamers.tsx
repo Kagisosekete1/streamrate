@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 import { TrendingStreamersSection } from "@/components/TrendingStreamersSection";
 import { useIsSeenAdmin } from "@/hooks/useIsSeenAdmin";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface Streamer {
   id: string;
   full_name: string | null;
@@ -342,7 +344,7 @@ const Streamers = () => {
                   >
                     <div className="relative">
                       <div className="p-[2px] rounded-full bg-gradient-to-br from-green-400 to-emerald-500">
-                        <img
+                        <ProfileAvatarImage
                           src={member.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
                           alt={member.username || member.full_name || "New member"}
                           className="w-14 h-14 rounded-full object-cover border-2 border-background"

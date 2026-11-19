@@ -8,6 +8,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { normalizeStreamUrl } from "@/lib/streamLinks";
 import { ClipItButton } from "@/components/ClipItButton";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface LiveStreamer {
   id: string;
   username: string | null;
@@ -218,7 +220,7 @@ const Live = () => {
                   >
                     <div className="flex items-center gap-3">
                       <div className="relative">
-                        <img
+                        <ProfileAvatarImage
                           src={streamer.avatar_url || "/placeholder.svg"}
                           alt={streamer.username || "Streamer"}
                           className="w-12 h-12 rounded-full object-cover ring-2 ring-red-500/70"

@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface LikesModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -127,7 +129,7 @@ export const LikesModal = ({ isOpen, onClose, postId, type }: LikesModalProps) =
                     className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/50 transition-colors"
                   >
                     <div className="relative">
-                      <img
+                      <ProfileAvatarImage
                         src={user.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
                         alt={user.username || "User"}
                         className="w-10 h-10 rounded-full object-cover"

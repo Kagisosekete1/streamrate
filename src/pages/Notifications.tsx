@@ -12,6 +12,8 @@ import { formatDistanceToNow } from "date-fns";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 import { getNotificationRoute } from "@/lib/notificationDeepLinks";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface Notification {
   id: string;
   type: string;
@@ -409,7 +411,7 @@ const Notifications = () => {
                       );
                     })() : notification.from_user?.avatar_url ? (
                       <div className="relative">
-                        <img
+                        <ProfileAvatarImage
                           src={notification.from_user.avatar_url}
                           alt=""
                           className="w-12 h-12 rounded-full object-cover"
@@ -568,7 +570,7 @@ const Notifications = () => {
                           }}
                           className="w-full flex items-center gap-3 p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors text-left"
                         >
-                          <img
+                          <ProfileAvatarImage
                             src={f.from_user?.avatar_url || getDefaultAvatar(f.from_user?.username || "User")}
                             alt={f.from_user?.username || "User"}
                             className="w-12 h-12 rounded-full object-cover"

@@ -19,6 +19,8 @@ import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 import { ReportBlockModal } from "@/components/ReportBlockModal";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface Reel {
   id: string;
   video_url: string;
@@ -911,7 +913,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
             <div className="absolute right-2 bottom-24 flex flex-col items-center gap-4 z-30">
               {/* User avatar with follow button and online indicator */}
               <div className="relative mb-1">
-                <img
+                <ProfileAvatarImage
                   src={currentReel.user?.avatar_url || getDefaultAvatar()}
                   alt={currentReel.user?.username || "User"}
                   className="w-10 h-10 rounded-full object-cover border-2 border-white cursor-pointer"

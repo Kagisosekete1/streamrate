@@ -33,6 +33,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface NavItem {
   icon: React.ElementType;
   label: string;
@@ -307,7 +309,7 @@ export const AppSidebar = () => {
               isExpanded ? "" : "justify-center"
             )}
           >
-            <img
+            <ProfileAvatarImage
               src={profileAvatar}
               alt={profile?.username || "User"}
               onError={(event) => { event.currentTarget.src = getDefaultAvatar((profile as any)?.gender); }}

@@ -13,6 +13,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface Product {
   id: string;
   name: string;
@@ -154,7 +156,7 @@ const ProductDetailModal = ({
           <p className="text-2xl font-bold text-primary mt-1">R{product.price.toFixed(2)}</p>
 
           <div className="flex items-center gap-2 mt-3">
-            <img
+            <ProfileAvatarImage
               src={product.seller?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"}
               alt="" className="w-6 h-6 rounded-full object-cover"
               onError={(e) => { e.currentTarget.src = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"; }}
@@ -771,7 +773,7 @@ const Store = () => {
                     <p className="font-medium text-foreground text-sm truncate">{product.name}</p>
                     <p className="text-primary font-bold text-sm mt-1">R{product.price.toFixed(2)}</p>
                     <div className="flex items-center gap-1.5 mt-2">
-                      <img
+                      <ProfileAvatarImage
                         src={product.seller?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"}
                         alt="" className="w-4 h-4 rounded-full object-cover"
                         onError={(e) => { e.currentTarget.src = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"; }}

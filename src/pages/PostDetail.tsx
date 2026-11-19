@@ -15,6 +15,8 @@ import { extractFirstUrl } from "@/lib/urlPreview";
 import { HashtagText } from "@/components/HashtagText";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface Post {
   id: string;
   content: string;
@@ -177,7 +179,7 @@ const PostDetail = () => {
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            <img
+            <ProfileAvatarImage
               src={post.profiles?.avatar_url || getDefaultAvatar()}
               alt={post.profiles?.full_name || "User"}
               onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}
@@ -201,7 +203,7 @@ const PostDetail = () => {
         >
           {/* Author header */}
           <div className="flex items-center gap-3 px-4 pt-4 pb-2">
-            <img
+            <ProfileAvatarImage
               src={post.profiles?.avatar_url || getDefaultAvatar()}
               alt={post.profiles?.full_name || "User"}
               onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}

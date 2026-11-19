@@ -12,6 +12,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { EmojiPicker } from "@/components/EmojiPicker";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface Comment {
   id: string;
   content: string;
@@ -281,7 +283,7 @@ export const PhotoViewerModal = ({
           <div className="w-[360px] flex-shrink-0 flex flex-col border-l border-border max-h-[90vh]">
             {/* Author header */}
             <div className="flex items-center gap-3 p-4 border-b border-border">
-              <img
+              <ProfileAvatarImage
                 src={authorAvatar || getDefaultAvatar()}
                 alt={authorName}
                 className="w-10 h-10 rounded-full object-cover cursor-pointer"
@@ -326,7 +328,7 @@ export const PhotoViewerModal = ({
                 comments.map((comment) => (
                   <div key={comment.id}>
                     <div className="flex items-start gap-2">
-                      <img
+                      <ProfileAvatarImage
                         src={comment.profiles?.avatar_url || getDefaultAvatar()}
                         alt={comment.profiles?.username || "User"}
                         className="w-8 h-8 rounded-full object-cover cursor-pointer"
@@ -362,7 +364,7 @@ export const PhotoViewerModal = ({
 
                         {expandedReplies.has(comment.id) && replies[comment.id]?.map((reply) => (
                           <div key={reply.id} className="flex items-start gap-2 mt-3 ml-4 border-l-2 border-border pl-3">
-                            <img src={reply.profiles?.avatar_url || getDefaultAvatar()} alt="" className="w-6 h-6 rounded-full object-cover" onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }} />
+                            <ProfileAvatarImage src={reply.profiles?.avatar_url || getDefaultAvatar()} alt="" className="w-6 h-6 rounded-full object-cover" onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }} />
                             <div className="flex-1">
                               <span className="font-medium text-xs text-foreground">{reply.profiles?.username || "Anonymous"}</span>
                               <p className="text-xs text-foreground">{reply.content}</p>

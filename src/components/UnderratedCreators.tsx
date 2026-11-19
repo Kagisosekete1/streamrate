@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface Streamer {
   id: string;
   username: string | null;
@@ -93,7 +95,7 @@ export const UnderratedCreators = () => {
               className="block bg-card border border-border rounded-xl p-3 text-center cursor-pointer hover:border-accent/50 transition-colors"
             >
               <div className="w-14 h-14 rounded-full mx-auto mb-2 overflow-hidden border-2 border-accent/30">
-                <img
+                <ProfileAvatarImage
                   src={streamer.avatar_url || getDefaultAvatar()}
                   alt={streamer.username || ""}
                   className="w-full h-full object-cover"

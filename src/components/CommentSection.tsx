@@ -14,6 +14,8 @@ import { MentionInput } from "@/components/MentionInput";
 import { HashtagText } from "@/components/HashtagText";
 import { extractFirstUrl } from "@/lib/urlPreview";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -428,7 +430,7 @@ export const CommentSection = ({ postId, postOwnerId, highlightCommentId }: Comm
           )}
         >
           <div className="flex items-start gap-3">
-            <img
+            <ProfileAvatarImage
               src={comment.profiles?.avatar_url || getDefaultAvatar()}
               alt={comment.profiles?.username || "User"}
               onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}

@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/AppLayout";
 import { cn } from "@/lib/utils";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface Streamer {
   id: string;
   full_name: string | null;
@@ -155,7 +157,7 @@ const Leaderboard = () => {
                 className="flex flex-col items-center"
               >
                 <div className="relative">
-                  <img
+                  <ProfileAvatarImage
                     src={streamers[1]?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
                     alt={streamers[1]?.full_name || ""}
                     className="w-16 h-16 rounded-full object-cover ring-2 ring-gray-400"
@@ -182,7 +184,7 @@ const Leaderboard = () => {
               >
                 <Crown className="w-8 h-8 text-yellow-500 mb-1" />
                 <div className="relative">
-                  <img
+                  <ProfileAvatarImage
                     src={streamers[0]?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
                     alt={streamers[0]?.full_name || ""}
                     className="w-20 h-20 rounded-full object-cover ring-4 ring-yellow-500"
@@ -209,7 +211,7 @@ const Leaderboard = () => {
                 className="flex flex-col items-center"
               >
                 <div className="relative">
-                  <img
+                  <ProfileAvatarImage
                     src={streamers[2]?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
                     alt={streamers[2]?.full_name || ""}
                     className="w-16 h-16 rounded-full object-cover ring-2 ring-amber-600"
@@ -273,7 +275,7 @@ const Leaderboard = () => {
                   </div>
 
                   {/* Avatar */}
-                  <img
+                  <ProfileAvatarImage
                     src={streamer.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
                     alt={streamer.full_name || ""}
                     className="w-12 h-12 rounded-full object-cover"

@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 const navItems = [
   { icon: Home, label: "Home", path: "/home" },
   { icon: Compass, label: "Discover", path: "/streamers" },
@@ -82,7 +84,7 @@ export const BottomNav = () => {
                   className="relative flex items-center justify-center"
                 >
                   {item.path === "/profile" ? (
-                    <img
+                    <ProfileAvatarImage
                       src={profileAvatar}
                       alt="Profile"
                       onError={(event) => { event.currentTarget.src = getDefaultAvatar((profile as any)?.gender); }}

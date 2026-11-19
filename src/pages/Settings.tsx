@@ -55,6 +55,8 @@ import { getDefaultAvatar } from "@/utils/defaultAvatar";
 import { buildProfileQrUrl, checkQrHandleAvailable, sanitizeQrHandle } from "@/lib/profileQr";
 import { cn } from "@/lib/utils";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 // Detect Median.co native webview
 const isMedianApp = () => !!(window as any).median || !!(window as any).gonative;
 
@@ -777,7 +779,7 @@ const Settings = () => {
           <div className="space-y-3">
             {blockedUsers.map((blocked) => (
               <div key={blocked.id} className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl">
-                <img
+                <ProfileAvatarImage
                   src={blocked.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
                   alt={blocked.username || "User"}
                   className="w-10 h-10 rounded-full object-cover"

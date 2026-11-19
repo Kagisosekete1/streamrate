@@ -11,6 +11,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface Raid { id: string; from_user_id: string; to_user_id: string; raider_count: number; message: string | null; created_at: string; }
 interface ProfileLite { id: string; username: string | null; avatar_url: string | null; }
 
@@ -84,7 +86,7 @@ export default function Raids() {
     const p = profiles[otherId];
     return (
       <Card className="p-3 flex items-center gap-3">
-        <img src={p?.avatar_url || "/logo.png"} alt="" className="w-10 h-10 rounded-full object-cover" />
+        <ProfileAvatarImage src={p?.avatar_url || "/logo.png"} alt="" className="w-10 h-10 rounded-full object-cover" />
         <div className="flex-1 min-w-0">
           <p className="font-semibold truncate">@{p?.username || "unknown"}</p>
           <p className="text-xs text-muted-foreground">{r.raider_count} raiders · {new Date(r.created_at).toLocaleString()}</p>
@@ -114,7 +116,7 @@ export default function Raids() {
                   <div className="border border-border rounded-lg max-h-40 overflow-auto">
                     {results.map(p => (
                       <button key={p.id} onClick={() => { setForm({ ...form, to_user_id: p.id }); setSearch("@" + (p.username || "")); setResults([]); }} className="w-full px-3 py-2 flex items-center gap-2 hover:bg-secondary text-left">
-                        <img src={p.avatar_url || "/logo.png"} alt="" className="w-7 h-7 rounded-full object-cover" />
+                        <ProfileAvatarImage src={p.avatar_url || "/logo.png"} alt="" className="w-7 h-7 rounded-full object-cover" />
                         <span className="text-sm">@{p.username}</span>
                       </button>
                     ))}

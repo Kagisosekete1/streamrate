@@ -28,6 +28,8 @@ import { buildProfileQrUrl, checkQrHandleAvailable, sanitizeQrHandle } from "@/l
 import { cn } from "@/lib/utils";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface Post {
   id: string;
   content: string;
@@ -451,13 +453,15 @@ const Profile = () => {
     }
 
     setIsUploading(true);
-    const fileName = `${user.id}/${Date.now()}.jpg`;
+    // A unique path avoids stale CDN/browser caches when a user changes their photo.
+    const fileName = `${user.id}/${crypto.randomUUID()}.jpg`;
 
     try {
       const { error: uploadError } = await supabase.storage
         .from("avatars")
         .upload(fileName, fileOrBlob, {
           contentType: "image/jpeg",
+          cacheControl: "0",
           upsert: false,
         });
 
@@ -475,6 +479,10 @@ const Profile = () => {
       }
 
       const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(fileName);
+      if (!urlData.publicUrl) {
+        toast({ title: "Couldn't create the photo link", description: "Please try uploading the picture again.", variant: "destructive" });
+        return;
+      }
       const { error } = await updateProfile({ avatar_url: urlData.publicUrl });
 
       if (error) {
@@ -870,7 +878,7 @@ const Profile = () => {
             className="flex flex-col items-center"
           >
             <div className="relative">
-              <img
+              <ProfileAvatarImage
                 src={profile.avatar_url || getDefaultAvatar((profile as any)?.gender)}
                 onError={(event) => { event.currentTarget.src = getDefaultAvatar((profile as any)?.gender); }}
                 alt={profile.full_name || "User"}

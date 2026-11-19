@@ -8,6 +8,8 @@ import { XPLevelBadge } from "@/components/XPLevelBadge";
 import { CoinBalance } from "@/components/CoinBalance";
 import { useGamification } from "@/hooks/useGamification";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface Stats {
   followers: number;
   ratings: number;
@@ -159,7 +161,7 @@ const CreatorDashboard = () => {
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-full bg-secondary overflow-hidden">
                         {rater.avatar_url ? (
-                          <img src={rater.avatar_url} className="w-full h-full object-cover" />
+                          <ProfileAvatarImage src={rater.avatar_url} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
                             {rater.username[0]?.toUpperCase()}

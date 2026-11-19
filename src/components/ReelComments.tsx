@@ -13,6 +13,8 @@ import { HashtagText } from "@/components/HashtagText";
 import { cn } from "@/lib/utils";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface Comment {
   id: string;
   content: string;
@@ -236,7 +238,7 @@ export const ReelComments = ({
             depth > maxIndent && "ml-6 border-l-2 border-border/30 pl-2"
           )}
         >
-          <img
+          <ProfileAvatarImage
             src={comment.profiles?.avatar_url || getDefaultAvatar()}
             alt={comment.profiles?.username || "User"}
             onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}

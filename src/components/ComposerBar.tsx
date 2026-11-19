@@ -3,6 +3,8 @@ import { ImageIcon, Video } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 export const ComposerBar = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
@@ -11,7 +13,7 @@ export const ComposerBar = () => {
   return (
     <div className="max-w-xl mx-auto px-4 pt-3">
       <div className="flex items-center gap-2 bg-card border border-border rounded-full px-3 py-2 shadow-sm">
-        <img
+        <ProfileAvatarImage
           src={avatar}
           alt="You"
           className="w-8 h-8 rounded-full object-cover flex-shrink-0"

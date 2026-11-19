@@ -7,6 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface SuggestedUser {
   id: string;
   username: string | null;
@@ -147,7 +149,7 @@ export const PeopleYouMayKnow = () => {
                     transition={{ delay: index * 0.05 }}
                     className="flex-shrink-0 w-36 bg-card border border-border rounded-xl p-4 text-center"
                   >
-                    <img
+                    <ProfileAvatarImage
                       src={person.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
                       alt={person.username || "User"}
                       className="w-16 h-16 rounded-full object-cover mx-auto mb-2 border-2 border-primary/20 cursor-pointer hover:border-primary/50 transition-colors"

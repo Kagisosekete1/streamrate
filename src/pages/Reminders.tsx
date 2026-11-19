@@ -6,6 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -122,7 +124,7 @@ const Reminders = () => {
     <div key={r.id} className="bg-card border border-border rounded-2xl p-4 space-y-3">
       <div className="flex items-start gap-3">
         <Link to={`/u/${r.schedule?.user_id}`} className="shrink-0">
-          <img
+          <ProfileAvatarImage
             src={r.streamer?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&crop=face"}
             alt={r.streamer?.username || "Streamer"}
             className="w-11 h-11 rounded-full object-cover ring-2 ring-border"

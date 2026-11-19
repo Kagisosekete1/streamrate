@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface MentionUser {
   id: string;
   username: string;
@@ -173,7 +175,7 @@ export const MentionInput = ({
               onClick={() => selectUser(user)}
               onMouseEnter={() => setSelectedIndex(idx)}
             >
-              <img
+              <ProfileAvatarImage
                 src={user.avatar_url || getDefaultAvatar()}
                 alt={user.username}
                 className="w-8 h-8 rounded-full object-cover"

@@ -11,6 +11,8 @@ import { HashtagText } from "./HashtagText";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PhotoViewerModal } from "./PhotoViewerModal";
 import { ReelThumbnail } from "./ReelThumbnail";
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -480,7 +482,7 @@ export const ProfileContentGrid = ({
                             navigate(`/streamer/${post.user_id}`);
                           }}
                         >
-                          <img
+                          <ProfileAvatarImage
                             src={post.author.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"}
                             alt=""
                             className="w-6 h-6 rounded-full object-cover"
@@ -521,7 +523,7 @@ export const ProfileContentGrid = ({
                   >
                     {/* Author header */}
                     <div className="flex items-center gap-3 p-3 pb-2">
-                      <img
+                      <ProfileAvatarImage
                         src={authorAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"}
                         alt=""
                         className="w-9 h-9 rounded-full object-cover cursor-pointer"

@@ -7,6 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 const Invite = () => {
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
@@ -265,7 +267,7 @@ const Invite = () => {
                   >
                     <div className="w-10 h-10 rounded-full bg-muted overflow-hidden flex-shrink-0">
                       {avatar ? (
-                        <img src={avatar} alt={name} className="w-full h-full object-cover" />
+                        <ProfileAvatarImage src={avatar} alt={name} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-xs font-bold text-muted-foreground">
                           {name.charAt(0).toUpperCase()}

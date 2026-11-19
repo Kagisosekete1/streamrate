@@ -15,6 +15,8 @@ import { formatDistanceToNow } from "date-fns";
 import { getNotificationRoute } from "@/lib/notificationDeepLinks";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface Notification {
   id: string;
   type: string;
@@ -192,14 +194,14 @@ export const NotificationBell = () => {
                 >
                   <div className="flex items-start gap-3">
                     {notification.from_user?.avatar_url ? (
-                      <img
+                      <ProfileAvatarImage
                         src={notification.from_user.avatar_url}
                         alt="Notification sender"
                         className="w-10 h-10 rounded-full object-cover"
                         onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}
                       />
                     ) : (
-                      <img
+                      <ProfileAvatarImage
                         src={getDefaultAvatar()}
                         alt="StreamRate"
                         className="w-10 h-10 rounded-full object-cover"

@@ -7,6 +7,8 @@ import { ReelViewer } from "@/components/ReelViewer";
 import { Input } from "@/components/ui/input";
 import { ReelThumbnail } from "@/components/ReelThumbnail";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 interface Hashtag {
   id: string;
   name: string;
@@ -379,7 +381,7 @@ const Hashtags = () => {
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
                     <div className="flex items-center gap-2">
-                      <img
+                      <ProfileAvatarImage
                         src={reel.user?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face"}
                         alt={reel.user?.username || "User"}
                         className="w-5 h-5 rounded-full object-cover"

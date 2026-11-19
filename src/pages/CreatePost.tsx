@@ -12,6 +12,8 @@ import { ReelUploadModal } from "@/components/ReelUploadModal";
 import { AIWritingAssistant } from "@/components/AIWritingAssistant";
 import { MentionInput } from "@/components/MentionInput";
 
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
 const CreatePost = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -292,7 +294,7 @@ const CreatePost = () => {
           className="bg-card rounded-xl border border-border/50 p-4"
         >
           <div className="flex items-start gap-3">
-            <img
+            <ProfileAvatarImage
               src={profile?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"}
               alt="Your avatar"
               className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20"
