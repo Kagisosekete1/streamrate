@@ -70,7 +70,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   const [showAvatarView, setShowAvatarView] = useState(false);
   const [showReportBlock, setShowReportBlock] = useState(false);
   const [captionExpanded, setCaptionExpanded] = useState(false);
-  const allowVideoPreload = false;
+  const allowVideoPreload = true;
   const [connectionQuality, setConnectionQuality] = useState<"excellent" | "good" | "fair" | "poor" | "offline">("good");
   const lastTapTime = useRef<number>(0);
   const viewStartTime = useRef<number>(0);
@@ -263,7 +263,8 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
       
       const video = document.createElement("video");
       video.src = url;
-      video.preload = "metadata";
+      // Buffer the next clip's data so a vertical swipe can start sooner.
+      video.preload = "auto";
       video.muted = true;
       video.playsInline = true;
       video.controls = false;
@@ -378,12 +379,19 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     }
 
     if (activeVideoUrlRef.current !== currentReel.video_url) {
+      const preloadedNext = preloadedVideosRef.current[currentReel.id];
       video.pause();
       video.dataset.retryAttempted = "false";
       video.removeAttribute("src");
       video.load();
       activeVideoUrlRef.current = currentReel.video_url;
-      video.src = currentReel.video_url;
+      video.src = preloadedNext?.currentSrc || currentReel.video_url;
+      if (preloadedNext) {
+        preloadedNext.pause();
+        preloadedNext.removeAttribute("src");
+        preloadedNext.load();
+        delete preloadedVideosRef.current[currentReel.id];
+      }
       video.load();
     }
 
@@ -782,7 +790,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                   playsInline
                   muted={isMuted}
                   controls={false}
-                  preload="none"
+                  preload="auto"
                   disablePictureInPicture
                   disableRemotePlayback
                   controlsList="nodownload nofullscreen noremoteplayback"
