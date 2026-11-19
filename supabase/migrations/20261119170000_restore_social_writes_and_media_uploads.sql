@@ -13,9 +13,9 @@ SELECT
   COALESCE(u.raw_user_meta_data ->> 'avatar_url', u.raw_user_meta_data ->> 'picture'),
   'user' || replace(u.id::text, '-', '')
 FROM auth.users u
-LEFT JOIN public.profiles p ON p.id = u.id::text
-WHERE p.id IS NULL
-ON CONFLICT (id) DO NOTHING;
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.profiles p WHERE p.id = u.id::text
+);
 
 DO $$
 BEGIN
