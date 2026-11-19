@@ -7,7 +7,8 @@ const config: CapacitorConfig = {
   plugins: {
     SplashScreen: {
       backgroundColor: '#FFFFFF',
-      launchShowDuration: 0,
+      // Keep the branded launch screen visible while the web view initializes.
+      launchShowDuration: 1800,
     },
   },
 };
