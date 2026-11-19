@@ -71,16 +71,14 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   const [showAvatarView, setShowAvatarView] = useState(false);
   const [showReportBlock, setShowReportBlock] = useState(false);
   const [captionExpanded, setCaptionExpanded] = useState(false);
-  const [allowVideoPreload, setAllowVideoPreload] = useState(true);
+  const allowVideoPreload = false;
   const [connectionQuality, setConnectionQuality] = useState<"excellent" | "good" | "fair" | "poor" | "offline">("good");
   const lastTapTime = useRef<number>(0);
   const viewStartTime = useRef<number>(0);
   const preloadedVideosRef = useRef<Record<string, HTMLVideoElement>>({});
   const playbackRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const waitingRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const playbackWatchdogRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const lastVideoTimeRef = useRef(0);
-  const stalledChecksRef = useRef(0);
+  const videoPlayRequestRef = useRef<HTMLVideoElement | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -93,9 +91,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
       }
       if (waitingRetryTimeoutRef.current) {
         clearTimeout(waitingRetryTimeoutRef.current);
-      }
-      if (playbackWatchdogRef.current) {
-        clearInterval(playbackWatchdogRef.current);
       }
     };
   }, []);
@@ -183,14 +178,12 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   useEffect(() => {
     const dataSaverOn = localStorage.getItem("data_saver") === "true";
     if (dataSaverOn) {
-      setAllowVideoPreload(false);
       setConnectionQuality("fair");
       return;
     }
 
     if (!navigator.onLine) {
       setConnectionQuality("offline");
-      setAllowVideoPreload(false);
       return;
     }
 
@@ -211,15 +204,15 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
       } else {
         setConnectionQuality("poor");
       }
-      const slowConnection = ["slow-2g", "2g", "3g"].includes(type);
-      setAllowVideoPreload(!(connection.saveData || slowConnection));
+      // Keep only the active reel's media decoder/network request alive.
+      // Preloading another video while this one plays is expensive on mobile.
     };
 
     syncPreloadPreference();
     connection.addEventListener?.("change", syncPreloadPreference);
 
     const handleOnline = () => syncPreloadPreference();
-    const handleOffline = () => { setConnectionQuality("offline"); setAllowVideoPreload(false); };
+    const handleOffline = () => { setConnectionQuality("offline"); };
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
@@ -393,58 +386,31 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
       if (!video.duration || Number.isNaN(video.duration)) return;
       const progress = (video.currentTime / video.duration) * 100;
       setVideoProgress(progress);
-      lastVideoTimeRef.current = video.currentTime;
-      stalledChecksRef.current = 0;
     };
 
     video.addEventListener("timeupdate", handleTimeUpdate);
     return () => video.removeEventListener("timeupdate", handleTimeUpdate);
   }, [currentIndex, isOpen, currentReel]);
 
-  // Playback watchdog to recover from stalled reels
+  // Keep the video decoder idle while the viewer is closed or comments cover it.
+  // Avoid a polling watchdog: repeatedly seeking/restarting stalled media can
+  // burn CPU and memory on lower-end Android devices and surface native controls.
   useEffect(() => {
-    if (!isOpen || !currentReel) return;
-
-    if (playbackWatchdogRef.current) {
-      clearInterval(playbackWatchdogRef.current);
+    const video = videoRef.current;
+    if (!video) return;
+    if (!isOpen || !isPlaying || showComments) {
+      video.pause();
+      videoPlayRequestRef.current = null;
+      return;
     }
-
-    playbackWatchdogRef.current = setInterval(() => {
-      const video = videoRef.current;
-      if (!video || !isPlaying || showComments) return;
-
-      if (video.paused) {
-        video.play().catch(() => {});
-        return;
-      }
-
-      if (video.seeking || video.ended || video.readyState < 2) return;
-
-      const delta = Math.abs(video.currentTime - lastVideoTimeRef.current);
-      if (delta < 0.02) {
-        stalledChecksRef.current += 1;
-      } else {
-        stalledChecksRef.current = 0;
-        lastVideoTimeRef.current = video.currentTime;
-      }
-
-      if (stalledChecksRef.current >= 2) {
-        const resumeFrom = video.currentTime;
-        try {
-          video.currentTime = Math.max(0, resumeFrom - 0.1);
-        } catch {
-          // Ignore seek failures and just replay
-        }
-        video.play().catch(() => {});
-        stalledChecksRef.current = 0;
-      }
-    }, 1300);
-
+    if (videoPlayRequestRef.current === video) return;
+    videoPlayRequestRef.current = video;
+    video.play().catch((error: DOMException) => {
+      videoPlayRequestRef.current = null;
+      if (error?.name === "NotAllowedError") setIsPlaying(false);
+    });
     return () => {
-      if (playbackWatchdogRef.current) {
-        clearInterval(playbackWatchdogRef.current);
-        playbackWatchdogRef.current = null;
-      }
+      if (videoPlayRequestRef.current === video) videoPlayRequestRef.current = null;
     };
   }, [currentReel?.id, isOpen, isPlaying, showComments]);
 
@@ -833,29 +799,22 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                   // @ts-ignore - webkit specific
                   webkit-playsinline="true"
                   x-webkit-airplay="deny"
-                  style={{ WebkitAppearance: 'none' } as React.CSSProperties}
+                  style={{ WebkitAppearance: "none" } as React.CSSProperties}
                   onLoadedData={(e) => {
-                    const vid = e.currentTarget;
-                    stalledChecksRef.current = 0;
-                    lastVideoTimeRef.current = vid.currentTime;
-                    vid.play().catch(() => {});
-                    if (isPlaying && !showComments) {
-                      vid.play().catch(() => {});
-                    }
+                    const video = e.currentTarget;
+                    if (isPlaying && !showComments && video.paused) video.play().catch(() => {});
                   }}
                   onCanPlayThrough={(e) => {
-                    const vid = e.currentTarget;
-                    stalledChecksRef.current = 0;
-                    if (vid.paused) {
-                      vid.play().catch(() => {});
-                    }
-                  }}
-                  onWaiting={() => {
-                    // Handled by watchdog – no aggressive retries here
+                    const video = e.currentTarget;
+                    if (isPlaying && !showComments && video.paused) video.play().catch(() => {});
                   }}
                   onError={(e) => {
                     const vid = e.currentTarget;
                     const resumeFrom = Number.isFinite(vid.currentTime) ? vid.currentTime : 0;
+
+                    // Retry a failed source at most once for the current reel.
+                    if (vid.dataset.retryAttempted === "true") return;
+                    vid.dataset.retryAttempted = "true";
 
                     if (playbackRetryTimeoutRef.current) {
                       clearTimeout(playbackRetryTimeoutRef.current);
