@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Music2, Flag, UserPlus, Eye, Layers, BarChart3, Wifi, WifiOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,7 +53,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   const { recordView, updateUserInterest, updateHashtagInterests } = useForYouAlgorithm();
   
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const [slideDirection, setSlideDirection] = useState(0);
   // Play original reel audio by default. Android's WebView media gesture
   // restriction is disabled in MainActivity so swiped reels can autoplay too.
   const [isMuted, setIsMuted] = useState(false);
@@ -78,7 +77,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   const preloadedVideosRef = useRef<Record<string, HTMLVideoElement>>({});
   const playbackRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const waitingRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const videoPlayRequestRef = useRef<HTMLVideoElement | null>(null);
+  const activeVideoUrlRef = useRef<string | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -91,6 +90,11 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
       }
       if (waitingRetryTimeoutRef.current) {
         clearTimeout(waitingRetryTimeoutRef.current);
+      }
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.removeAttribute("src");
+        videoRef.current.load();
       }
     };
   }, []);
@@ -351,8 +355,10 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     setIsPlaying(true);
   }, [currentReel?.id]);
 
-  // Play/pause video
-  useEffect(() => {
+  // Reuse one HTML video surface for the entire swipe session. Remounting a
+  // video element for every reel makes Android WebView create a fresh decoder
+  // and can flash its native grey play affordance between surfaces.
+  useLayoutEffect(() => {
     if (waitingRetryTimeoutRef.current) {
       clearTimeout(waitingRetryTimeoutRef.current);
     }
@@ -360,22 +366,39 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
       clearTimeout(playbackRetryTimeoutRef.current);
     }
 
-    if (videoRef.current && isOpen && currentReel) {
-      if (isPlaying && !showComments) {
-        const playPromise = videoRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch((error: DOMException) => {
-            // AbortError can happen when quickly switching reels; only stop on autoplay policy blocks
-            if (error?.name === "NotAllowedError") {
-              setIsPlaying(false);
-            }
-          });
-        }
-      } else {
-        videoRef.current.pause();
-      }
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (!isOpen || !currentReel) {
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+      activeVideoUrlRef.current = null;
+      return;
     }
-  }, [isPlaying, currentIndex, isOpen, showComments, currentReel]);
+
+    if (activeVideoUrlRef.current !== currentReel.video_url) {
+      video.pause();
+      video.dataset.retryAttempted = "false";
+      video.removeAttribute("src");
+      video.load();
+      activeVideoUrlRef.current = currentReel.video_url;
+      video.src = currentReel.video_url;
+      video.load();
+    }
+
+    if (isPlaying && !showComments) {
+      video.play().catch((error: DOMException) => {
+        // A rapid swipe may abort the old source while the next source loads.
+        // Keep the reel intent active so media readiness can start the new URL.
+        if (error?.name !== "AbortError") {
+          console.debug("Reel playback is waiting for the active source", error.name);
+        }
+      });
+    } else {
+      video.pause();
+    }
+  }, [currentReel?.id, currentReel?.video_url, isPlaying, isOpen, showComments]);
 
   // Video progress
   useEffect(() => {
@@ -392,28 +415,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     return () => video.removeEventListener("timeupdate", handleTimeUpdate);
   }, [currentIndex, isOpen, currentReel]);
 
-  // Keep the video decoder idle while the viewer is closed or comments cover it.
-  // Avoid a polling watchdog: repeatedly seeking/restarting stalled media can
-  // burn CPU and memory on lower-end Android devices and surface native controls.
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    if (!isOpen || !isPlaying || showComments) {
-      video.pause();
-      videoPlayRequestRef.current = null;
-      return;
-    }
-    if (videoPlayRequestRef.current === video) return;
-    videoPlayRequestRef.current = video;
-    video.play().catch((error: DOMException) => {
-      videoPlayRequestRef.current = null;
-      if (error?.name === "NotAllowedError") setIsPlaying(false);
-    });
-    return () => {
-      if (videoPlayRequestRef.current === video) videoPlayRequestRef.current = null;
-    };
-  }, [currentReel?.id, isOpen, isPlaying, showComments]);
-
   // Haptic feedback helper
   const triggerHaptic = useCallback(() => {
     if (navigator.vibrate) {
@@ -429,7 +430,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     lastReelChangeRef.current = now;
     setCaptionExpanded(false);
     if (direction === -1 && currentIndex < reels.length - 1) {
-      setSlideDirection(-1);
       setCurrentIndex(prev => prev + 1);
       setIsPlaying(true);
       setVideoProgress(0);
@@ -438,7 +438,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
         onLoadMore();
       }
     } else if (direction === 1 && currentIndex > 0) {
-      setSlideDirection(1);
       setCurrentIndex(prev => prev - 1);
       setIsPlaying(true);
       setVideoProgress(0);
@@ -772,27 +771,18 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
             onDragEnd={handleDragEnd}
             className="relative w-full h-full touch-none select-none"
           >
-            <AnimatePresence mode="sync" initial={false} custom={slideDirection}>
-              <motion.div
-                key={currentReel.id}
-                custom={slideDirection}
-                initial={{ y: slideDirection === -1 ? "100%" : slideDirection === 1 ? "-100%" : 0, opacity: 0.5 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: slideDirection === -1 ? "-100%" : "100%", opacity: 0.5 }}
-                transition={{ type: "tween", duration: 0.3, ease: "easeInOut" }}
+            <div
                 className="absolute inset-0 flex items-center justify-center"
                 onClick={handleVideoTap}
               >
                 <video
                   ref={videoRef}
-                  src={currentReel.video_url}
                   className="reel-video w-full h-full object-contain max-w-lg mx-auto"
                   loop
                   playsInline
                   muted={isMuted}
-                  autoPlay
                   controls={false}
-                  preload={allowVideoPreload ? "metadata" : "none"}
+                  preload="none"
                   disablePictureInPicture
                   disableRemotePlayback
                   controlsList="nodownload nofullscreen noremoteplayback"
@@ -858,8 +848,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                   )}
                 </AnimatePresence>
 
-              </motion.div>
-            </AnimatePresence>
+            </div>
 
             {/* Right side actions - Facebook Reels style */}
             <div className="absolute right-2 bottom-24 flex flex-col items-center gap-4 z-30">
