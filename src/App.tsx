@@ -1,9 +1,9 @@
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { useAppVisibility } from "@/hooks/useAppVisibility";
@@ -17,6 +17,7 @@ import { AppLockGate } from "@/components/AppLockGate";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { NavigationMemory } from "@/components/NavigationMemory";
 import { NativeAuthRedirect } from "@/components/NativeAuthRedirect";
+import { useAuth } from "@/hooks/useAuth";
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Home = lazy(() => import("./pages/Home"));
@@ -61,9 +62,27 @@ const TournamentDetail = lazy(() => import("./pages/TournamentDetail"));
 function AppStartupScreen() {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#021124]">
-      <img src="/pwa-512x512.png" alt="Zyiro" className="h-28 w-28 rounded-2xl object-contain" />
+      <img src="/zyiro-mark.png" alt="ZYIRO" className="h-48 w-48 object-contain sm:h-56 sm:w-56" />
     </div>
   );
+}
+
+function StartupRedirect() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const [minimumSplashShown, setMinimumSplashShown] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setMinimumSplashShown(true), 3000);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (loading || !minimumSplashShown) return;
+    navigate(user ? "/home" : "/auth", { replace: true });
+  }, [loading, minimumSplashShown, navigate, user]);
+
+  return <AppStartupScreen />;
 }
 
 const queryClient = new QueryClient({
@@ -95,7 +114,7 @@ function AppContent() {
         <AppLockGate>
           <Suspense fallback={<AppStartupScreen />}>
           <Routes>
-            <Route path="/" element={<Auth />} />
+            <Route path="/" element={<StartupRedirect />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/home" element={<Home />} />
             <Route path="/streamers" element={<Streamers />} />

@@ -255,9 +255,8 @@ const Auth = () => {
     return (
       <div className="min-h-screen bg-background flex flex-col justify-center px-6 py-12">
         <div className="max-w-sm mx-auto w-full">
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <img src="/logo.png" alt="Zyiro" className="h-12 w-auto" />
-            <span className="text-2xl font-bold gradient-text">Zyiro</span>
+          <div className="flex items-center justify-center mb-8">
+            <img src="/zyiro-mark.png" alt="ZYIRO" className="h-40 w-40 object-contain sm:h-44 sm:w-44" />
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-2 text-center">
             {passwordRecovery ? "Choose a new password" : "Reset your password"}
@@ -295,10 +294,9 @@ const Auth = () => {
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="flex items-center justify-center gap-3 mb-8"
+          className="flex items-center justify-center mb-8"
         >
-          <img src="/logo.png" alt="Zyiro" className="h-12 w-auto" />
-          <span className="text-2xl font-bold gradient-text">Zyiro</span>
+          <img src="/zyiro-mark.png" alt="ZYIRO" className="h-40 w-40 object-contain sm:h-44 sm:w-44" />
         </motion.div>
 
         <AnimatePresence mode="wait">

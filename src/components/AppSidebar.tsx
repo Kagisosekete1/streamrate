@@ -160,8 +160,8 @@ export const AppSidebar = () => {
       <div className="p-4 border-b border-border flex items-center justify-between">
         <Link to="/home" className="flex items-center gap-3">
           <img
-            src="/logo.png"
-            alt="Zyiro"
+            src="/zyiro-mark.png"
+            alt="ZYIRO"
             className="h-8 w-8 object-contain"
           />
           <AnimatePresence>
@@ -172,7 +172,7 @@ export const AppSidebar = () => {
                 exit={{ opacity: 0, width: 0 }}
                 className="font-bold text-lg text-foreground overflow-hidden whitespace-nowrap"
               >
-                Zyiro
+                ZYIRO
               </motion.span>
             )}
           </AnimatePresence>

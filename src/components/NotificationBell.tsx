@@ -197,14 +197,14 @@ export const NotificationBell = () => {
                       <ProfileAvatarImage
                         src={notification.from_user.avatar_url}
                         alt="Notification sender"
-                        className="w-10 h-10 rounded-full object-cover"
+                        className="w-12 h-12 rounded-full object-cover"
                         onError={(event) => { event.currentTarget.src = getDefaultAvatar(); }}
                       />
                     ) : (
                       <ProfileAvatarImage
                         src={getDefaultAvatar()}
                         alt="Zyiro"
-                        className="w-10 h-10 rounded-full object-cover"
+                        className="w-12 h-12 rounded-full object-cover"
                       />
                     )}
                     <div className="flex-1 min-w-0">

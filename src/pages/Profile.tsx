@@ -887,9 +887,9 @@ const Profile = () => {
                 e.stopPropagation();
                 handleRemoveHeader();
               }}
-              className="absolute bottom-2 right-12 w-8 h-8 rounded-full bg-destructive/80 flex items-center justify-center hover:bg-destructive transition-colors z-10"
+              className="absolute bottom-2 right-12 w-8 h-8 rounded-full bg-card/90 border border-border text-foreground flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors z-10"
             >
-              <X className="w-4 h-4 text-white" />
+              <X className="w-4 h-4" />
             </button>
           )}
 

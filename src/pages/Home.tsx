@@ -360,11 +360,11 @@ const Home = () => {
               aria-label="Go to Zyiro home"
             >
               <img
-                src="/logo.png"
-                alt="Zyiro"
-                className="h-8 w-auto"
+                src="/zyiro-mark.png"
+                alt="ZYIRO"
+                className="h-9 w-9 object-contain"
               />
-              <span className="text-xl font-bold gradient-text leading-none">Zyiro</span>
+              <span className="text-xl font-bold gradient-text leading-none">ZYIRO</span>
             </button>
             <NotificationBell />
           </div>
