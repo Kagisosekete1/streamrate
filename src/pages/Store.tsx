@@ -714,7 +714,7 @@ const Store = () => {
               <Crown className="w-8 h-8 text-primary mx-auto mb-2" />
               <h3 className="font-bold text-foreground mb-1">Activate Your Seller Account</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Purchase a seller package to start listing products on the Zyro Market.
+                Purchase a seller package to start listing products on the Zyiro Market.
               </p>
               <Button variant="gaming" onClick={() => setShowPricingModal(true)}>
                 View Seller Packages

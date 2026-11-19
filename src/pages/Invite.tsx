@@ -119,8 +119,8 @@ const Invite = () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Join me on Zyro",
-          text: "Join Zyro with my invite — I'll get a blue verification badge if you sign up!",
+          title: "Join me on Zyiro",
+          text: "Join Zyiro with my invite — I'll get a blue verification badge if you sign up!",
           url: referralUrl,
         });
       } catch {}

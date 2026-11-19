@@ -357,14 +357,14 @@ const Home = () => {
             <button
               onClick={() => navigate("/home")}
               className="flex items-center gap-2 min-w-0"
-              aria-label="Go to Zyro home"
+              aria-label="Go to Zyiro home"
             >
               <img
                 src="/logo.png"
-                alt="Zyro"
+                alt="Zyiro"
                 className="h-8 w-auto"
               />
-              <span className="text-xl font-bold gradient-text leading-none">Zyro</span>
+              <span className="text-xl font-bold gradient-text leading-none">Zyiro</span>
             </button>
             <NotificationBell />
           </div>

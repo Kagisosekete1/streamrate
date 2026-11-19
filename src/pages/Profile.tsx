@@ -1076,7 +1076,7 @@ const Profile = () => {
                   const url = `${window.location.origin}/auth?ref=${(profile as any).referral_code}`;
                   if (navigator.share) {
                     try {
-                      await navigator.share({ title: "Join me on Zyro", text: "Join Zyro with my invite!", url });
+                      await navigator.share({ title: "Join me on Zyiro", text: "Join Zyiro with my invite!", url });
                     } catch {}
                   } else {
                     await navigator.clipboard.writeText(url);

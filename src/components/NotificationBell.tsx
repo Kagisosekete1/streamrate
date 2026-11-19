@@ -203,7 +203,7 @@ export const NotificationBell = () => {
                     ) : (
                       <ProfileAvatarImage
                         src={getDefaultAvatar()}
-                        alt="Zyro"
+                        alt="Zyiro"
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     )}

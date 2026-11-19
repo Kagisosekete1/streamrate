@@ -25,22 +25,22 @@ const TERMS_SECTIONS = [
   {
     icon: CheckCircle,
     title: "Acceptance of Terms",
-    content: `By accessing or using Zyro ("the Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not access or use the Service.
+    content: `By accessing or using Zyiro ("the Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not access or use the Service.
 
-These Terms constitute a legally binding agreement between you and Zyro. We reserve the right to modify these Terms at any time. Continued use of the Service after changes constitutes acceptance of the modified Terms.
+These Terms constitute a legally binding agreement between you and Zyiro. We reserve the right to modify these Terms at any time. Continued use of the Service after changes constitutes acceptance of the modified Terms.
 
-You must be at least 13 years old (or the minimum age in your jurisdiction) to use Zyro. If you are under 18, you represent that your parent or legal guardian has reviewed and agreed to these Terms on your behalf.`
+You must be at least 13 years old (or the minimum age in your jurisdiction) to use Zyiro. If you are under 18, you represent that your parent or legal guardian has reviewed and agreed to these Terms on your behalf.`
   },
   {
     icon: User,
     title: "Account Registration & Responsibility",
-    content: `When you create a Zyro account, you agree to:
+    content: `When you create a Zyiro account, you agree to:
 
 • Provide accurate, current, and complete information during registration
 • Maintain and promptly update your account information to keep it accurate
 • Maintain the security and confidentiality of your password
 • Accept responsibility for all activities that occur under your account
-• Immediately notify Zyro of any unauthorized use of your account
+• Immediately notify Zyiro of any unauthorized use of your account
 
 You may not:
 • Create accounts using automated methods or false information
@@ -48,12 +48,12 @@ You may not:
 • Use another person's account without permission
 • Sell, transfer, or assign your account to any third party
 
-Zyro reserves the right to suspend or terminate accounts that violate these Terms or for any other reason at our sole discretion.`
+Zyiro reserves the right to suspend or terminate accounts that violate these Terms or for any other reason at our sole discretion.`
   },
   {
     icon: FileText,
     title: "User-Generated Content",
-    content: `Zyro allows you to create, post, and share content including text, images, videos, ratings, reviews, and comments ("User Content"). You retain ownership of your User Content, but by posting it on Zyro, you grant us:
+    content: `Zyiro allows you to create, post, and share content including text, images, videos, ratings, reviews, and comments ("User Content"). You retain ownership of your User Content, but by posting it on Zyiro, you grant us:
 
 • A worldwide, non-exclusive, royalty-free, transferable license to use, reproduce, modify, adapt, publish, translate, distribute, and display your User Content in connection with the Service
 • The right to sublicense these rights to our service providers and partners
@@ -64,7 +64,7 @@ You represent and warrant that:
 • Your User Content does not infringe any third-party rights
 • Your User Content complies with all applicable laws and our Community Guidelines
 
-Zyro does not claim ownership of your User Content but needs these licenses to operate and improve the Service.`
+Zyiro does not claim ownership of your User Content but needs these licenses to operate and improve the Service.`
   },
   {
     icon: Ban,
@@ -87,7 +87,7 @@ Violation of these prohibitions may result in immediate account termination and 
   {
     icon: Scale,
     title: "Ratings, Reviews & Fair Use",
-    content: `Zyro's rating and review system is built on authenticity and trust. When providing ratings and reviews:
+    content: `Zyiro's rating and review system is built on authenticity and trust. When providing ratings and reviews:
 
 • Base your ratings on genuine experience with the streamer's content
 • Provide honest, constructive, and fair feedback
@@ -95,7 +95,7 @@ Violation of these prohibitions may result in immediate account termination and 
 • Do not create multiple accounts to manipulate ratings
 • Do not coordinate with others to artificially inflate or deflate ratings
 
-Zyro reserves the right to:
+Zyiro reserves the right to:
 • Remove ratings or reviews that violate these Terms or our Community Guidelines
 • Adjust rating calculations to account for manipulation attempts
 • Suspend or terminate accounts engaged in rating fraud
@@ -106,11 +106,11 @@ Streamers may not retaliate against users for honest ratings or reviews. Doing s
   {
     icon: Copyright,
     title: "Intellectual Property Rights",
-    content: `Zyro and its content, features, and functionality are owned by Zyro and its licensors and are protected by copyright, trademark, and other intellectual property laws.
+    content: `Zyiro and its content, features, and functionality are owned by Zyiro and its licensors and are protected by copyright, trademark, and other intellectual property laws.
 
-The Zyro name, logo, and all related names, logos, product and service names, designs, and slogans are trademarks of Zyro. You may not use such marks without our prior written permission.
+The Zyiro name, logo, and all related names, logos, product and service names, designs, and slogans are trademarks of Zyiro. You may not use such marks without our prior written permission.
 
-If you believe content on Zyro infringes your copyright, please contact us at ${CONTACT_EMAIL} with:
+If you believe content on Zyiro infringes your copyright, please contact us at ${CONTACT_EMAIL} with:
 • Identification of the copyrighted work claimed to be infringed
 • Identification of the allegedly infringing material
 • Your contact information
@@ -122,7 +122,7 @@ We will respond to valid notices and may remove infringing content and terminate
   {
     icon: Shield,
     title: "Privacy & Data Protection",
-    content: `Your privacy is important to us. Our Privacy Policy explains how we collect, use, and protect your information. By using Zyro, you agree to our Privacy Policy.
+    content: `Your privacy is important to us. Our Privacy Policy explains how we collect, use, and protect your information. By using Zyiro, you agree to our Privacy Policy.
 
 Key points:
 • We collect information you provide and usage data to operate the Service
@@ -137,7 +137,7 @@ Please review our full Privacy Policy for detailed information about our data pr
     title: "Disclaimers & Limitations",
     content: `THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
 
-Zyro does not warrant that:
+Zyiro does not warrant that:
 • The Service will be uninterrupted, secure, or error-free
 • The results obtained from the Service will be accurate or reliable
 • Any content or materials available through the Service are free of viruses or harmful components
@@ -153,7 +153,7 @@ OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNT YOU PAID US, IF ANY, IN THE PAST
   {
     icon: Gavel,
     title: "Indemnification",
-    content: `You agree to indemnify, defend, and hold harmless Zyro, its affiliates, officers, directors, employees, agents, and licensors from and against any claims, liabilities, damages, losses, costs, and expenses (including reasonable attorneys' fees) arising out of or relating to:
+    content: `You agree to indemnify, defend, and hold harmless Zyiro, its affiliates, officers, directors, employees, agents, and licensors from and against any claims, liabilities, damages, losses, costs, and expenses (including reasonable attorneys' fees) arising out of or relating to:
 
 • Your use of the Service
 • Your User Content
@@ -177,14 +177,14 @@ Class Action Waiver: You agree that any proceedings to resolve disputes will be 
   {
     icon: AlertTriangle,
     title: "Termination",
-    content: `Zyro may terminate or suspend your access to the Service immediately, without prior notice or liability, for any reason, including:
+    content: `Zyiro may terminate or suspend your access to the Service immediately, without prior notice or liability, for any reason, including:
 
 • Breach of these Terms
 • Violation of our Community Guidelines
 • Upon request by law enforcement or government agencies
 • Extended periods of inactivity
 • Technical or security issues
-• Conduct we believe is harmful to other users, third parties, or Zyro
+• Conduct we believe is harmful to other users, third parties, or Zyiro
 
 Upon termination:
 • Your right to use the Service will immediately cease
@@ -224,7 +224,7 @@ export const TermsOfServiceModal = ({ onClose }: TermsOfServiceModalProps) => {
           </button>
           <div className="text-center">
             <h2 className="text-xl font-bold text-foreground">Terms of Service</h2>
-            <p className="text-xs text-muted-foreground mt-1">Legal agreement for using Zyro</p>
+            <p className="text-xs text-muted-foreground mt-1">Legal agreement for using Zyiro</p>
           </div>
           <div className="w-10" />
         </div>
@@ -238,9 +238,9 @@ export const TermsOfServiceModal = ({ onClose }: TermsOfServiceModalProps) => {
               <div>
                 <p className="font-medium text-foreground mb-2">Legal Agreement</p>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  These Terms of Service ("Terms") govern your access to and use of Zyro.
+                  These Terms of Service ("Terms") govern your access to and use of Zyiro.
                   Please read these Terms carefully before using our platform. By creating an account 
-                  or using Zyro, you acknowledge that you have read, understood, and agree to
+                  or using Zyiro, you acknowledge that you have read, understood, and agree to
                   be bound by these Terms.
                 </p>
               </div>
@@ -290,12 +290,12 @@ export const TermsOfServiceModal = ({ onClose }: TermsOfServiceModalProps) => {
           {/* Footer */}
           <div className="pt-4 border-t border-border">
             <p className="text-center text-xs text-muted-foreground">
-              By using Zyro, you acknowledge that you have read, understood, and agree to
+              By using Zyiro, you acknowledge that you have read, understood, and agree to
               these Terms of Service and our Privacy Policy. If you do not agree to these Terms, 
-              please do not use Zyro.
+              please do not use Zyiro.
             </p>
             <p className="text-center text-xs text-muted-foreground mt-2">
-              © 2025 Zyro. All rights reserved.
+              © 2025 Zyiro. All rights reserved.
             </p>
           </div>
         </div>

@@ -60,8 +60,8 @@ export default defineConfig(({ mode }) => ({
       },
       includeAssets: ["favicon.ico", "logo.png", "pwa-192x192.png", "pwa-512x512.png"],
       manifest: {
-        name: "Zyro",
-        short_name: "Zyro",
+        name: "Zyiro",
+        short_name: "Zyiro",
         description: "Play, stream, and connect with the gaming community.",
         id: "/",
         start_url: "/",

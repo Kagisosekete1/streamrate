@@ -173,7 +173,7 @@ const NotificationsModal = ({
           <div className="mb-4 p-4 rounded-xl bg-destructive/10 border border-destructive/30">
             <p className="font-semibold text-destructive text-sm mb-1">System notifications blocked?</p>
             <p className="text-xs text-muted-foreground mb-3">
-              If you're not receiving notifications, tap below to open your phone's notification settings for Zyro.
+              If you're not receiving notifications, tap below to open your phone's notification settings for Zyiro.
             </p>
             <button
               onClick={() => {
@@ -183,7 +183,7 @@ const NotificationsModal = ({
                   median.open.appSettings();
                 } else {
                   // Fallback: show instruction
-                  toast({ title: "Open your phone's Settings → Apps → Zyro → Notifications and enable them." });
+                  toast({ title: "Open your phone's Settings → Apps → Zyiro → Notifications and enable them." });
                 }
               }}
               className="w-full py-2 px-4 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition-colors"
@@ -342,7 +342,7 @@ const Settings = () => {
   const editingQrUrl = buildProfileQrUrl(editingQrHandle || "your_handle");
   const currentQrHandle = (profile as any)?.qr_handle as string | undefined;
   const willRedirectFromLegacy = !!currentQrHandle && !!editingQrHandle && currentQrHandle !== editingQrHandle;
-  const displayName = profile?.username ? `@${profile.username}` : profile?.full_name || "Zyro profile";
+  const displayName = profile?.username ? `@${profile.username}` : profile?.full_name || "Zyiro profile";
   const avatarUrl = profile?.avatar_url || getDefaultAvatar();
 
   useEffect(() => {
@@ -424,7 +424,7 @@ const Settings = () => {
     ctx.fillStyle = fg;
     ctx.font = "700 54px Inter, system-ui, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("Zyro", 540, 165);
+    ctx.fillText("Zyiro", 540, 165);
     ctx.font = "700 38px Inter, system-ui, sans-serif";
     ctx.fillText(displayName, 540, 1110);
     ctx.fillStyle = muted;
@@ -999,7 +999,7 @@ const Settings = () => {
           <SettingItem
             icon={Info}
             title="About Us"
-            subtitle="Learn more about Zyro"
+            subtitle="Learn more about Zyiro"
             onClick={() => navigate("/about")}
           />
         </div>
@@ -1033,7 +1033,7 @@ const Settings = () => {
         <div className="mt-8 mb-4 p-4 rounded-xl bg-secondary/30 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Smartphone className="w-5 h-5 text-primary" />
-            <span className="font-semibold text-foreground">Zyro</span>
+            <span className="font-semibold text-foreground">Zyiro</span>
           </div>
           <p className="text-xs text-muted-foreground">
             Version {APP_VERSION} (Build {BUILD_NUMBER})
@@ -1176,7 +1176,7 @@ const Settings = () => {
                 {qrDataUrl ? (
                   <img
                     src={qrDataUrl}
-                    alt="Your Zyro profile QR code"
+                    alt="Your Zyiro profile QR code"
                     className="mx-auto w-full max-w-[280px] rounded-xl border border-border bg-background"
                   />
                 ) : (
@@ -1186,7 +1186,7 @@ const Settings = () => {
                 )}
                 <p className="mt-3 text-sm font-medium text-foreground">{displayName}</p>
                 <p className="mt-1 text-xs text-muted-foreground break-all">{profileUrl}</p>
-                <p className="mt-2 text-xs text-primary">Scan test: this resolves to your signed-in Zyro profile.</p>
+                <p className="mt-2 text-xs text-primary">Scan test: this resolves to your signed-in Zyiro profile.</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Button variant="outline" onClick={handleCopyProfileLink}>
@@ -1562,7 +1562,7 @@ const Settings = () => {
                 onClick={() => {
                   toast({
                     title: "You're up to date!",
-                    description: `Zyro v${APP_VERSION} is the latest version.`,
+                    description: `Zyiro v${APP_VERSION} is the latest version.`,
                   });
                 }}
               >

@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Zyro</string>
-    <string name="title_activity_main">Zyro</string>
+    <string name="app_name">Zyiro</string>
+    <string name="title_activity_main">Zyiro</string>
     <string name="package_name">com.semogrouptech.streamrateapp</string>
     <string name="custom_url_scheme">com.semogrouptech.streamrateapp</string>
 </resources>

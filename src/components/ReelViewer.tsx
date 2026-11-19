@@ -622,7 +622,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     try {
       if (navigator.share) {
         await navigator.share({
-          title: currentReel.caption || "Check out this reel on Zyro!",
+          title: currentReel.caption || "Check out this reel on Zyiro!",
           url: shareUrl
         });
         destination = "native";

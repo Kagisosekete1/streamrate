@@ -15,7 +15,7 @@ export const useNativePushNotifications = () => {
   const [nativePermissionGranted, setNativePermissionGranted] = useState(false);
 
   useEffect(() => {
-    // Zyro uses Android native push only. Browser notification APIs are
+    // Zyiro uses Android native push only. Browser notification APIs are
     // deliberately not initialized or requested.
     if (Capacitor.isNativePlatform()) {
       setIsSupported(true);

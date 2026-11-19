@@ -76,7 +76,7 @@ const NotificationSettings = () => {
       toast({
         title: "Permission blocked",
         description: Capacitor.isNativePlatform()
-          ? "Open Android Settings, find Zyro, then allow notifications."
+          ? "Open Android Settings, find Zyiro, then allow notifications."
           : "Open your browser's site settings and allow notifications, then refresh.",
       });
       return;
@@ -99,10 +99,10 @@ const NotificationSettings = () => {
     }
     void category;
     if (!Capacitor.isNativePlatform()) {
-      toast({ title: "Android app notifications", description: "Open Zyro on Android to receive push notifications." });
+      toast({ title: "Android app notifications", description: "Open Zyiro on Android to receive push notifications." });
       return;
     }
-    toast({ title: "Native Android push", description: "Send a test notification to this device from the Zyro app in OneSignal." });
+    toast({ title: "Native Android push", description: "Send a test notification to this device from the Zyiro app in OneSignal." });
   };
 
   return (
@@ -187,7 +187,7 @@ const NotificationSettings = () => {
                       {Capacitor.isNativePlatform() && perm === "unsupported" && "Android push notifications are unavailable."}
                       {Capacitor.isNativePlatform() && perm === "granted" && "Allowed — notifications will appear in the Android notification shade."}
                       {Capacitor.isNativePlatform() && perm === "default" && "Not enabled yet. Allow notifications from Android."}
-                      {Capacitor.isNativePlatform() && perm === "denied" && "Currently blocked. Allow Zyro notifications in Android Settings."}
+                      {Capacitor.isNativePlatform() && perm === "denied" && "Currently blocked. Allow Zyiro notifications in Android Settings."}
                     </p>
                   </div>
                 </div>

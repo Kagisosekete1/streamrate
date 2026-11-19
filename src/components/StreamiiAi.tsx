@@ -176,7 +176,7 @@ export const StreamiiAi = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-sm text-foreground">StreamiiAi</h3>
-                    <p className="text-[10px] text-muted-foreground">Your Zyro buddy</p>
+                    <p className="text-[10px] text-muted-foreground">Your Zyiro buddy</p>
                   </div>
                 </div>
                 <button onClick={() => setIsOpen(false)} className="p-1.5 rounded-full hover:bg-secondary">
@@ -192,7 +192,7 @@ export const StreamiiAi = () => {
                       <Bot className="w-9 h-9 text-primary" />
                     </div>
                     <h4 className="font-semibold text-foreground mb-1">Hey there! 🎮</h4>
-                    <p className="text-sm text-muted-foreground">I'm StreamiiAi, your Zyro assistant. Ask me anything about the app!</p>
+                    <p className="text-sm text-muted-foreground">I'm StreamiiAi, your Zyiro assistant. Ask me anything about the app!</p>
                     <div className="mt-4 space-y-2">
                       {["How do I create a reel?", "What are trending hashtags?", "How do I rate a streamer?"].map((q) => (
                         <button

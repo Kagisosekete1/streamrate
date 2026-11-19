@@ -398,7 +398,7 @@ const StreamerProfile = () => {
           </div>
           <h1 className="mb-2 text-xl font-bold text-foreground">QR profile not found</h1>
           <p className="mb-6 text-sm text-muted-foreground">
-            {missingProfileParam ? `No Zyro profile exists for “${missingProfileParam}” anymore.` : "This Zyro QR link no longer matches a profile."}
+            {missingProfileParam ? `No Zyiro profile exists for “${missingProfileParam}” anymore.` : "This Zyiro QR link no longer matches a profile."}
           </p>
           <Button
             variant="gaming"

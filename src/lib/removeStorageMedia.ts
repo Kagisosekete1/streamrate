@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 type MediaBucket = "post-images" | "reels";
 
-/** Remove the actual Storage object for media uploaded to Zyro. */
+/** Remove the actual Storage object for media uploaded to Zyiro. */
 export async function removeStorageMedia(mediaUrl: string | null | undefined): Promise<void> {
   if (!mediaUrl) return;
 

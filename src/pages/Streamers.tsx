@@ -473,7 +473,7 @@ const Streamers = () => {
               </div>
               <div className="text-left flex-1">
                 <p className="font-medium text-foreground">Add Streamers from Contacts</p>
-                <p className="text-xs text-muted-foreground">Find friends who are on Zyro</p>
+                <p className="text-xs text-muted-foreground">Find friends who are on Zyiro</p>
               </div>
             </button>
           </section>
@@ -586,18 +586,18 @@ const Streamers = () => {
                 onClick={() => toggleSection("explore")}
                 aria-expanded={expandedSections.explore}
                 aria-controls="explore-streamrate-tiles"
-                aria-label={`${expandedSections.explore ? "Collapse" : "Expand"} Explore Zyro section`}
+                aria-label={`${expandedSections.explore ? "Collapse" : "Expand"} Explore Zyiro section`}
                 className="w-full flex items-center gap-2 mb-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <Sparkles className="w-5 h-5 text-primary" />
-                <h2 className="font-semibold text-foreground">Explore Zyro</h2>
+                <h2 className="font-semibold text-foreground">Explore Zyiro</h2>
                 <ChevronDown className={cn("w-4 h-4 ml-auto text-muted-foreground transition-transform", expandedSections.explore && "rotate-180")} />
               </button>
               {expandedSections.explore && (
                 <motion.div
                   id="explore-streamrate-tiles"
                   role="navigation"
-                  aria-label="Explore Zyro quick links"
+                  aria-label="Explore Zyiro quick links"
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   className="grid grid-cols-3 gap-3 overflow-hidden"

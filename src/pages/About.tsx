@@ -8,7 +8,7 @@ const About = () => {
 
   const teamMembers = [
     {
-      name: "Zyro Team",
+      name: "Zyiro Team",
       role: "Development & Design",
       image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400&h=400&fit=crop&crop=face",
       description: "Passionate developers and designers building the future of streamer communities.",
@@ -46,7 +46,7 @@ const About = () => {
     {
       icon: Users,
       title: "Inclusivity",
-      description: "Zyro welcomes everyone. We celebrate diversity and strive to create an inclusive space for all gaming enthusiasts.",
+      description: "Zyiro welcomes everyone. We celebrate diversity and strive to create an inclusive space for all gaming enthusiasts.",
     },
   ];
 
@@ -84,7 +84,7 @@ const About = () => {
                 <Star className="w-10 h-10 text-primary-foreground" />
               </div>
               <h1 className="text-4xl font-bold text-foreground mb-4">
-                Zyro
+                Zyiro
               </h1>
               <p className="text-xl text-muted-foreground mb-8">
                 The Ultimate Platform for Streamer Discovery & Community Engagement
@@ -120,7 +120,7 @@ const About = () => {
                 <h2 className="text-2xl font-bold text-foreground">Our Mission</h2>
               </div>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                At Zyro, we're on a mission to revolutionize how fans discover,
+                At Zyiro, we're on a mission to revolutionize how fans discover,
                 connect with, and support their favorite content creators. We believe 
                 every streamer deserves recognition, and every fan deserves a platform 
                 where their voice matters. By bridging the gap between creators and 
@@ -205,7 +205,7 @@ const About = () => {
               seketefilmstv@gmail.com
             </a>
             <p className="text-sm text-muted-foreground mt-6">
-              © {new Date().getFullYear()} Zyro. All rights reserved.
+              © {new Date().getFullYear()} Zyiro. All rights reserved.
             </p>
           </div>
         </section>
