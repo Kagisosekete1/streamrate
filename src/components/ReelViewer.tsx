@@ -70,32 +70,25 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   const [showAvatarView, setShowAvatarView] = useState(false);
   const [showReportBlock, setShowReportBlock] = useState(false);
   const [captionExpanded, setCaptionExpanded] = useState(false);
-  const allowVideoPreload = true;
   const [connectionQuality, setConnectionQuality] = useState<"excellent" | "good" | "fair" | "poor" | "offline">("good");
   const lastTapTime = useRef<number>(0);
   const viewStartTime = useRef<number>(0);
-  const preloadedVideosRef = useRef<Record<string, HTMLVideoElement>>({});
-  const playbackRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const waitingRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const activeVideoUrlRef = useRef<string | null>(null);
-  
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoSlotsRef = useRef<[HTMLVideoElement | null, HTMLVideoElement | null]>([null, null]);
+  const [activeVideoSlot, setActiveVideoSlot] = useState<0 | 1>(0);
+  const activeVideoSlotRef = useRef<0 | 1>(0);
+  const swipeDirectionRef = useRef<-1 | 1>(-1);
+  const videoChangeSequenceRef = useRef(0);
+  const ignoreVideoTapUntilRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastReelChangeRef = useRef(0);
 
   useEffect(() => {
     return () => {
-      if (playbackRetryTimeoutRef.current) {
-        clearTimeout(playbackRetryTimeoutRef.current);
-      }
-      if (waitingRetryTimeoutRef.current) {
-        clearTimeout(waitingRetryTimeoutRef.current);
-      }
-      if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.removeAttribute("src");
-        videoRef.current.load();
-      }
+      videoSlotsRef.current.forEach((video) => {
+        video?.pause();
+        video?.removeAttribute("src");
+        video?.load();
+      });
     };
   }, []);
 
@@ -244,71 +237,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     }));
   }, [user]);
 
-  // Preload next 2 videos for instant switching
-  useEffect(() => {
-    if (!isOpen || reels.length === 0) return;
-
-    if (!allowVideoPreload) {
-      Object.values(preloadedVideosRef.current).forEach((video) => {
-        video.pause();
-        video.src = "";
-        video.load();
-      });
-      preloadedVideosRef.current = {};
-      return;
-    }
-
-    const preloadVideo = (url: string, reelId: string) => {
-      if (preloadedVideosRef.current[reelId]) return; // Already preloaded
-      
-      const video = document.createElement("video");
-      video.src = url;
-      // Buffer the next clip's data so a vertical swipe can start sooner.
-      video.preload = "auto";
-      video.muted = true;
-      video.playsInline = true;
-      video.controls = false;
-      video.setAttribute("webkit-playsinline", "true");
-      video.setAttribute("x-webkit-airplay", "allow");
-      video.load();
-
-      preloadedVideosRef.current[reelId] = video;
-    };
-
-    const keepIds = new Set<string>();
-
-    // Preload next reel only (lighter on mobile/PWA bandwidth)
-    for (let i = 1; i <= 1; i++) {
-      const nextIndex = currentIndex + i;
-      if (nextIndex < reels.length) {
-        const nextReel = reels[nextIndex];
-        preloadVideo(nextReel.video_url, nextReel.id);
-        keepIds.add(nextReel.id);
-      }
-    }
-
-    // Cleanup stale preloaded videos to avoid memory/network pressure
-    Object.entries(preloadedVideosRef.current).forEach(([reelId, video]) => {
-      if (!keepIds.has(reelId)) {
-        video.pause();
-        video.src = "";
-        video.load();
-        delete preloadedVideosRef.current[reelId];
-      }
-    });
-  }, [allowVideoPreload, currentIndex, isOpen, reels]);
-
-  // Cleanup preloaded videos on unmount
-  useEffect(() => {
-    return () => {
-      Object.values(preloadedVideosRef.current).forEach((video) => {
-        video.src = "";
-        video.load();
-      });
-      preloadedVideosRef.current = {};
-    };
-  }, []);
-
   useEffect(() => {
     if (isOpen && currentReel) {
       fetchReelData(currentReel.id);
@@ -356,61 +284,106 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     setIsPlaying(true);
   }, [currentReel?.id]);
 
-  // Reuse one HTML video surface for the entire swipe session. Remounting a
-  // video element for every reel makes Android WebView create a fresh decoder
-  // and can flash its native grey play affordance between surfaces.
+  // Keep the playing reel on one surface while the second surface prepares
+  // the requested reel. Swap only after the incoming clip has decoded a frame.
   useLayoutEffect(() => {
-    if (waitingRetryTimeoutRef.current) {
-      clearTimeout(waitingRetryTimeoutRef.current);
-    }
-    if (playbackRetryTimeoutRef.current) {
-      clearTimeout(playbackRetryTimeoutRef.current);
-    }
-
-    const video = videoRef.current;
-    if (!video) return;
-
     if (!isOpen || !currentReel) {
-      video.pause();
-      video.removeAttribute("src");
-      video.load();
-      activeVideoUrlRef.current = null;
+      videoSlotsRef.current.forEach((video) => video?.pause());
       return;
     }
 
-    if (activeVideoUrlRef.current !== currentReel.video_url) {
-      const preloadedNext = preloadedVideosRef.current[currentReel.id];
-      video.pause();
-      video.dataset.retryAttempted = "false";
-      video.removeAttribute("src");
-      video.load();
-      activeVideoUrlRef.current = currentReel.video_url;
-      video.src = preloadedNext?.currentSrc || currentReel.video_url;
-      if (preloadedNext) {
-        preloadedNext.pause();
-        preloadedNext.removeAttribute("src");
-        preloadedNext.load();
-        delete preloadedVideosRef.current[currentReel.id];
+    const sequence = ++videoChangeSequenceRef.current;
+    const currentSlot = activeVideoSlotRef.current;
+    const currentVideo = videoSlotsRef.current[currentSlot];
+    const targetSlot: 0 | 1 = currentVideo?.dataset.reelId === currentReel.id
+      ? currentSlot
+      : (currentSlot === 0 ? 1 : 0);
+    const incoming = videoSlotsRef.current[targetSlot];
+    if (!incoming) return;
+
+    let cancelled = false;
+    const activate = () => {
+      if (cancelled || sequence !== videoChangeSequenceRef.current) return;
+      if (incoming.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || incoming.videoWidth === 0) return;
+
+      const outgoing = videoSlotsRef.current[activeVideoSlotRef.current];
+      if (outgoing && outgoing !== incoming) outgoing.pause();
+      activeVideoSlotRef.current = targetSlot;
+      setActiveVideoSlot(targetSlot);
+      incoming.muted = isMuted;
+      if (isPlaying && !showComments) incoming.play().catch(() => undefined);
+    };
+
+    const onError = () => {
+      if (cancelled || sequence !== videoChangeSequenceRef.current) return;
+      if (incoming.dataset.retryAttempted === "true") {
+        console.warn("Reel video failed to load", currentReel.id, incoming.error?.code);
+        return;
       }
-      video.load();
+      incoming.dataset.retryAttempted = "true";
+      window.setTimeout(() => {
+        if (cancelled || sequence !== videoChangeSequenceRef.current) return;
+        incoming.src = currentReel.video_url;
+        incoming.load();
+      }, 500);
+    };
+
+    incoming.addEventListener("loadeddata", activate);
+    incoming.addEventListener("canplay", activate);
+    incoming.addEventListener("error", onError);
+
+    if (incoming.dataset.reelId !== currentReel.id || incoming.currentSrc !== currentReel.video_url) {
+      incoming.pause();
+      incoming.dataset.reelId = currentReel.id;
+      incoming.dataset.retryAttempted = "false";
+      incoming.preload = "auto";
+      incoming.src = currentReel.video_url;
+      incoming.load();
     }
 
-    if (isPlaying && !showComments) {
-      video.play().catch((error: DOMException) => {
-        // A rapid swipe may abort the old source while the next source loads.
-        // Keep the reel intent active so media readiness can start the new URL.
-        if (error?.name !== "AbortError") {
-          console.debug("Reel playback is waiting for the active source", error.name);
-        }
-      });
-    } else {
-      video.pause();
-    }
+    activate();
+
+    return () => {
+      cancelled = true;
+      incoming.removeEventListener("loadeddata", activate);
+      incoming.removeEventListener("canplay", activate);
+      incoming.removeEventListener("error", onError);
+    };
   }, [currentReel?.id, currentReel?.video_url, isPlaying, isOpen, showComments]);
+
+  // Keep the current clip's sound/pause state in sync without disturbing the
+  // hidden buffer while it is waiting for its first decoded frame.
+  useEffect(() => {
+    const video = videoSlotsRef.current[activeVideoSlotRef.current];
+    if (!video || !isOpen) return;
+    video.muted = isMuted;
+    if (isPlaying && !showComments) video.play().catch(() => undefined);
+    else video.pause();
+  }, [activeVideoSlot, isMuted, isPlaying, isOpen, showComments]);
+
+  // Prime exactly one neighboring reel in the inactive surface. Direction is
+  // remembered so both upward and downward swipes can be ready in advance.
+  useEffect(() => {
+    if (!isOpen || reels.length < 2 || !currentReel) return;
+    const activeSlot = activeVideoSlotRef.current;
+    if (videoSlotsRef.current[activeSlot]?.dataset.reelId !== currentReel.id) return;
+    const inactiveSlot: 0 | 1 = activeSlot === 0 ? 1 : 0;
+    const standby = videoSlotsRef.current[inactiveSlot];
+    if (!standby) return;
+    const neighborIndex = currentIndex - swipeDirectionRef.current;
+    const neighbor = reels[neighborIndex];
+    if (!neighbor || neighbor.id === currentReel.id || standby.dataset.reelId === neighbor.id) return;
+    standby.pause();
+    standby.dataset.reelId = neighbor.id;
+    standby.dataset.retryAttempted = "false";
+    standby.preload = "auto";
+    standby.src = neighbor.video_url;
+    standby.load();
+  }, [activeVideoSlot, currentIndex, currentReel?.id, isOpen, reels]);
 
   // Video progress
   useEffect(() => {
-    const video = videoRef.current;
+    const video = videoSlotsRef.current[activeVideoSlotRef.current];
     if (!video || !isOpen || !currentReel) return;
 
     const handleTimeUpdate = () => {
@@ -421,7 +394,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
 
     video.addEventListener("timeupdate", handleTimeUpdate);
     return () => video.removeEventListener("timeupdate", handleTimeUpdate);
-  }, [currentIndex, isOpen, currentReel]);
+  }, [activeVideoSlot, currentIndex, isOpen, currentReel]);
 
   // Haptic feedback helper
   const triggerHaptic = useCallback(() => {
@@ -438,6 +411,8 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     lastReelChangeRef.current = now;
     setCaptionExpanded(false);
     if (direction === -1 && currentIndex < reels.length - 1) {
+      swipeDirectionRef.current = direction;
+      videoSlotsRef.current[activeVideoSlotRef.current]?.pause();
       setCurrentIndex(prev => prev + 1);
       setIsPlaying(true);
       setVideoProgress(0);
@@ -446,6 +421,8 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
         onLoadMore();
       }
     } else if (direction === 1 && currentIndex > 0) {
+      swipeDirectionRef.current = direction;
+      videoSlotsRef.current[activeVideoSlotRef.current]?.pause();
       setCurrentIndex(prev => prev - 1);
       setIsPlaying(true);
       setVideoProgress(0);
@@ -525,6 +502,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     const velocityThreshold = 520;
     const absY = Math.abs(info.offset.y);
     const absX = Math.abs(info.offset.x);
+    if (absY > 12) ignoreVideoTapUntilRef.current = Date.now() + 650;
     const verticalIntent = absY > absX * 1.25;
     if (!verticalIntent) return;
     if (info.offset.y < -threshold || info.velocity.y < -velocityThreshold) {
@@ -646,7 +624,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
 
   // Handle double tap to like
   const handleVideoTap = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (showComments) return;
+    if (showComments || Date.now() < ignoreVideoTapUntilRef.current) return;
     
     const now = Date.now();
     const DOUBLE_TAP_DELAY = 300;
@@ -783,62 +761,28 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                 className="absolute inset-0 flex items-center justify-center"
                 onClick={handleVideoTap}
               >
-                <video
-                  ref={videoRef}
-                  className="reel-video w-full h-full object-contain max-w-lg mx-auto"
-                  loop
-                  playsInline
-                  muted={isMuted}
-                  controls={false}
-                  preload="auto"
-                  disablePictureInPicture
-                  disableRemotePlayback
-                  controlsList="nodownload nofullscreen noremoteplayback"
-                  // @ts-ignore - webkit specific
-                  webkit-playsinline="true"
-                  x-webkit-airplay="deny"
-                  style={{ WebkitAppearance: "none" } as React.CSSProperties}
-                  onLoadedData={(e) => {
-                    const video = e.currentTarget;
-                    if (isPlaying && !showComments && video.paused) video.play().catch(() => {});
-                  }}
-                  onCanPlayThrough={(e) => {
-                    const video = e.currentTarget;
-                    if (isPlaying && !showComments && video.paused) video.play().catch(() => {});
-                  }}
-                  onError={(e) => {
-                    const vid = e.currentTarget;
-                    const resumeFrom = Number.isFinite(vid.currentTime) ? vid.currentTime : 0;
-
-                    // Retry a failed source at most once for the current reel.
-                    if (vid.dataset.retryAttempted === "true") return;
-                    vid.dataset.retryAttempted = "true";
-
-                    if (playbackRetryTimeoutRef.current) {
-                      clearTimeout(playbackRetryTimeoutRef.current);
-                    }
-
-                    playbackRetryTimeoutRef.current = setTimeout(() => {
-                      const sourceUrl = currentReel.video_url;
-                      const resumePlayback = () => {
-                        if (resumeFrom > 0) {
-                          try {
-                            vid.currentTime = Math.max(0, resumeFrom - 0.1);
-                          } catch {
-                            // Ignore seek errors
-                          }
-                        }
-                        if (isPlaying && !showComments) {
-                          vid.play().catch(() => {});
-                        }
-                      };
-
-                      vid.addEventListener("canplaythrough", resumePlayback, { once: true });
-                      vid.src = sourceUrl;
-                      vid.load();
-                    }, 1000);
-                  }}
-                />
+                {[0, 1].map((slot) => (
+                  <video
+                    key={slot}
+                    ref={(element) => { videoSlotsRef.current[slot] = element; }}
+                    className={cn(
+                      "reel-video absolute inset-0 w-full h-full object-contain max-w-lg mx-auto transition-opacity duration-100",
+                      activeVideoSlot === slot ? "opacity-100" : "opacity-0 pointer-events-none",
+                    )}
+                    loop
+                    playsInline
+                    muted={isMuted}
+                    controls={false}
+                    preload="auto"
+                    disablePictureInPicture
+                    disableRemotePlayback
+                    controlsList="nodownload nofullscreen noremoteplayback"
+                    // @ts-ignore - webkit specific
+                    webkit-playsinline="true"
+                    x-webkit-airplay="deny"
+                    style={{ WebkitAppearance: "none" } as React.CSSProperties}
+                  />
+                ))}
 
                 {/* Double tap heart animation */}
                 <AnimatePresence>
