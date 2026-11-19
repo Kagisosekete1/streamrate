@@ -810,7 +810,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                 <video
                   ref={videoRef}
                   src={currentReel.video_url}
-                  className="w-full h-full object-contain max-w-lg mx-auto"
+                  className="reel-video w-full h-full object-contain max-w-lg mx-auto"
                   loop
                   playsInline
                   muted={isMuted}

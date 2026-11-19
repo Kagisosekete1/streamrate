@@ -219,3 +219,30 @@
 body.hide-bottom-nav nav.mobile-bottom-nav {
   display: none !important;
 }
+
+/* Android WebView can draw its own oversized play affordance over a video
+   after a swipe replaces the active reel. Hide native media controls outside
+   Tailwind's layer so this rule is not dropped or overridden by utility CSS. */
+video.reel-video,
+video.reel-video::-webkit-media-controls,
+video.reel-video::-webkit-media-controls-enclosure,
+video.reel-video::-webkit-media-controls-panel,
+video.reel-video::-webkit-media-controls-play-button,
+video.reel-video::-webkit-media-controls-start-playback-button,
+video.reel-video::-webkit-media-controls-overlay-play-button,
+video.reel-video::-internal-media-controls-overlay-cast-button {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+
+video.reel-video::-webkit-media-controls,
+video.reel-video::-webkit-media-controls-enclosure,
+video.reel-video::-webkit-media-controls-panel,
+video.reel-video::-webkit-media-controls-play-button,
+video.reel-video::-webkit-media-controls-start-playback-button,
+video.reel-video::-webkit-media-controls-overlay-play-button,
+video.reel-video::-internal-media-controls-overlay-cast-button {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

@@ -375,9 +375,7 @@ const CreateReel = () => {
         let hashtagId: string;
         if (existingTag) {
           await supabase
-            .from("hashtags")
-            .update({ use_count: existingTag.use_count + 1 })
-            .eq("id", existingTag.id);
+            .rpc("increment_hashtag_use_count", { _hashtag_id: existingTag.id });
           hashtagId = existingTag.id;
         } else {
           const { data: newTag } = await supabase
