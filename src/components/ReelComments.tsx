@@ -171,13 +171,20 @@ export const ReelComments = ({
 
   const handleDeleteComment = async (commentId: string, parentId: string | null) => {
     if (!user) return;
-    const { error } = await supabase
+    const { data: deleted, error } = await supabase
       .from("reel_comments")
       .delete()
       .eq("id", commentId)
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .select("id")
+      .maybeSingle();
     if (error) {
-      toast({ title: "Failed to delete comment", variant: "destructive" });
+      console.error("Reel comment deletion failed", error);
+      toast({ title: "Failed to delete comment", description: error.message, variant: "destructive" });
+      return;
+    }
+    if (!deleted) {
+      toast({ title: "Comment was not deleted", description: "The database did not return a deleted comment. Apply the social deletion migration and retry.", variant: "destructive" });
       return;
     }
     toast({ title: "Comment deleted" });

@@ -240,7 +240,8 @@ export const PostCard = ({
     const { data, error } = await supabase.rpc("delete_own_post", { _post_id: id });
 
     if (error || data !== true) {
-      toast({ title: "Failed to delete post", variant: "destructive" });
+      console.error("Post deletion failed", error || "The delete RPC did not confirm deletion");
+      toast({ title: "Failed to delete post", description: error?.message || "The database did not confirm the delete. Apply the latest social deletion migration and retry.", variant: "destructive" });
       setIsDeleting(false);
       return;
     }

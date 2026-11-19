@@ -63,7 +63,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   const [isFollowing, setIsFollowing] = useState<Record<string, boolean>>({});
   const [videoProgress, setVideoProgress] = useState(0);
   const [viewsCount, setViewsCount] = useState<Record<string, number>>({});
-  const [viewRecorded, setViewRecorded] = useState<Record<string, boolean>>({});
+  const recordedViewIds = useRef<Set<string>>(new Set());
   const [showDuetStitch, setShowDuetStitch] = useState(false);
   const [showDoubleTapHeart, setShowDoubleTapHeart] = useState(false);
   const [doubleTapPosition, setDoubleTapPosition] = useState({ x: 0, y: 0 });
@@ -73,6 +73,10 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   const [connectionQuality, setConnectionQuality] = useState<"excellent" | "good" | "fair" | "poor" | "offline">("good");
   const lastTapTime = useRef<number>(0);
   const viewStartTime = useRef<number>(0);
+  const recordViewRef = useRef(recordView);
+  recordViewRef.current = recordView;
+  const userRef = useRef(user);
+  userRef.current = user;
   const videoSlotsRef = useRef<[HTMLVideoElement | null, HTMLVideoElement | null]>([null, null]);
   const [activeVideoSlot, setActiveVideoSlot] = useState<0 | 1>(0);
   const [isVideoTransitioning, setIsVideoTransitioning] = useState(false);
@@ -152,6 +156,9 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
       [reelId]: reelData?.view_count || 0
     }));
   }, [user]);
+
+  const fetchReelDataRef = useRef(fetchReelData);
+  fetchReelDataRef.current = fetchReelData;
 
   const prevQualityRef = useRef(connectionQuality);
 
@@ -245,7 +252,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     if (isOpen && currentReel) {
       fetchReelData(currentReel.id);
       checkFollowing(currentReel.user_id);
-      viewStartTime.current = Date.now();
       
       // Update user interest for viewing this creator
       updateUserInterest("creator", currentReel.user_id, "view");
@@ -254,29 +260,36 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
 
   // Record view when switching reels or closing
   useEffect(() => {
+    if (!isOpen) return;
     const reelId = currentReel?.id;
     const duration = currentReel?.duration;
-    
+    viewStartTime.current = 0;
+    if (reelId) recordedViewIds.current.delete(reelId);
+
     return () => {
-      if (reelId && viewStartTime.current > 0 && !viewRecorded[reelId]) {
+      if (reelId && viewStartTime.current > 0 && !recordedViewIds.current.has(reelId)) {
         const watchDuration = Math.floor((Date.now() - viewStartTime.current) / 1000);
+        if (watchDuration < 1) return;
         const completed = duration ? watchDuration >= duration * 0.8 : false; // 80% watched
-        recordView(reelId, watchDuration, completed);
-        setViewRecorded(prev => ({ ...prev, [reelId]: true }));
+        recordedViewIds.current.add(reelId);
+        void recordViewRef.current(reelId, watchDuration, completed).then((recorded) => {
+          if (recorded) void fetchReelDataRef.current(reelId);
+        });
 
         // Award XP for watching reel
-        if (user && completed) {
-          supabase.from("user_xp").select("total_xp, level").eq("user_id", user.id).single().then(({ data: xpData }) => {
+        const viewer = userRef.current;
+        if (viewer && completed) {
+          supabase.from("user_xp").select("total_xp, level").eq("user_id", viewer.id).single().then(({ data: xpData }) => {
             if (xpData) {
               const newXp = xpData.total_xp + 10;
               const newLevel = Math.max(1, Math.floor(Math.sqrt(newXp / 100)) + 1);
-              supabase.from("user_xp").update({ total_xp: newXp, level: newLevel }).eq("user_id", user.id);
+              supabase.from("user_xp").update({ total_xp: newXp, level: newLevel }).eq("user_id", viewer.id);
             }
           });
         }
       }
     };
-  }, [currentReel?.id, currentReel?.duration, recordView, viewRecorded]);
+  }, [currentReel?.id, currentReel?.duration, isOpen]);
 
   useEffect(() => {
     setCurrentIndex(initialIndex);
@@ -308,6 +321,9 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     let cancelled = false;
     const onPlaying = () => {
       if (cancelled || sequence !== videoChangeSequenceRef.current) return;
+      if (activeVideoSlotRef.current === targetSlot && viewStartTime.current === 0) {
+        viewStartTime.current = Date.now();
+      }
       if (activeVideoSlotRef.current === targetSlot && !showComments) {
         if (transitionRevealTimeoutRef.current) clearTimeout(transitionRevealTimeoutRef.current);
         const remainingCoverMs = Math.max(0, 350 - (Date.now() - transitionStartedAtRef.current));

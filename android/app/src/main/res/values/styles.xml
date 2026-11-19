@@ -23,9 +23,9 @@
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">#021124</item>
-        <!-- Use the adaptive Zyiro icon so Android keeps the logo square
-             and applies the system safe-area mask without stretching it. -->
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+        <!-- Use a padded, transparent mark so the system safe-area mask does
+             not clip the Z artwork; the navy theme remains visible behind it. -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/zyiro_splash_logo</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>

@@ -4,18 +4,34 @@
 BEGIN;
 
 -- Bring Auth users with missing profile rows back into the in-app directory.
--- Keep existing profile rows untouched; use a unique generated QR handle.
-INSERT INTO public.profiles (id, email, full_name, avatar_url, qr_handle)
-SELECT
-  u.id::text,
-  u.email,
-  COALESCE(u.raw_user_meta_data ->> 'full_name', u.raw_user_meta_data ->> 'name'),
-  COALESCE(u.raw_user_meta_data ->> 'avatar_url', u.raw_user_meta_data ->> 'picture'),
-  'user' || replace(u.id::text, '-', '')
-FROM auth.users u
-WHERE NOT EXISTS (
-  SELECT 1 FROM public.profiles p WHERE p.id = u.id::text
-);
+-- Preserve existing rows and support either UUID or text profile IDs.
+DO $$
+DECLARE
+  profile_id_type text;
+BEGIN
+  SELECT data_type INTO profile_id_type
+  FROM information_schema.columns
+  WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'id';
+
+  IF profile_id_type = 'uuid' THEN
+    INSERT INTO public.profiles (id, email, full_name, avatar_url, qr_handle)
+    SELECT u.id, u.email,
+      COALESCE(u.raw_user_meta_data ->> 'full_name', u.raw_user_meta_data ->> 'name'),
+      COALESCE(u.raw_user_meta_data ->> 'avatar_url', u.raw_user_meta_data ->> 'picture'),
+      'user' || replace(u.id::text, '-', '')
+    FROM auth.users u
+    WHERE NOT EXISTS (SELECT 1 FROM public.profiles p WHERE p.id::text = u.id::text);
+  ELSE
+    INSERT INTO public.profiles (id, email, full_name, avatar_url, qr_handle)
+    SELECT u.id::text, u.email,
+      COALESCE(u.raw_user_meta_data ->> 'full_name', u.raw_user_meta_data ->> 'name'),
+      COALESCE(u.raw_user_meta_data ->> 'avatar_url', u.raw_user_meta_data ->> 'picture'),
+      'user' || replace(u.id::text, '-', '')
+    FROM auth.users u
+    WHERE NOT EXISTS (SELECT 1 FROM public.profiles p WHERE p.id::text = u.id::text);
+  END IF;
+END;
+$$;
 
 DO $$
 BEGIN
@@ -24,8 +40,8 @@ BEGIN
     DROP POLICY IF EXISTS "StreamRate users update own profile" ON public.profiles;
     CREATE POLICY "StreamRate users update own profile"
       ON public.profiles FOR UPDATE TO authenticated
-      USING (id = auth.uid()::text)
-      WITH CHECK (id = auth.uid()::text);
+      USING (id::text = auth.uid()::text)
+      WITH CHECK (id::text = auth.uid()::text);
   END IF;
 
   IF to_regclass('public.posts') IS NOT NULL THEN
@@ -35,14 +51,14 @@ BEGIN
     DROP POLICY IF EXISTS "StreamRate users delete own posts" ON public.posts;
     CREATE POLICY "StreamRate users create own posts"
       ON public.posts FOR INSERT TO authenticated
-      WITH CHECK (user_id = auth.uid()::text);
+      WITH CHECK (user_id::text = auth.uid()::text);
     CREATE POLICY "StreamRate users update own posts"
       ON public.posts FOR UPDATE TO authenticated
-      USING (user_id = auth.uid()::text)
-      WITH CHECK (user_id = auth.uid()::text);
+      USING (user_id::text = auth.uid()::text)
+      WITH CHECK (user_id::text = auth.uid()::text);
     CREATE POLICY "StreamRate users delete own posts"
       ON public.posts FOR DELETE TO authenticated
-      USING (user_id = auth.uid()::text);
+      USING (user_id::text = auth.uid()::text);
   END IF;
 
   IF to_regclass('public.post_likes') IS NOT NULL THEN
@@ -51,10 +67,10 @@ BEGIN
     DROP POLICY IF EXISTS "StreamRate users remove own post likes" ON public.post_likes;
     CREATE POLICY "StreamRate users create own post likes"
       ON public.post_likes FOR INSERT TO authenticated
-      WITH CHECK (user_id = auth.uid()::text);
+      WITH CHECK (user_id::text = auth.uid()::text);
     CREATE POLICY "StreamRate users remove own post likes"
       ON public.post_likes FOR DELETE TO authenticated
-      USING (user_id = auth.uid()::text);
+      USING (user_id::text = auth.uid()::text);
   END IF;
 
   IF to_regclass('public.comments') IS NOT NULL THEN
@@ -64,14 +80,14 @@ BEGIN
     DROP POLICY IF EXISTS "StreamRate users delete own comments" ON public.comments;
     CREATE POLICY "StreamRate users create own comments"
       ON public.comments FOR INSERT TO authenticated
-      WITH CHECK (user_id = auth.uid()::text);
+      WITH CHECK (user_id::text = auth.uid()::text);
     CREATE POLICY "StreamRate users update own comments"
       ON public.comments FOR UPDATE TO authenticated
-      USING (user_id = auth.uid()::text)
-      WITH CHECK (user_id = auth.uid()::text);
+      USING (user_id::text = auth.uid()::text)
+      WITH CHECK (user_id::text = auth.uid()::text);
     CREATE POLICY "StreamRate users delete own comments"
       ON public.comments FOR DELETE TO authenticated
-      USING (user_id = auth.uid()::text);
+      USING (user_id::text = auth.uid()::text);
   END IF;
 
   IF to_regclass('public.comment_likes') IS NOT NULL THEN
@@ -80,10 +96,10 @@ BEGIN
     DROP POLICY IF EXISTS "StreamRate users remove own comment likes" ON public.comment_likes;
     CREATE POLICY "StreamRate users create own comment likes"
       ON public.comment_likes FOR INSERT TO authenticated
-      WITH CHECK (user_id = auth.uid()::text);
+      WITH CHECK (user_id::text = auth.uid()::text);
     CREATE POLICY "StreamRate users remove own comment likes"
       ON public.comment_likes FOR DELETE TO authenticated
-      USING (user_id = auth.uid()::text);
+      USING (user_id::text = auth.uid()::text);
   END IF;
 
   IF to_regclass('public.follows') IS NOT NULL THEN
@@ -92,10 +108,10 @@ BEGIN
     DROP POLICY IF EXISTS "StreamRate users remove follows" ON public.follows;
     CREATE POLICY "StreamRate users create follows"
       ON public.follows FOR INSERT TO authenticated
-      WITH CHECK (follower_id = auth.uid()::text AND following_id <> auth.uid()::text);
+      WITH CHECK (follower_id::text = auth.uid()::text AND following_id::text <> auth.uid()::text);
     CREATE POLICY "StreamRate users remove follows"
       ON public.follows FOR DELETE TO authenticated
-      USING (follower_id = auth.uid()::text);
+      USING (follower_id::text = auth.uid()::text);
   END IF;
 
   IF to_regclass('public.reels') IS NOT NULL THEN
@@ -105,14 +121,14 @@ BEGIN
     DROP POLICY IF EXISTS "StreamRate users delete own reels" ON public.reels;
     CREATE POLICY "StreamRate users create own reels"
       ON public.reels FOR INSERT TO authenticated
-      WITH CHECK (user_id = auth.uid()::text);
+      WITH CHECK (user_id::text = auth.uid()::text);
     CREATE POLICY "StreamRate users update own reels"
       ON public.reels FOR UPDATE TO authenticated
-      USING (user_id = auth.uid()::text)
-      WITH CHECK (user_id = auth.uid()::text);
+      USING (user_id::text = auth.uid()::text)
+      WITH CHECK (user_id::text = auth.uid()::text);
     CREATE POLICY "StreamRate users delete own reels"
       ON public.reels FOR DELETE TO authenticated
-      USING (user_id = auth.uid()::text);
+      USING (user_id::text = auth.uid()::text);
   END IF;
 
   IF to_regclass('public.reel_likes') IS NOT NULL THEN
@@ -121,10 +137,10 @@ BEGIN
     DROP POLICY IF EXISTS "StreamRate users remove own reel likes" ON public.reel_likes;
     CREATE POLICY "StreamRate users create own reel likes"
       ON public.reel_likes FOR INSERT TO authenticated
-      WITH CHECK (user_id = auth.uid()::text);
+      WITH CHECK (user_id::text = auth.uid()::text);
     CREATE POLICY "StreamRate users remove own reel likes"
       ON public.reel_likes FOR DELETE TO authenticated
-      USING (user_id = auth.uid()::text);
+      USING (user_id::text = auth.uid()::text);
   END IF;
 
   IF to_regclass('public.reel_comments') IS NOT NULL THEN
@@ -134,14 +150,14 @@ BEGIN
     DROP POLICY IF EXISTS "StreamRate users delete own reel comments" ON public.reel_comments;
     CREATE POLICY "StreamRate users create own reel comments"
       ON public.reel_comments FOR INSERT TO authenticated
-      WITH CHECK (user_id = auth.uid()::text);
+      WITH CHECK (user_id::text = auth.uid()::text);
     CREATE POLICY "StreamRate users update own reel comments"
       ON public.reel_comments FOR UPDATE TO authenticated
-      USING (user_id = auth.uid()::text)
-      WITH CHECK (user_id = auth.uid()::text);
+      USING (user_id::text = auth.uid()::text)
+      WITH CHECK (user_id::text = auth.uid()::text);
     CREATE POLICY "StreamRate users delete own reel comments"
       ON public.reel_comments FOR DELETE TO authenticated
-      USING (user_id = auth.uid()::text);
+      USING (user_id::text = auth.uid()::text);
   END IF;
 
   IF to_regclass('public.post_shares') IS NOT NULL THEN
@@ -150,11 +166,11 @@ BEGIN
     DROP POLICY IF EXISTS "StreamRate users share posts" ON public.post_shares;
     CREATE POLICY "StreamRate users share posts"
       ON public.post_shares FOR INSERT TO authenticated
-      WITH CHECK (user_id = auth.uid()::text);
+      WITH CHECK (user_id::text = auth.uid()::text);
     DROP POLICY IF EXISTS "StreamRate users remove own post shares" ON public.post_shares;
     CREATE POLICY "StreamRate users remove own post shares"
       ON public.post_shares FOR DELETE TO authenticated
-      USING (user_id = auth.uid()::text);
+      USING (user_id::text = auth.uid()::text);
   END IF;
 
   IF to_regclass('public.reel_shares') IS NOT NULL THEN
@@ -163,10 +179,10 @@ BEGIN
     DROP POLICY IF EXISTS "StreamRate users remove own reel shares" ON public.reel_shares;
     CREATE POLICY "StreamRate users share reels"
       ON public.reel_shares FOR INSERT TO authenticated
-      WITH CHECK (user_id = auth.uid()::text);
+      WITH CHECK (user_id::text = auth.uid()::text);
     CREATE POLICY "StreamRate users remove own reel shares"
       ON public.reel_shares FOR DELETE TO authenticated
-      USING (user_id = auth.uid()::text);
+      USING (user_id::text = auth.uid()::text);
   END IF;
 
   IF to_regclass('public.reel_hashtags') IS NOT NULL THEN
@@ -176,13 +192,13 @@ BEGIN
       ON public.reel_hashtags FOR ALL TO authenticated
       USING (EXISTS (
         SELECT 1 FROM public.reels r
-        WHERE r.id = reel_hashtags.reel_id
-          AND r.user_id = auth.uid()::text
+        WHERE r.id::text = reel_hashtags.reel_id::text
+          AND r.user_id::text = auth.uid()::text
       ))
       WITH CHECK (EXISTS (
         SELECT 1 FROM public.reels r
-        WHERE r.id = reel_hashtags.reel_id
-          AND r.user_id = auth.uid()::text
+        WHERE r.id::text = reel_hashtags.reel_id::text
+          AND r.user_id::text = auth.uid()::text
       ));
   END IF;
 END
@@ -203,7 +219,7 @@ BEGIN
 
   UPDATE public.hashtags
   SET use_count = use_count + 1
-  WHERE id = _hashtag_id;
+  WHERE id::text = _hashtag_id;
 END;
 $$;
 

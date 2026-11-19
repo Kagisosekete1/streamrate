@@ -247,12 +247,20 @@ export const ProfileContentGrid = ({
       if (!reel) throw new Error("Reel not found or not owned by this account");
 
       await removeStorageMedia(reel.video_url);
-      const { error } = await supabase.from("reels").delete().eq("id", reelId).eq("user_id", user?.id ?? "");
+      const { data: deleted, error } = await supabase
+        .from("reels")
+        .delete()
+        .eq("id", reelId)
+        .eq("user_id", user?.id ?? "")
+        .select("id")
+        .maybeSingle();
       if (error) throw error;
+      if (!deleted) throw new Error("The database did not confirm this reel was deleted.");
       toast({ title: "Reel deleted" });
       onReelDelete(reelId);
-    } catch {
-      toast({ title: "Failed to delete reel", variant: "destructive" });
+    } catch (error) {
+      console.error("Reel deletion failed", error);
+      toast({ title: "Failed to delete reel", description: error instanceof Error ? error.message : "Apply the latest social deletion migration and retry.", variant: "destructive" });
     } finally {
       setDeletingId(null);
     }

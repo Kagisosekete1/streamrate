@@ -210,17 +210,22 @@ export const useForYouAlgorithm = () => {
 
   // Record a view and update hashtag interests
   const recordView = useCallback(async (reelId: string, watchDuration: number, completed: boolean) => {
-    await supabase.from("reel_views").insert({
+    const { error } = await supabase.from("reel_views").insert({
       reel_id: reelId,
       user_id: user?.id || null,
       watch_duration: watchDuration,
       completed
     });
+    if (error) {
+      console.warn("Unable to record reel view", error);
+      return false;
+    }
 
     // Update hashtag interests for views (lower weight for views)
     if (user && watchDuration > 3) { // Only track if watched more than 3 seconds
       await updateHashtagInterests(reelId, "view");
     }
+    return true;
   }, [user, updateHashtagInterests]);
 
   return {

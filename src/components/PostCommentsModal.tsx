@@ -229,9 +229,20 @@ export const PostCommentsModal = ({
 
   const handleDeleteComment = async (commentId: string, parentId: string | null) => {
     if (!user) return;
-    const { error } = await supabase.from("comments").delete().eq("id", commentId).eq("user_id", user.id);
+    const { data: deleted, error } = await supabase
+      .from("comments")
+      .delete()
+      .eq("id", commentId)
+      .eq("user_id", user.id)
+      .select("id")
+      .maybeSingle();
     if (error) {
-      toast({ title: "Failed to delete", variant: "destructive" });
+      console.error("Comment deletion failed", error);
+      toast({ title: "Failed to delete", description: error.message, variant: "destructive" });
+      return;
+    }
+    if (!deleted) {
+      toast({ title: "Comment was not deleted", description: "The database did not return a deleted comment. Apply the social deletion migration and retry.", variant: "destructive" });
       return;
     }
     toast({ title: "Deleted" });

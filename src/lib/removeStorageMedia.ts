@@ -20,7 +20,7 @@ export async function removeStorageMedia(mediaUrl: string | null | undefined): P
   const markerIndex = parsed.pathname.indexOf(marker);
   if (markerIndex < 0) return;
 
-  const [, visibility, bucketPart, ...pathParts] = parsed.pathname
+  const [visibility, bucketPart, ...pathParts] = parsed.pathname
     .slice(markerIndex + marker.length)
     .split("/");
   if (!visibility || !bucketPart || pathParts.length === 0) return;
