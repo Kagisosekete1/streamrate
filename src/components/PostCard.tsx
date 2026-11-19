@@ -21,6 +21,7 @@ import { HashtagText } from "@/components/HashtagText";
 import { LinkPreview } from "@/components/LinkPreview";
 import { extractFirstUrl } from "@/lib/urlPreview";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
+import { removeStorageMedia } from "@/lib/removeStorageMedia";
 
 import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
 
@@ -136,9 +137,6 @@ export const PostCard = ({
   const [showAvatarView, setShowAvatarView] = useState(false);
   const [content, setContent] = useState(initialContent);
   const [imageUrl, setImageUrl] = useState(initialImageUrl);
-  // `updated_at` is also touched by engagement counters, so it cannot prove
-  // that the author edited the post. Only mark it after a real content edit.
-  const [wasEdited, setWasEdited] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [showReportBlock, setShowReportBlock] = useState(false);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
@@ -230,6 +228,15 @@ export const PostCard = ({
     if (!user || !isOwner) return;
 
     setIsDeleting(true);
+    try {
+      await removeStorageMedia(initialImageUrl);
+    } catch (error) {
+      console.error("Unable to permanently remove post media", error);
+      toast({ title: "Couldn't remove the post image from storage", description: "The post was left in place. Check your connection and try again.", variant: "destructive" });
+      setIsDeleting(false);
+      return;
+    }
+
     const { data, error } = await supabase.rpc("delete_own_post", { _post_id: id });
 
     if (error || data !== true) {
@@ -371,7 +378,6 @@ export const PostCard = ({
             </Link>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span>{formatDistanceToNow(createdAt, { addSuffix: false })}</span>
-              {wasEdited && <span>• Edited</span>}
             </div>
           </div>
         </div>
@@ -562,7 +568,6 @@ export const PostCard = ({
         onSave={(newContent, newImageUrl) => {
           setContent(newContent);
           setImageUrl(newImageUrl);
-          setWasEdited(true);
           onUpdate?.();
         }}
       />

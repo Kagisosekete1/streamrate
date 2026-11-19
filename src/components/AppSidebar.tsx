@@ -161,7 +161,7 @@ export const AppSidebar = () => {
         <Link to="/home" className="flex items-center gap-3">
           <img
             src="/logo.png"
-            alt="StreamRate"
+            alt="Zyro"
             className="h-8 w-8 object-contain"
           />
           <AnimatePresence>
@@ -172,7 +172,7 @@ export const AppSidebar = () => {
                 exit={{ opacity: 0, width: 0 }}
                 className="font-bold text-lg text-foreground overflow-hidden whitespace-nowrap"
               >
-                StreamRate
+                Zyro
               </motion.span>
             )}
           </AnimatePresence>

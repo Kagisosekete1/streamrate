@@ -33,7 +33,7 @@ export const registerAppServiceWorker = () => {
       window.dispatchEvent(new CustomEvent("streamrate:pwa-update-ready"));
     },
     onOfflineReady() {
-      console.info("StreamRate is ready for offline use.");
+      console.info("Zyro is ready for offline use.");
     },
   });
 };

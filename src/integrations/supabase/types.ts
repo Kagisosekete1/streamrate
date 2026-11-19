@@ -2607,6 +2607,10 @@ export type Database = {
     }
     Functions: {
       calculate_level: { Args: { xp: number }; Returns: number }
+      create_watch_party: {
+        Args: { _platform: string; _stream_url: string; _title: string }
+        Returns: string
+      }
       delete_own_post: { Args: { _post_id: string }; Returns: boolean }
       get_my_email: { Args: never; Returns: string }
       get_post_viewers: {

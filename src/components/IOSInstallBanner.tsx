@@ -38,9 +38,9 @@ export const IOSInstallBanner = () => {
             <X className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-3 pr-4">
-            <img src="/logo.png" alt="StreamRate" className="w-10 h-10 rounded-xl" />
+            <img src="/logo.png" alt="Zyro" className="w-10 h-10 rounded-xl" />
             <div className="flex-1 min-w-0">
-              <p className="text-foreground text-sm font-semibold">Install StreamRate</p>
+              <p className="text-foreground text-sm font-semibold">Install Zyro</p>
               <p className="text-muted-foreground text-xs">
                 Tap <Share className="w-3 h-3 inline" /> then "Add to Home Screen"
               </p>

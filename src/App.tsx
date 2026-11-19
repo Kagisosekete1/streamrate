@@ -60,8 +60,8 @@ const TournamentDetail = lazy(() => import("./pages/TournamentDetail"));
 
 function AppStartupScreen() {
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black">
-      <img src="/pwa-512x512.png" alt="StreamRate" className="h-20 w-20 animate-pulse rounded-2xl object-cover" />
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#021124]">
+      <img src="/pwa-512x512.png" alt="Zyro" className="h-28 w-28 rounded-2xl object-contain" />
     </div>
   );
 }

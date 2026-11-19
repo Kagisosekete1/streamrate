@@ -75,15 +75,19 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   const viewStartTime = useRef<number>(0);
   const videoSlotsRef = useRef<[HTMLVideoElement | null, HTMLVideoElement | null]>([null, null]);
   const [activeVideoSlot, setActiveVideoSlot] = useState<0 | 1>(0);
+  const [isVideoTransitioning, setIsVideoTransitioning] = useState(false);
   const activeVideoSlotRef = useRef<0 | 1>(0);
   const swipeDirectionRef = useRef<-1 | 1>(-1);
   const videoChangeSequenceRef = useRef(0);
   const ignoreVideoTapUntilRef = useRef(0);
+  const transitionStartedAtRef = useRef(0);
+  const transitionRevealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastReelChangeRef = useRef(0);
 
   useEffect(() => {
     return () => {
+      if (transitionRevealTimeoutRef.current) clearTimeout(transitionRevealTimeoutRef.current);
       videoSlotsRef.current.forEach((video) => {
         video?.pause();
         video?.removeAttribute("src");
@@ -302,6 +306,18 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     if (!incoming) return;
 
     let cancelled = false;
+    const onPlaying = () => {
+      if (cancelled || sequence !== videoChangeSequenceRef.current) return;
+      if (activeVideoSlotRef.current === targetSlot && !showComments) {
+        if (transitionRevealTimeoutRef.current) clearTimeout(transitionRevealTimeoutRef.current);
+        const remainingCoverMs = Math.max(0, 350 - (Date.now() - transitionStartedAtRef.current));
+        transitionRevealTimeoutRef.current = setTimeout(() => {
+          if (!cancelled && sequence === videoChangeSequenceRef.current) {
+            setIsVideoTransitioning(false);
+          }
+        }, remainingCoverMs);
+      }
+    };
     const activate = () => {
       if (cancelled || sequence !== videoChangeSequenceRef.current) return;
       if (incoming.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || incoming.videoWidth === 0) return;
@@ -311,7 +327,11 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
       activeVideoSlotRef.current = targetSlot;
       setActiveVideoSlot(targetSlot);
       incoming.muted = isMuted;
-      if (isPlaying && !showComments) incoming.play().catch(() => undefined);
+      if (isPlaying && !showComments) {
+        incoming.play().catch(() => undefined);
+      } else {
+        setIsVideoTransitioning(false);
+      }
     };
 
     const onError = () => {
@@ -330,6 +350,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
 
     incoming.addEventListener("loadeddata", activate);
     incoming.addEventListener("canplay", activate);
+    incoming.addEventListener("playing", onPlaying);
     incoming.addEventListener("error", onError);
 
     if (incoming.dataset.reelId !== currentReel.id || incoming.currentSrc !== currentReel.video_url) {
@@ -347,6 +368,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
       cancelled = true;
       incoming.removeEventListener("loadeddata", activate);
       incoming.removeEventListener("canplay", activate);
+      incoming.removeEventListener("playing", onPlaying);
       incoming.removeEventListener("error", onError);
     };
   }, [currentReel?.id, currentReel?.video_url, isPlaying, isOpen, showComments]);
@@ -412,6 +434,9 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     setCaptionExpanded(false);
     if (direction === -1 && currentIndex < reels.length - 1) {
       swipeDirectionRef.current = direction;
+      transitionStartedAtRef.current = Date.now();
+      if (transitionRevealTimeoutRef.current) clearTimeout(transitionRevealTimeoutRef.current);
+      setIsVideoTransitioning(true);
       videoSlotsRef.current[activeVideoSlotRef.current]?.pause();
       setCurrentIndex(prev => prev + 1);
       setIsPlaying(true);
@@ -422,6 +447,9 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
       }
     } else if (direction === 1 && currentIndex > 0) {
       swipeDirectionRef.current = direction;
+      transitionStartedAtRef.current = Date.now();
+      if (transitionRevealTimeoutRef.current) clearTimeout(transitionRevealTimeoutRef.current);
+      setIsVideoTransitioning(true);
       videoSlotsRef.current[activeVideoSlotRef.current]?.pause();
       setCurrentIndex(prev => prev - 1);
       setIsPlaying(true);
@@ -594,7 +622,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     try {
       if (navigator.share) {
         await navigator.share({
-          title: currentReel.caption || "Check out this reel on StreamRate!",
+          title: currentReel.caption || "Check out this reel on Zyro!",
           url: shareUrl
         });
         destination = "native";
@@ -783,6 +811,12 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                     style={{ WebkitAppearance: "none" } as React.CSSProperties}
                   />
                 ))}
+                {isVideoTransitioning && (
+                  <div
+                    className="absolute inset-0 z-10 bg-black"
+                    aria-hidden="true"
+                  />
+                )}
 
                 {/* Double tap heart animation */}
                 <AnimatePresence>

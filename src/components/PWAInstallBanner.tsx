@@ -65,9 +65,9 @@ export const PWAInstallBanner = () => {
             <X className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-3 pr-6">
-            <img src="/pwa-192x192.png" alt="StreamRate" className="w-12 h-12 rounded-xl shadow-md" />
+            <img src="/pwa-192x192.png" alt="Zyro" className="w-12 h-12 rounded-xl shadow-md" />
             <div className="flex-1 min-w-0">
-              <p className="text-foreground text-sm font-bold">Install StreamRate</p>
+              <p className="text-foreground text-sm font-bold">Install Zyro</p>
               <p className="text-muted-foreground text-xs mt-0.5">
                 Get the full app experience — faster, offline-ready
               </p>

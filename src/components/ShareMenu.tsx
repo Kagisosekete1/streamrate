@@ -30,7 +30,7 @@ export const ShareMenu = ({ postId, title = "Check out this post", imageUrl, aut
   const shareUrl = getCanonicalPostUrl(appOrigin, postId);
   const handle = authorUsername ? `@${authorUsername}` : authorName || "";
   const attribution = handle ? ` by ${handle}` : "";
-  const shareText = `${title}${attribution} – StreamRate`;
+  const shareText = `${title}${attribution} – Zyro`;
 
   const recordShare = async (destination: string) => {
     if (!user) return;
@@ -94,7 +94,7 @@ export const ShareMenu = ({ postId, title = "Check out this post", imageUrl, aut
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "StreamRate",
+          title: "Zyro",
           text: shareText,
           url: getTarget("native"),
         });

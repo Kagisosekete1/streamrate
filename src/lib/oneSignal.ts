@@ -19,7 +19,7 @@ export const getPushPermissionState = async (): Promise<"default" | "granted" | 
     if (await OneSignal.Notifications.hasPermission()) return "granted";
     return (await OneSignal.Notifications.canRequestPermission()) ? "default" : "denied";
   }
-  // StreamRate sends push notifications to Android only. Browser notifications
+  // Zyro sends push notifications to Android only. Browser notifications
   // are intentionally disabled to avoid duplicate or misleading prompts.
   return "unsupported";
 };

@@ -97,9 +97,10 @@ const Auth = () => {
     event.preventDefault();
     setIsSubmitting(true);
     const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
-      redirectTo: Capacitor.isNativePlatform()
-        ? "com.semogrouptech.streamrateapp://auth/callback"
-        : `${window.location.origin}/auth`,
+      // Open the recovery email in the public app page. Supabase redirects
+      // back to this URL with the recovery code, which the web client can
+      // exchange reliably even when the request originated in the native app.
+      redirectTo: "https://streamrateapp.com/auth",
     });
     setIsSubmitting(false);
     if (error) {
@@ -255,14 +256,14 @@ const Auth = () => {
       <div className="min-h-screen bg-background flex flex-col justify-center px-6 py-12">
         <div className="max-w-sm mx-auto w-full">
           <div className="flex items-center justify-center gap-3 mb-8">
-            <img src="/logo.png" alt="StreamRate" className="h-12 w-auto" />
-            <span className="text-2xl font-bold gradient-text">StreamRate</span>
+            <img src="/logo.png" alt="Zyro" className="h-12 w-auto" />
+            <span className="text-2xl font-bold gradient-text">Zyro</span>
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-2 text-center">
             {passwordRecovery ? "Choose a new password" : "Reset your password"}
           </h1>
           <p className="text-muted-foreground mb-8 text-center">
-            {passwordRecovery ? "Set a new password for your StreamRate account." : "Enter your account email and we’ll send a secure reset link."}
+            {passwordRecovery ? "Set a new password for your Zyro account." : "Enter your account email and we’ll send a secure reset link."}
           </p>
           <form onSubmit={passwordRecovery ? handleNewPassword : handlePasswordResetRequest} className="space-y-4">
             {!passwordRecovery && <div className="relative">
@@ -296,8 +297,8 @@ const Auth = () => {
           animate={{ y: 0, opacity: 1 }}
           className="flex items-center justify-center gap-3 mb-8"
         >
-          <img src="/logo.png" alt="StreamRate" className="h-12 w-auto" />
-          <span className="text-2xl font-bold gradient-text">StreamRate</span>
+          <img src="/logo.png" alt="Zyro" className="h-12 w-auto" />
+          <span className="text-2xl font-bold gradient-text">Zyro</span>
         </motion.div>
 
         <AnimatePresence mode="wait">
@@ -496,7 +497,7 @@ const Auth = () => {
                 Choose your role
               </h1>
               <p className="text-muted-foreground mb-4 text-center">
-                What brings you to StreamRate?
+                What brings you to Zyro?
               </p>
               <div className="mb-6 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
                 <p className="text-sm text-amber-500 text-center font-medium">

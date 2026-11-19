@@ -357,14 +357,14 @@ const Home = () => {
             <button
               onClick={() => navigate("/home")}
               className="flex items-center gap-2 min-w-0"
-              aria-label="Go to StreamRate home"
+              aria-label="Go to Zyro home"
             >
               <img
                 src="/logo.png"
-                alt="StreamRate"
+                alt="Zyro"
                 className="h-8 w-auto"
               />
-              <span className="text-xl font-bold gradient-text leading-none">StreamRate</span>
+              <span className="text-xl font-bold gradient-text leading-none">Zyro</span>
             </button>
             <NotificationBell />
           </div>

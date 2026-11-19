@@ -263,7 +263,7 @@ export const ReportProblemModal = ({ onClose }: ReportProblemModalProps) => {
               </div>
               <h3 className="text-xl font-bold text-foreground mb-2">Report Submitted</h3>
               <p className="text-muted-foreground mb-6">
-                Thank you for helping us improve StreamRate. Our team will review your report 
+                Thank you for helping us improve Zyro. Our team will review your report
                 and take appropriate action. You may receive a follow-up email if we need 
                 more information.
               </p>

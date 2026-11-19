@@ -27,7 +27,7 @@ const PRIVACY_SECTIONS = [
     content: [
       {
         subtitle: "Information You Provide",
-        text: "When you create an account, we collect your email address, username, password (securely encrypted), profile information (bio, profile picture, header image), and country/location. When you use StreamRate, we collect the content you create including posts, reels, comments, ratings, and reviews."
+        text: "When you create an account, we collect your email address, username, password (securely encrypted), profile information (bio, profile picture, header image), and country/location. When you use Zyro, we collect the content you create including posts, reels, comments, ratings, and reviews."
       },
       {
         subtitle: "Automatically Collected Information",
@@ -35,7 +35,7 @@ const PRIVACY_SECTIONS = [
       },
       {
         subtitle: "Information from Third Parties",
-        text: "If you choose to link your StreamRate account with third-party services (such as social media platforms for login), we may receive information from those services as permitted by their privacy settings and your authorization."
+        text: "If you choose to link your Zyro account with third-party services (such as social media platforms for login), we may receive information from those services as permitted by their privacy settings and your authorization."
       }
     ]
   },
@@ -45,7 +45,7 @@ const PRIVACY_SECTIONS = [
     content: [
       {
         subtitle: "Providing Our Services",
-        text: "We use your information to operate StreamRate, including: creating and managing your account, displaying your profile to other users, enabling you to create and share content, facilitating ratings, reviews, and interactions, personalizing your experience and content recommendations."
+        text: "We use your information to operate Zyro, including: creating and managing your account, displaying your profile to other users, enabling you to create and share content, facilitating ratings, reviews, and interactions, personalizing your experience and content recommendations."
       },
       {
         subtitle: "Improving Our Services",
@@ -63,11 +63,11 @@ const PRIVACY_SECTIONS = [
     content: [
       {
         subtitle: "Public Information",
-        text: "Your profile information, posts, reels, ratings, and reviews are visible to other StreamRate users based on your privacy settings. Public profiles are visible to all users; private profiles are visible only to approved followers."
+        text: "Your profile information, posts, reels, ratings, and reviews are visible to other Zyro users based on your privacy settings. Public profiles are visible to all users; private profiles are visible only to approved followers."
       },
       {
         subtitle: "We Do NOT Sell Your Data",
-        text: "StreamRate does not sell, rent, or trade your personal information to third parties for their marketing purposes. Your data is not a product—you are our valued user, not our commodity."
+        text: "Zyro does not sell, rent, or trade your personal information to third parties for their marketing purposes. Your data is not a product—you are our valued user, not our commodity."
       },
       {
         subtitle: "Service Providers",
@@ -111,7 +111,7 @@ const PRIVACY_SECTIONS = [
       },
       {
         subtitle: "Privacy Controls",
-        text: "StreamRate provides granular privacy controls including: profile visibility (public/private), who can comment on your content, who can see your last seen status, blocked users management, and notification preferences."
+        text: "Zyro provides granular privacy controls including: profile visibility (public/private), who can comment on your content, who can see your last seen status, blocked users management, and notification preferences."
       }
     ]
   },
@@ -129,7 +129,7 @@ const PRIVACY_SECTIONS = [
       },
       {
         subtitle: "Your Choices",
-        text: "You can control cookies through your browser settings. Note that disabling essential cookies may affect your ability to use StreamRate properly."
+        text: "You can control cookies through your browser settings. Note that disabling essential cookies may affect your ability to use Zyro properly."
       }
     ]
   },
@@ -139,7 +139,7 @@ const PRIVACY_SECTIONS = [
     content: [
       {
         subtitle: "Global Operations",
-        text: "StreamRate operates globally, and your information may be processed in countries other than your own. We ensure appropriate safeguards are in place for international data transfers in compliance with applicable laws."
+        text: "Zyro operates globally, and your information may be processed in countries other than your own. We ensure appropriate safeguards are in place for international data transfers in compliance with applicable laws."
       },
       {
         subtitle: "Data Protection",
@@ -153,7 +153,7 @@ const PRIVACY_SECTIONS = [
     content: [
       {
         subtitle: "Age Requirement",
-        text: "StreamRate is not intended for children under 13 years of age (or the minimum age in your jurisdiction). We do not knowingly collect personal information from children under 13."
+        text: "Zyro is not intended for children under 13 years of age (or the minimum age in your jurisdiction). We do not knowingly collect personal information from children under 13."
       },
       {
         subtitle: "Parental Notice",
@@ -205,9 +205,9 @@ export const PrivacyPolicyModal = ({ onClose }: PrivacyPolicyModalProps) => {
               <div>
                 <p className="font-medium text-foreground mb-2">Your Privacy Matters</p>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  At StreamRate, we are committed to protecting your privacy and ensuring you understand 
+                  At Zyro, we are committed to protecting your privacy and ensuring you understand
                   how we collect, use, and safeguard your information. This Privacy Policy explains our 
-                  practices and your rights regarding your personal data. By using StreamRate, you agree 
+                  practices and your rights regarding your personal data. By using Zyro, you agree
                   to the terms outlined in this policy.
                 </p>
               </div>
@@ -271,11 +271,11 @@ export const PrivacyPolicyModal = ({ onClose }: PrivacyPolicyModalProps) => {
           <div className="pt-4 border-t border-border">
             <p className="text-center text-xs text-muted-foreground">
               This Privacy Policy may be updated periodically. We will notify you of significant changes 
-              via email or in-app notification. Continued use of StreamRate after changes constitutes 
+              via email or in-app notification. Continued use of Zyro after changes constitutes
               acceptance of the updated policy.
             </p>
             <p className="text-center text-xs text-muted-foreground mt-2">
-              © 2025 StreamRate. All rights reserved.
+              © 2025 Zyro. All rights reserved.
             </p>
           </div>
         </div>

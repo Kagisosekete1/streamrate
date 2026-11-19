@@ -187,22 +187,22 @@ const WatchParties = () => {
       return;
     }
     setUrlError(null);
-    const { data, error } = await supabase
-      .from("watch_parties")
-      .insert({ host_id: user.id, title: title.trim(), platform, stream_url: validated.url })
-      .select()
-      .single();
-    if (error || !data) {
-      toast.error("Failed to create party");
+    const { data: partyId, error } = await supabase.rpc("create_watch_party", {
+      _title: title.trim(),
+      _platform: platform,
+      _stream_url: validated.url,
+    });
+    if (error || !partyId) {
+      console.error("Failed to create watch party", error);
+      toast.error(error?.message || "Failed to create party");
       return;
     }
-    await supabase.from("watch_party_members").insert({ party_id: data.id, user_id: user.id });
     updateMissionProgress("host_party");
     toast.success("Party created!");
     setOpen(false);
     setTitle("");
     setStreamUrl("");
-    navigate(`/watch-party/${data.id}`);
+    navigate(`/watch-party/${partyId}`);
   };
 
   if (!inRouter) {

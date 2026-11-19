@@ -27,6 +27,7 @@ import { TwitchLiveEmbed } from "@/components/TwitchLiveEmbed";
 import { buildProfileQrUrl, checkQrHandleAvailable, sanitizeQrHandle } from "@/lib/profileQr";
 import { cn } from "@/lib/utils";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
+import { removeStorageMedia } from "@/lib/removeStorageMedia";
 
 import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
 
@@ -679,6 +680,16 @@ const Profile = () => {
 
   const handleDeletePost = async (postId: string) => {
     setDeletingPostId(postId);
+    try {
+      const post = posts.find((item) => item.id === postId);
+      await removeStorageMedia(post?.image_url);
+    } catch (storageError) {
+      console.error("Unable to permanently remove post media", storageError);
+      toast({ title: "Couldn't remove the post image from storage", description: "The post was left in place. Check your connection and try again.", variant: "destructive" });
+      setDeletingPostId(null);
+      return;
+    }
+
     const { data, error } = await supabase.rpc("delete_own_post", { _post_id: postId });
 
     if (error || data !== true) {
@@ -1065,7 +1076,7 @@ const Profile = () => {
                   const url = `${window.location.origin}/auth?ref=${(profile as any).referral_code}`;
                   if (navigator.share) {
                     try {
-                      await navigator.share({ title: "Join me on StreamRate", text: "Join StreamRate with my invite!", url });
+                      await navigator.share({ title: "Join me on Zyro", text: "Join Zyro with my invite!", url });
                     } catch {}
                   } else {
                     await navigator.clipboard.writeText(url);

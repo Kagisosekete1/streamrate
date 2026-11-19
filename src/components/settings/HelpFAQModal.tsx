@@ -38,8 +38,8 @@ const FAQ_CATEGORIES = [
     icon: Smartphone,
     faqs: [
       {
-        q: "What is StreamRate?",
-        a: "StreamRate is a premier social platform that connects fans with their favorite content creators and streamers worldwide. Our platform enables authentic engagement through ratings, reviews, posts, reels, and real-time interaction. Whether you're a fan looking to discover new streamers or a creator building your community, StreamRate provides the tools you need to succeed."
+        q: "What is Zyro?",
+        a: "Zyro is a premier social platform that connects fans with their favorite content creators and streamers worldwide. Our platform enables authentic engagement through ratings, reviews, posts, reels, and real-time interaction. Whether you're a fan looking to discover new streamers or a creator building your community, Zyro provides the tools you need to succeed."
       },
       {
         q: "How do I create an account?",
@@ -50,8 +50,8 @@ const FAQ_CATEGORIES = [
         a: "Fan accounts are designed for users who want to follow, rate, and engage with streamers. Streamer accounts include additional features like analytics, leaderboard eligibility, and the ability to receive ratings and reviews. Your role determines your experience on the platform and cannot be changed after signup to maintain authenticity."
       },
       {
-        q: "Is StreamRate free to use?",
-        a: "Yes! StreamRate is completely free to download and use. All core features including posting, rating, commenting, and following are available at no cost. We may introduce optional premium features in the future, but the essential StreamRate experience will always remain free."
+        q: "Is Zyro free to use?",
+        a: "Yes! Zyro is completely free to download and use. All core features including posting, rating, commenting, and following are available at no cost. We may introduce optional premium features in the future, but the essential Zyro experience will always remain free."
       },
     ]
   },
@@ -104,7 +104,7 @@ const FAQ_CATEGORIES = [
     icon: Image,
     faqs: [
       {
-        q: "What can I post on StreamRate?",
+        q: "What can I post on Zyro?",
         a: "Share text updates, photos, and videos that showcase your personality and content. Fans can post about their favorite streamers, gaming moments, or community experiences. Streamers can share behind-the-scenes content, announcements, and engage with their audience. All content must comply with our Community Guidelines."
       },
       {
@@ -127,7 +127,7 @@ const FAQ_CATEGORIES = [
     faqs: [
       {
         q: "Who can see my profile?",
-        a: "By default, your profile is public and visible to all StreamRate users. You can change this in Settings > Profile Visibility to make your profile private, limiting visibility to approved followers only. Even with a public profile, you control who can comment and interact with your content."
+        a: "By default, your profile is public and visible to all Zyro users. You can change this in Settings > Profile Visibility to make your profile private, limiting visibility to approved followers only. Even with a public profile, you control who can comment and interact with your content."
       },
       {
         q: "How do I control my Last Seen status?",
@@ -153,7 +153,7 @@ const FAQ_CATEGORIES = [
       },
       {
         q: "Why am I not receiving notifications?",
-        a: "First, check that notifications are enabled in your StreamRate settings. Then verify that your device's notification permissions for StreamRate are turned on in your phone's settings. If issues persist, try logging out and back in, or contact us at " + CONTACT_EMAIL
+        a: "First, check that notifications are enabled in your Zyro settings. Then verify that your device's notification permissions for Zyro are turned on in your phone's settings. If issues persist, try logging out and back in, or contact us at " + CONTACT_EMAIL
       },
     ]
   },
@@ -163,7 +163,7 @@ const FAQ_CATEGORIES = [
     faqs: [
       {
         q: "The app is running slowly. What should I do?",
-        a: "Try clearing your cache in Settings > Clear Cache. Ensure you're using the latest version of StreamRate by checking for updates. If the issue persists, try restarting the app or your device. For ongoing performance issues, please contact our support team."
+        a: "Try clearing your cache in Settings > Clear Cache. Ensure you're using the latest version of Zyro by checking for updates. If the issue persists, try restarting the app or your device. For ongoing performance issues, please contact our support team."
       },
       {
         q: "I found a bug. How do I report it?",
@@ -258,7 +258,7 @@ export const HelpFAQModal = ({ onClose }: HelpFAQModalProps) => {
           {/* App Info */}
           <div className="pt-4 border-t border-border">
             <p className="text-center text-xs text-muted-foreground">
-              StreamRate v1.0.0 • © 2025 StreamRate. All rights reserved.
+              Zyro v1.0.0 • © 2025 Zyro. All rights reserved.
             </p>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { Grid3X3, Image, Film, Bookmark, Hash, Trash2, Play, Heart, MessageCircl
 import { useNavigate, Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import { removeStorageMedia } from "@/lib/removeStorageMedia";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -194,6 +195,7 @@ export const ProfileContentGrid = ({
 }: ProfileContentGridProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const isMobile = useIsMobile();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [photoViewerPost, setPhotoViewerPost] = useState<Post | null>(null);
@@ -235,7 +237,17 @@ export const ProfileContentGrid = ({
   const handleDeleteReel = async (reelId: string) => {
     setDeletingId(reelId);
     try {
-      const { error } = await supabase.from("reels").delete().eq("id", reelId);
+      const { data: reel, error: readError } = await supabase
+        .from("reels")
+        .select("video_url")
+        .eq("id", reelId)
+        .eq("user_id", user?.id ?? "")
+        .maybeSingle();
+      if (readError) throw readError;
+      if (!reel) throw new Error("Reel not found or not owned by this account");
+
+      await removeStorageMedia(reel.video_url);
+      const { error } = await supabase.from("reels").delete().eq("id", reelId).eq("user_id", user?.id ?? "");
       if (error) throw error;
       toast({ title: "Reel deleted" });
       onReelDelete(reelId);

@@ -36,7 +36,7 @@ const GUIDELINES = [
   {
     icon: Ban,
     title: "Zero Tolerance for Hate",
-    description: "Hate speech, discrimination, and harassment have no place on StreamRate. We are committed to maintaining a safe space for everyone.",
+    description: "Hate speech, discrimination, and harassment have no place on Zyro. We are committed to maintaining a safe space for everyone.",
     details: [
       "No content that promotes hatred based on race, ethnicity, religion, gender, sexual orientation, disability, or nationality",
       "Slurs, derogatory language, and harmful stereotypes are prohibited",
@@ -47,7 +47,7 @@ const GUIDELINES = [
   {
     icon: Shield,
     title: "No Harassment or Bullying",
-    description: "Everyone deserves to feel safe on StreamRate. Harassment, bullying, and intimidation are strictly prohibited.",
+    description: "Everyone deserves to feel safe on Zyro. Harassment, bullying, and intimidation are strictly prohibited.",
     details: [
       "Do not target individuals with repeated unwanted contact or mentions",
       "Avoid posting content intended to shame, embarrass, or humiliate others",
@@ -173,10 +173,10 @@ export const CommunityGuidelinesModal = ({ onClose }: CommunityGuidelinesModalPr
             <div className="flex items-start gap-3">
               <Sparkles className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-foreground mb-2">Welcome to StreamRate</p>
+                <p className="font-medium text-foreground mb-2">Welcome to Zyro</p>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Our community guidelines exist to ensure StreamRate remains a positive, safe, and 
-                  welcoming space for all users. By using StreamRate, you agree to follow these guidelines. 
+                  Our community guidelines exist to ensure Zyro remains a positive, safe, and
+                  welcoming space for all users. By using Zyro, you agree to follow these guidelines.
                   We encourage everyone to help us build a community where creators and fans can connect authentically.
                 </p>
               </div>
@@ -258,7 +258,7 @@ export const CommunityGuidelinesModal = ({ onClose }: CommunityGuidelinesModalPr
           <div className="pt-4 border-t border-border">
             <p className="text-center text-xs text-muted-foreground">
               Last updated: January 2025 • These guidelines may be updated periodically. 
-              Continued use of StreamRate constitutes acceptance of the current guidelines.
+              Continued use of Zyro constitutes acceptance of the current guidelines.
             </p>
           </div>
         </div>

@@ -60,16 +60,16 @@ export default defineConfig(({ mode }) => ({
       },
       includeAssets: ["favicon.ico", "logo.png", "pwa-192x192.png", "pwa-512x512.png"],
       manifest: {
-        name: "StreamRate",
-        short_name: "StreamRate",
-        description: "Rate, Review Your Favorite Streamers",
+        name: "Zyro",
+        short_name: "Zyro",
+        description: "Play, stream, and connect with the gaming community.",
         id: "/",
         start_url: "/",
         scope: "/",
         display: "standalone",
         display_override: ["standalone"],
-        background_color: "#ffffff",
-        theme_color: "#ffffff",
+        background_color: "#021124",
+        theme_color: "#021124",
         orientation: "portrait-primary",
         icons: [
           {
