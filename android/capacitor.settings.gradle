@@ -10,3 +10,6 @@ project(':capacitor-browser').projectDir = new File('../node_modules/.pnpm/@capa
 
 include ':capacitor-push-notifications'
 project(':capacitor-push-notifications').projectDir = new File('../node_modules/.pnpm/@capacitor+push-notifications@8.1.2_@capacitor+core@8.5.2/node_modules/@capacitor/push-notifications/android')
+
+include ':onesignal-capacitor-plugin'
+project(':onesignal-capacitor-plugin').projectDir = new File('../node_modules/.pnpm/@onesignal+capacitor-plugin@1.2.3_@capacitor+core@8.5.2/node_modules/@onesignal/capacitor-plugin/android')

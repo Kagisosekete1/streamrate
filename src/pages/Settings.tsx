@@ -43,6 +43,8 @@ import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
+import { getPushPermissionState, requestPushPermission } from "@/lib/oneSignal";
+import { Capacitor } from "@capacitor/core";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { HelpFAQModal } from "@/components/settings/HelpFAQModal";
@@ -80,8 +82,8 @@ const NotificationsModal = ({
     if (isMedianApp()) {
       // For Median.co APK, always use localStorage as source of truth
       setPushEnabled(localStorage.getItem("median_push_enabled") === "true");
-    } else if ("Notification" in window) {
-      setPushEnabled(Notification.permission === "granted");
+    } else {
+      getPushPermissionState().then((permission) => setPushEnabled(permission === "granted"));
     }
   }, []);
 
@@ -95,6 +97,10 @@ const NotificationsModal = ({
   };
 
   const handleTogglePush = async (checked: boolean) => {
+    if (!Capacitor.isNativePlatform() && !isMedianApp()) {
+      toast({ title: "Android app notifications", description: "Push notifications are available in the Android app only." });
+      return;
+    }
     setLoading(true);
     try {
       if (isMedianApp()) {
@@ -109,15 +115,15 @@ const NotificationsModal = ({
         } else {
           toast({ title: "Push notifications disabled" });
         }
-      } else if ("Notification" in window) {
+      } else {
         if (checked) {
-          const permission = await Notification.requestPermission();
-          if (permission === "granted") {
+          const granted = await requestPushPermission();
+          if (granted) {
             setPushEnabled(true);
             localStorage.setItem("push_prompt_dismissed", "true");
             toast({ title: "Push notifications enabled!" });
           } else {
-            toast({ title: "Permission denied", description: "Enable notifications in your browser settings.", variant: "destructive" });
+            toast({ title: "Permission denied", description: "Enable notifications in your device settings.", variant: "destructive" });
           }
         } else {
           toast({ title: "To disable", description: "Manage notification permissions in your device settings." });
@@ -198,13 +204,13 @@ const NotificationsModal = ({
               <div>
                 <p className="font-semibold text-foreground text-sm">Push Notifications</p>
                 <p className="text-xs text-muted-foreground">
-                  {pushEnabled ? "Enabled — you'll receive push alerts" : "Enable to get notified in real-time"}
+                  {pushEnabled ? "Enabled — you'll receive Android push alerts" : Capacitor.isNativePlatform() ? "Enable to get Android push alerts" : "Push notifications are available in the Android app only"}
                 </p>
               </div>
             </div>
             <Switch
               checked={pushEnabled}
-              disabled={loading}
+              disabled={loading || (!Capacitor.isNativePlatform() && !isMedianApp())}
               onCheckedChange={handleTogglePush}
             />
           </div>

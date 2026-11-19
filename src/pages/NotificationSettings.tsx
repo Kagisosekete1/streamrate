@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import { Capacitor } from "@capacitor/core";
+import { getPushPermissionState, requestPushPermission } from "@/lib/oneSignal";
 
 type PermState = "default" | "granted" | "denied" | "unsupported";
 
@@ -21,8 +23,7 @@ const NotificationSettings = () => {
   const [perm, setPerm] = useState<PermState>("default");
 
   useEffect(() => {
-    if (typeof Notification === "undefined") setPerm("unsupported");
-    else setPerm(Notification.permission as PermState);
+    getPushPermissionState().then(setPerm).catch(() => setPerm("unsupported"));
   }, []);
 
   useEffect(() => {
@@ -67,19 +68,24 @@ const NotificationSettings = () => {
   };
 
   const requestPerm = async () => {
-    if (typeof Notification === "undefined") return;
-    if (Notification.permission === "denied") {
+    if (!Capacitor.isNativePlatform()) {
+      toast({ title: "Android app notifications", description: "Push notifications are available in the Android app only." });
+      return;
+    }
+    if (perm === "denied") {
       toast({
         title: "Permission blocked",
-        description:
-          "Your browser has blocked notifications for this site. Open site settings (the lock icon in your address bar) and allow notifications, then refresh.",
+        description: Capacitor.isNativePlatform()
+          ? "Open Android Settings, find StreamRate, then allow notifications."
+          : "Open your browser's site settings and allow notifications, then refresh.",
       });
       return;
     }
     try {
-      const res = await Notification.requestPermission();
-      setPerm(res as PermState);
-      if (res === "granted") toast({ title: "Notifications enabled" });
+      const granted = await requestPushPermission();
+      const nextPerm = await getPushPermissionState();
+      setPerm(nextPerm);
+      if (granted) toast({ title: "Notifications enabled" });
       else toast({ title: "Notifications not granted", variant: "destructive" });
     } catch (e: any) {
       toast({ title: "Couldn't request permission", description: e?.message, variant: "destructive" });
@@ -91,24 +97,12 @@ const NotificationSettings = () => {
       toast({ title: `${label} muted`, description: `Enable ${label.toLowerCase()} above to receive this alert.` });
       return;
     }
-    if (typeof Notification === "undefined") {
-      toast({ title: "Notifications unsupported in this browser", variant: "destructive" });
+    void category;
+    if (!Capacitor.isNativePlatform()) {
+      toast({ title: "Android app notifications", description: "Open StreamRate on Android to receive push notifications." });
       return;
     }
-    if (Notification.permission !== "granted") {
-      toast({ title: "Grant browser permission first", description: "Use the Allow notifications button below." });
-      return;
-    }
-    try {
-      new Notification(`Test: ${label}`, {
-        body: `This is a test ${label.toLowerCase()} notification. Category: ${category}.`,
-        icon: "/logo.png",
-        tag: `test-${category}`,
-      });
-      toast({ title: `Sent test ${label.toLowerCase()}` });
-    } catch (e: any) {
-      toast({ title: "Couldn't send test", description: e?.message, variant: "destructive" });
-    }
+    toast({ title: "Native Android push", description: "Send a test notification to this device from the StreamRate app in OneSignal." });
   };
 
   return (
@@ -187,13 +181,13 @@ const NotificationSettings = () => {
                     <ShieldAlert className="w-5 h-5 text-amber-500 mt-0.5" />
                   )}
                   <div className="flex-1">
-                    <h2 className="font-semibold text-foreground">Browser notification permission</h2>
+                    <h2 className="font-semibold text-foreground">{Capacitor.isNativePlatform() ? "Android notification permission" : "Android push notifications"}</h2>
                     <p className="text-sm text-muted-foreground">
-                      {perm === "unsupported" && "Your browser does not support web notifications."}
-                      {perm === "granted" && "Allowed — reminders can pop up even when the app is in the background."}
-                      {perm === "default" && "Not requested yet. Allow to get reminder pop-ups."}
-                      {perm === "denied" &&
-                        "Currently blocked. Use your browser's site settings (lock icon in the URL bar) to allow notifications, then refresh."}
+                      {!Capacitor.isNativePlatform() && "Push notifications are sent to the Android app only. Browser notifications are disabled."}
+                      {Capacitor.isNativePlatform() && perm === "unsupported" && "Android push notifications are unavailable."}
+                      {Capacitor.isNativePlatform() && perm === "granted" && "Allowed — notifications will appear in the Android notification shade."}
+                      {Capacitor.isNativePlatform() && perm === "default" && "Not enabled yet. Allow notifications from Android."}
+                      {Capacitor.isNativePlatform() && perm === "denied" && "Currently blocked. Allow StreamRate notifications in Android Settings."}
                     </p>
                   </div>
                 </div>

@@ -1,12 +1,13 @@
 import { useEffect } from "react";
 import { useAuth } from "./useAuth";
+import { Capacitor } from "@capacitor/core";
+import OneSignal from "@onesignal/capacitor-plugin";
+import { initializeNativeOneSignal } from "@/lib/oneSignal";
 
-declare global {
-  interface Window {
-    OneSignal?: any;
-    OneSignalDeferred?: any[];
-  }
-}
+// OneSignal identity changes must be serialized. In particular, don't let the
+// initial signed-out render race with Supabase restoring a saved session.
+let nativeIdentityQueue: Promise<void> = Promise.resolve();
+let syncedNativeIdentity: string | null | undefined;
 
 /**
  * Ties the signed-in user to their OneSignal push subscription via external_id
@@ -14,33 +15,25 @@ declare global {
  * user directly by include_aliases.external_id.
  */
 export const useOneSignalIdentity = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    if (loading || !Capacitor.isNativePlatform()) return;
 
-    window.OneSignalDeferred.push(async function (OneSignal: any) {
-      try {
-        const currentExternalId = OneSignal?.User?.externalId;
-        if (user?.id) {
-          if (currentExternalId !== user.id) {
-            await OneSignal.login(user.id);
-          }
-          // Ask for permission (no-op if already granted/denied).
-          if (OneSignal?.Notifications?.permission === false) {
-            try {
-              await OneSignal.Notifications.requestPermission();
-            } catch {
-              /* user dismissed */
-            }
-          }
-        } else if (currentExternalId) {
-          await OneSignal.logout();
-        }
-      } catch (err) {
-        console.warn("OneSignal identity sync failed", err);
-      }
-    });
-  }, [user?.id]);
+    let active = true;
+    const externalId = user?.id ?? null;
+    nativeIdentityQueue = nativeIdentityQueue
+      .catch(() => undefined)
+      .then(async () => {
+        if (!active || syncedNativeIdentity === externalId) return;
+        await initializeNativeOneSignal();
+        if (!active) return;
+        if (externalId) await OneSignal.login(externalId);
+        else await OneSignal.logout();
+        syncedNativeIdentity = externalId;
+      })
+      .catch((err) => console.warn("OneSignal native identity sync failed", err));
+
+    return () => { active = false; };
+  }, [loading, user?.id]);
 };

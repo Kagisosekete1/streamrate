@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { requestPushPermission } from "@/lib/oneSignal";
 import {
   Dialog,
   DialogContent,
@@ -324,11 +325,7 @@ const StreamSchedule = () => {
         return;
       }
       if (inserted) setReminders((prev) => [...prev, inserted as ReminderRow]);
-      try {
-        if ("Notification" in window && Notification.permission === "default") {
-          await Notification.requestPermission();
-        }
-      } catch { /* ignore */ }
+      try { await requestPushPermission(); } catch { /* permission is optional */ }
       toast({ title: "You'll be reminded", description: `${defaultLead}m before • ${formatWhen(row.scheduled_at)}` });
     }
   };

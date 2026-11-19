@@ -3,6 +3,8 @@ import { PushNotifications, PushNotificationSchema, Token, PermissionStatus } fr
 import { Capacitor } from "@capacitor/core";
 import { useAuth } from "./useAuth";
 import { getNotificationRoute } from "@/lib/notificationDeepLinks";
+import OneSignal from "@onesignal/capacitor-plugin";
+import { initializeNativeOneSignal } from "@/lib/oneSignal";
 
 type PushPermissionState = "prompt" | "prompt-with-rationale" | "granted" | "denied";
 
@@ -16,12 +18,39 @@ export const usePushNotifications = () => {
     const checkSupport = async () => {
       if (Capacitor.isNativePlatform()) {
         setIsSupported(true);
-        await initializePushNotifications();
+        await initializeOneSignalNotifications();
       }
     };
 
     checkSupport();
   }, []);
+
+  const initializeOneSignalNotifications = async () => {
+    try {
+      await initializeNativeOneSignal();
+      const granted = await OneSignal.Notifications.hasPermission();
+      setPermissionStatus(granted ? "granted" : "prompt");
+      if (!granted) {
+        await OneSignal.Notifications.requestPermission(false);
+        return;
+      }
+      const subscriptionId = await OneSignal.User.pushSubscription.getIdAsync();
+      if (subscriptionId) setToken(subscriptionId);
+      OneSignal.Notifications.addEventListener("click", (event) => {
+        const data = event.notification.additionalData ?? {};
+        const targetPath = data.url || getNotificationRoute({
+          type: data.type,
+          post_id: data.postId,
+          reel_id: data.reelId,
+          comment_id: data.commentId,
+          from_user_id: data.fromUserId,
+        });
+        if (targetPath) window.location.assign(String(targetPath));
+      });
+    } catch (error) {
+      console.error("Error initializing OneSignal notifications:", error);
+    }
+  };
 
   useEffect(() => {
     if (token && user) {
@@ -110,6 +139,16 @@ export const usePushNotifications = () => {
     if (!isSupported) return false;
 
     try {
+      if (Capacitor.isNativePlatform()) {
+        await initializeNativeOneSignal();
+        const granted = await OneSignal.Notifications.requestPermission(false);
+        setPermissionStatus(granted ? "granted" : "denied");
+        if (granted) {
+          const subscriptionId = await OneSignal.User.pushSubscription.getIdAsync();
+          if (subscriptionId) setToken(subscriptionId);
+        }
+        return granted;
+      }
       const result = await PushNotifications.requestPermissions();
       setPermissionStatus(result.receive);
 

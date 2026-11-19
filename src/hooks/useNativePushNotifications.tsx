@@ -4,31 +4,68 @@ import { useAuth } from "./useAuth";
 import { toast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { getNotificationRoute } from "@/lib/notificationDeepLinks";
-
-const NOTIFICATION_ICON = "/__l5e/assets-v1/29ab3d65-7964-4f3f-a4d7-9fea62411606/streamrate-push-icon-192.png";
-const NOTIFICATION_BADGE = "/__l5e/assets-v1/ce739aca-2329-46b8-ad6a-1e1ecbcc729d/streamrate-push-badge-96.png";
+import { Capacitor } from "@capacitor/core";
+import OneSignal from "@onesignal/capacitor-plugin";
+import { initializeNativeOneSignal } from "@/lib/oneSignal";
 
 export const useNativePushNotifications = () => {
   const { user } = useAuth();
-  const [permission, setPermission] = useState<NotificationPermission>("default");
   const [isSupported, setIsSupported] = useState(false);
   const shownLiveToastIds = useRef<Set<string>>(new Set());
+  const [nativePermissionGranted, setNativePermissionGranted] = useState(false);
 
   useEffect(() => {
-    const supported = "Notification" in window && "serviceWorker" in navigator;
-    setIsSupported(supported);
-    if (supported) {
-      setPermission(Notification.permission);
+    // StreamRate uses Android native push only. Browser notification APIs are
+    // deliberately not initialized or requested.
+    if (Capacitor.isNativePlatform()) {
+      setIsSupported(true);
+      let active = true;
+      const handlePushClick = (event: any) => {
+        const data = event?.notification?.additionalData ?? {};
+        const suppliedUrl = typeof data.url === "string" ? data.url : null;
+        let route = suppliedUrl ? getNotificationRoute({ ...data, url: suppliedUrl }) : getNotificationRoute({
+          type: data.type,
+          post_id: data.postId,
+          reel_id: data.reelId,
+          comment_id: data.commentId,
+          from_user_id: data.fromUserId,
+        });
+        if (suppliedUrl) {
+          try {
+            const parsed = new URL(suppliedUrl, "https://streamrateapp.com");
+            route = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+          } catch {
+            // Keep the notification type route when the supplied URL is invalid.
+          }
+        }
+        if (route?.startsWith("/")) window.location.assign(route);
+      };
+      initializeNativeOneSignal()
+        .then(async () => {
+          if (!active) return;
+          OneSignal.Notifications.addEventListener("click", handlePushClick);
+          setNativePermissionGranted(await OneSignal.Notifications.hasPermission());
+        })
+        .catch((error) => console.warn("Native OneSignal initialization failed", error));
+      return () => {
+        active = false;
+        OneSignal.Notifications.removeEventListener("click", handlePushClick);
+      };
     }
+    setIsSupported(false);
   }, []);
 
   const requestPermission = useCallback(async () => {
     if (!isSupported) return false;
 
     try {
-      const result = await Notification.requestPermission();
-      setPermission(result);
-      return result === "granted";
+      if (Capacitor.isNativePlatform()) {
+        await initializeNativeOneSignal();
+        const granted = await OneSignal.Notifications.requestPermission(false);
+        setNativePermissionGranted(granted);
+        return granted;
+      }
+      return false;
     } catch (error) {
       console.error("Error requesting notification permission:", error);
       return false;
@@ -37,30 +74,17 @@ export const useNativePushNotifications = () => {
 
   const showNotification = useCallback(
     async (title: string, options?: NotificationOptions) => {
-      if (permission !== "granted") return;
-
-      try {
-        const registration = await navigator.serviceWorker.ready;
-        registration.showNotification(title, {
-          icon: NOTIFICATION_ICON,
-          badge: NOTIFICATION_BADGE,
-          ...options,
-        });
-      } catch (error) {
-        // Fallback to regular Notification
-        new Notification(title, {
-          icon: NOTIFICATION_ICON,
-          badge: NOTIFICATION_BADGE,
-          ...options,
-        });
-      }
+      // Native remote pushes are delivered by OneSignal. Avoid browser shade
+      // notifications; in-app realtime alerts are shown as app toasts below.
+      void title;
+      void options;
     },
-    [permission]
+    []
   );
 
-  // Listen for in-app notifications from Supabase and show browser notifications
+  // Listen for in-app notifications from Supabase. Push delivery is native Android only.
   useEffect(() => {
-    if (!user || permission !== "granted") return;
+    if (!user) return;
 
     const channel = supabase
       .channel("push-notifications")
@@ -84,9 +108,21 @@ export const useNativePushNotifications = () => {
             from_user_id?: string;
           };
 
-          // Check if go-live notifications are disabled
-          const notifPrefs = JSON.parse(localStorage.getItem("notification_prefs") || "{}");
-          if (notification.type === "go_live" && notifPrefs.goLive === false) {
+          // The OneSignal Edge Function delivers this same notification to
+          // the native Android shade. Keep the realtime toast in-app only.
+          if (Capacitor.isNativePlatform()) {
+            if (document.hasFocus() && notification.type === "go_live" && !shownLiveToastIds.current.has(notification.id)) {
+              shownLiveToastIds.current.add(notification.id);
+              toast({
+                title: notification.title,
+                description: notification.message,
+                action: (
+                  <ToastAction altText="Watch now" onClick={() => window.location.assign(getNotificationRoute(notification))}>
+                    Watch
+                  </ToastAction>
+                ),
+              });
+            }
             return;
           }
 
@@ -112,16 +148,6 @@ export const useNativePushNotifications = () => {
             return;
           }
 
-          showNotification(notification.title, {
-            body: notification.message,
-            tag: notification.type,
-            data: {
-              postId: notification.post_id,
-              reelId: notification.reel_id,
-              commentId: notification.comment_id,
-              url: getNotificationRoute(notification),
-            },
-          });
         }
       )
       .subscribe();
@@ -129,11 +155,11 @@ export const useNativePushNotifications = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, permission, showNotification]);
+  }, [user]);
 
   return {
     isSupported,
-    permission,
+    permission: Capacitor.isNativePlatform() ? (nativePermissionGranted ? "granted" : "default") : "unsupported",
     requestPermission,
     showNotification,
   };
