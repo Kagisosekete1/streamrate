@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, RotateCcw, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { toast } from "@/hooks/use-toast";
 
 interface ImageCropperProps {
   isOpen: boolean;
@@ -56,6 +57,10 @@ export const ImageCropper = ({
     if (!completedCrop || !imgRef.current) return;
 
     const image = imgRef.current;
+    if (!image.complete || !image.naturalWidth || !image.naturalHeight) {
+      toast({ title: "Couldn't read this image", description: "Try saving it as JPG or PNG and select it again.", variant: "destructive" });
+      return;
+    }
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -70,9 +75,6 @@ export const ImageCropper = ({
 
     // Handle rotation
     const rotRad = (rotation * Math.PI) / 180;
-    const cos = Math.abs(Math.cos(rotRad));
-    const sin = Math.abs(Math.sin(rotRad));
-
     canvas.width = 1000;
     canvas.height = 1000;
 
@@ -92,6 +94,8 @@ export const ImageCropper = ({
         if (blob) {
           onCropComplete(blob);
           onClose();
+        } else {
+          toast({ title: "Couldn't crop this image", description: "Try a different photo or save it as JPG or PNG.", variant: "destructive" });
         }
       },
       "image/jpeg",
@@ -152,6 +156,7 @@ export const ImageCropper = ({
                   src={imageSrc}
                   alt="Crop preview"
                   onLoad={onImageLoad}
+                  onError={() => toast({ title: "Couldn't open this image", description: "This image format isn't supported by the phone's browser. Try JPG or PNG.", variant: "destructive" })}
                   className="max-h-[60vh] md:max-h-[70vh] max-w-full w-auto object-contain select-none"
                   draggable={false}
                   style={{

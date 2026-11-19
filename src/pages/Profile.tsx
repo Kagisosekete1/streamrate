@@ -375,23 +375,25 @@ const Profile = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type — only real image files (not videos, PDFs, etc.)
-    const isImage = file.type.startsWith("image/") &&
-      ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/heic"].includes(file.type);
+    // Accept any browser-recognized image format, plus common image extensions
+    // when Android's document picker leaves the MIME type blank.
+    const extension = file.name.split(".").pop()?.toLowerCase() || "";
+    const isImage = file.type.toLowerCase().startsWith("image/") ||
+      ["jpg", "jpeg", "png", "webp", "gif", "heic", "heif", "avif", "bmp", "tif", "tiff"].includes(extension);
     if (!isImage) {
       toast({
         title: "Invalid file type",
-        description: "Please select an image file (JPG, PNG, WebP, or GIF).",
+        description: "Please select a photo or image file.",
         variant: "destructive",
       });
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
-    // Validate file size (10 MB)
-    if (file.size > 10 * 1024 * 1024) {
+    // The avatars bucket is configured for up to 50 MB per object.
+    if (file.size > 50 * 1024 * 1024) {
       toast({
         title: "Image too large",
-        description: "Please choose an image under 10 MB.",
+        description: "This image is over the 50 MB upload limit.",
         variant: "destructive",
       });
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -443,10 +445,10 @@ const Profile = () => {
       });
       return;
     }
-    if (fileOrBlob.size > 10 * 1024 * 1024) {
+    if (fileOrBlob.size > 50 * 1024 * 1024) {
       toast({
         title: "Image too large",
-        description: "Please choose an image under 10 MB.",
+        description: "This image is over the 50 MB upload limit.",
         variant: "destructive",
       });
       return;

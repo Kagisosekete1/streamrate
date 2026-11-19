@@ -56,6 +56,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   const [slideDirection, setSlideDirection] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [isReelReady, setIsReelReady] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [likesData, setLikesData] = useState<Record<string, { count: number; isLiked: boolean }>>({});
   const [commentsCount, setCommentsCount] = useState<Record<string, number>>({});
@@ -100,6 +101,10 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
 
   // Get current reel safely
   const currentReel = reels[currentIndex] || null;
+
+  useEffect(() => {
+    setIsReelReady(false);
+  }, [currentReel?.id]);
 
   // Fetch likes, comments, and views data
   const fetchReelData = useCallback(async (reelId: string) => {
@@ -819,7 +824,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                   autoPlay
                   controls={false}
                   preload={allowVideoPreload ? "metadata" : "none"}
-                  poster=""
                   disablePictureInPicture
                   disableRemotePlayback
                   controlsList="nodownload nofullscreen noremoteplayback"
@@ -831,6 +835,10 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                     const vid = e.currentTarget;
                     stalledChecksRef.current = 0;
                     lastVideoTimeRef.current = vid.currentTime;
+                    setIsReelReady(true);
+                    // Android WebView can briefly paint its native grey play
+                    // affordance while a new reel is decoding after a swipe.
+                    vid.play().catch(() => {});
                     if (isPlaying && !showComments) {
                       vid.play().catch(() => {});
                     }
@@ -838,7 +846,8 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                   onCanPlayThrough={(e) => {
                     const vid = e.currentTarget;
                     stalledChecksRef.current = 0;
-                    if (isPlaying && !showComments && vid.paused) {
+                    setIsReelReady(true);
+                    if (vid.paused) {
                       vid.play().catch(() => {});
                     }
                   }}
@@ -893,7 +902,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
 
                 {/* Play/Pause overlay */}
                 <AnimatePresence>
-                  {!isPlaying && !showComments && (
+                  {!isPlaying && isReelReady && !showComments && (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.5 }}
                       animate={{ opacity: 1, scale: 1 }}
