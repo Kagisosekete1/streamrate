@@ -54,7 +54,7 @@ type ProfileTab = "posts" | "photos" | "reels" | "saved" | "live" | "more";
 const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, profile, userRole, loading, signOut, updateProfile } = useAuth();
+  const { user, profile, userRole, loading, signOut, updateProfile, refreshProfile } = useAuth();
   const isSeenAdmin = useIsSeenAdmin();
   const { xp, coins } = useGamification();
   const [posts, setPosts] = useState<Post[]>([]);
@@ -99,6 +99,7 @@ const Profile = () => {
   const [headerPreviewSrc, setHeaderPreviewSrc] = useState<string | null>(null);
   const [selectedHeaderFile, setSelectedHeaderFile] = useState<File | null>(null);
   const [isUploadingHeader, setIsUploadingHeader] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const [showProfilePreview, setShowProfilePreview] = useState(false);
   const [activeTab, setActiveTab] = useState<ProfileTab>("posts");
@@ -705,6 +706,13 @@ const Profile = () => {
   };
 
   const handleSaveProfile = async () => {
+    if (!user) {
+      toast({ title: "Sign in to save your profile", variant: "destructive" });
+      return;
+    }
+
+    setIsSavingProfile(true);
+    try {
     // Normalize username: lowercase, no spaces
     const cleanUsername = editForm.username ? editForm.username.replace(/\s/g, '').toLowerCase() : '';
     
@@ -720,12 +728,14 @@ const Profile = () => {
 
     // Validate username uniqueness
     if (cleanUsername && cleanUsername !== profile?.username?.toLowerCase()) {
-      const { data: existingUser } = await supabase
+      const { data: existingUser, error: usernameLookupError } = await supabase
         .from("profiles")
         .select("id")
         .eq("username", cleanUsername)
         .neq("id", user.id)
         .maybeSingle();
+
+      if (usernameLookupError) throw usernameLookupError;
 
       if (existingUser) {
         toast({
@@ -748,7 +758,7 @@ const Profile = () => {
     }
 
     // Update profile with basic info and social links
-    const { error } = await supabase
+    const { data: savedProfile, error } = await supabase
       .from("profiles")
       .update({
         full_name: editForm.full_name,
@@ -765,15 +775,15 @@ const Profile = () => {
         show_kick: editForm.show_kick,
         show_youtube_gaming: editForm.show_youtube_gaming,
       })
-      .eq("id", user.id);
+      .eq("id", user.id)
+      .select("id")
+      .maybeSingle();
 
     if (error) {
-      toast({
-        title: "Failed to update profile",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
+      throw error;
+    }
+    if (!savedProfile) {
+      throw new Error("Your profile was not updated. Please check your connection and profile permissions, then try again.");
     }
 
     // Update local social links state
@@ -789,12 +799,22 @@ const Profile = () => {
     });
 
     // Refresh profile in auth context
-    await updateProfile({});
+    await refreshProfile();
 
     toast({
       title: "Profile updated!",
     });
     setShowEditModal(false);
+    } catch (error) {
+      console.error("Failed to save profile", error);
+      toast({
+        title: "Failed to update profile",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   // Show skeleton while loading or no user (will redirect)
@@ -1157,9 +1177,10 @@ const Profile = () => {
                 <h2 className="text-lg font-bold text-foreground">Edit Profile</h2>
                 <button
                   onClick={handleSaveProfile}
-                  className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg"
+                  disabled={isSavingProfile}
+                  className="min-w-16 h-10 rounded-full bg-primary px-3 flex items-center justify-center text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg disabled:opacity-60"
                 >
-                  Save
+                  {isSavingProfile ? "Saving…" : "Save"}
                 </button>
               </div>
 
