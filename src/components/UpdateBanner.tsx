@@ -4,6 +4,7 @@ import { Sparkles, X, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { WhatsNewModal } from "@/components/WhatsNewModal";
+import { Capacitor } from "@capacitor/core";
 
 const STORAGE_KEY = "streamrate_seen_version";
 
@@ -52,6 +53,10 @@ export const UpdateBanner = () => {
     } catch {}
     window.location.reload();
   };
+
+  // Native releases are updated through the app store/APK, not a website
+  // refresh. Keeping this banner off the app also keeps clear of the status bar.
+  if (Capacitor.isNativePlatform()) return null;
 
   return (
     <>

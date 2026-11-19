@@ -16,6 +16,7 @@ import { UpdateBanner } from "@/components/UpdateBanner";
 import { AppLockGate } from "@/components/AppLockGate";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { NavigationMemory } from "@/components/NavigationMemory";
+import { NativeAuthRedirect } from "@/components/NativeAuthRedirect";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
@@ -80,6 +81,7 @@ function AppContent() {
     <BrowserRouter>
       <NavigationMemory />
       <AuthProvider>
+        <NativeAuthRedirect />
         <AuthenticatedFeatures />
         <ErrorBoundary>
         <AppLockGate>

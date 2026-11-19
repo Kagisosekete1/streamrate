@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Cookie, Settings2, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Capacitor } from "@capacitor/core";
 import {
   Dialog,
   DialogContent,
@@ -72,6 +73,10 @@ export const CookieConsent = () => {
   const saveCustomPreferences = () => {
     savePreferences(preferences);
   };
+
+  // Cookie consent belongs to the public website.  A native Capacitor app does
+  // not use browser cookies, and this full-width banner was covering sign-in.
+  if (Capacitor.isNativePlatform()) return null;
 
   return (
     <>

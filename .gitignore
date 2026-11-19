@@ -17,6 +17,9 @@ android/local.properties
 dist
 dist-ssr
 *.local
+.gradle-user-home/
+StreamRate-debug.apk
+emulator-*.png
 
 # Editor directories and files
 .vscode/*

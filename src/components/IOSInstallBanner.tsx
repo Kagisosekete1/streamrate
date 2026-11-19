@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, Share } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Capacitor } from "@capacitor/core";
 
 export const IOSInstallBanner = () => {
   const [show, setShow] = useState(false);
@@ -21,6 +22,8 @@ export const IOSInstallBanner = () => {
     setShow(false);
     localStorage.setItem("ios-install-dismissed", Date.now().toString());
   };
+
+  if (Capacitor.isNativePlatform()) return null;
 
   return (
     <AnimatePresence>

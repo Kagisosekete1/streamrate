@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { X, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Capacitor } from "@capacitor/core";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -47,6 +48,8 @@ export const PWAInstallBanner = () => {
     setShow(false);
     localStorage.setItem("pwa-install-dismissed", Date.now().toString());
   };
+
+  if (Capacitor.isNativePlatform()) return null;
 
   return (
     <AnimatePresence>

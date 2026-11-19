@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { Capacitor } from "@capacitor/core";
+import { Browser } from "@capacitor/browser";
 
 type AuthMode = "login" | "signup";
 type UserRole = "fan" | "streamer" | "seller";
@@ -23,7 +25,7 @@ const Auth = () => {
   const [showVerifyEmail, setShowVerifyEmail] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [passwordRecovery, setPasswordRecovery] = useState(
-    () => new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery",
+    () => new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery" || new URLSearchParams(window.location.search).get("recovery") === "1",
   );
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [formData, setFormData] = useState({
@@ -49,6 +51,17 @@ const Auth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("recovery") === "1") {
+      setPasswordRecovery(true);
+      setShowPasswordReset(true);
+    }
+    if (params.get("error")) {
+      toast({ title: "Sign in failed", description: params.get("error") || "Please try again.", variant: "destructive" });
+    }
+  }, [toast]);
+
   // Capture referral code from URL (?ref=CODE) for later redemption
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -59,9 +72,13 @@ const Auth = () => {
   }, []);
 
   const handleGoogleSignIn = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
+    const native = Capacitor.isNativePlatform();
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/home` },
+      options: {
+        redirectTo: native ? "com.semogrouptech.streamrateapp://auth/callback" : `${window.location.origin}/home`,
+        skipBrowserRedirect: native,
+      },
     });
     if (error) {
       toast({
@@ -69,6 +86,10 @@ const Auth = () => {
         description: String(error),
         variant: "destructive",
       });
+      return;
+    }
+    if (native && data.url) {
+      await Browser.open({ url: data.url });
     }
   };
 
@@ -76,7 +97,9 @@ const Auth = () => {
     event.preventDefault();
     setIsSubmitting(true);
     const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
-      redirectTo: `${window.location.origin}/auth`,
+      redirectTo: Capacitor.isNativePlatform()
+        ? "com.semogrouptech.streamrateapp://auth/callback"
+        : `${window.location.origin}/auth`,
     });
     setIsSubmitting(false);
     if (error) {
