@@ -125,6 +125,7 @@ const Notifications = () => {
       .from("notifications")
       .select("*")
       .eq("user_id", user.id)
+      .neq("type", "profile_view")
       .order("created_at", { ascending: false })
       .limit(50);
 

@@ -9,6 +9,7 @@ export type NotificationRouteInput = {
 const POST_TYPES = new Set([
   "post_like",
   "post_share",
+  "post_view",
   "comment",
   "comment_like",
   "comment_reply",
@@ -16,7 +17,7 @@ const POST_TYPES = new Set([
   "new_post",
 ]);
 
-const REEL_TYPES = new Set(["reel_like", "reel_comment", "reel_share"]);
+const REEL_TYPES = new Set(["reel_like", "reel_comment", "reel_share", "reel_view"]);
 const COMMENT_TYPES = new Set(["comment", "comment_like", "comment_reply", "mention"]);
 
 export const getNotificationRoute = (notification: NotificationRouteInput): string => {
@@ -42,6 +43,7 @@ export const getNotificationRoute = (notification: NotificationRouteInput): stri
   }
 
   if (type === "party_join") return "/watch-parties";
+  if (type === "profile_boost") return "/profile";
   if (type === "poll_vote" || type === "raid" || type === "co_stream") return "/live";
   if (type === "lfg_response") {
     return notification.from_user_id

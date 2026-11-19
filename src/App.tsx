@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,46 +17,54 @@ import { AppLockGate } from "@/components/AppLockGate";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { NavigationMemory } from "@/components/NavigationMemory";
 import { NativeAuthRedirect } from "@/components/NativeAuthRedirect";
-import NotFound from "./pages/NotFound";
-import Auth from "./pages/Auth";
-import Home from "./pages/Home";
-import Streamers from "./pages/Streamers";
-import StreamerProfile from "./pages/StreamerProfile";
-import Profile from "./pages/Profile";
-import CreatePost from "./pages/CreatePost";
-import PostDetail from "./pages/PostDetail";
-import Settings from "./pages/Settings";
-import Notifications from "./pages/Notifications";
-import Reels from "./pages/Reels";
-import Hashtags from "./pages/Hashtags";
-import ReelAnalytics from "./pages/ReelAnalytics";
-import CreateReel from "./pages/CreateReel";
-import Leaderboard from "./pages/Leaderboard";
-import About from "./pages/About";
-import Live from "./pages/Live";
-import Store from "./pages/Store";
-import StreamingAnalytics from "./pages/StreamingAnalytics";
-import Missions from "./pages/Missions";
-import BoostProfile from "./pages/BoostProfile";
-import CreatorDashboard from "./pages/CreatorDashboard";
-import WatchParties from "./pages/WatchParties";
-import WatchPartyRoom from "./pages/WatchPartyRoom";
-import SquadUp from "./pages/SquadUp";
-import Clips from "./pages/Clips";
-import Invite from "./pages/Invite";
-import SecurityFindings from "./pages/SecurityFindings";
-import StreamSchedule from "./pages/StreamSchedule";
-import Reminders from "./pages/Reminders";
-import NotificationSettings from "./pages/NotificationSettings";
-import AdminReminderLogs from "./pages/AdminReminderLogs";
-import AdminPushLogs from "./pages/AdminPushLogs";
-import StreamerGames from "./pages/StreamerGames";
-import StreamerGear from "./pages/StreamerGear";
-import ChatCommands from "./pages/ChatCommands";
-import CoStream from "./pages/CoStream";
-import Raids from "./pages/Raids";
-import Tournaments from "./pages/Tournaments";
-import TournamentDetail from "./pages/TournamentDetail";
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Home = lazy(() => import("./pages/Home"));
+const Streamers = lazy(() => import("./pages/Streamers"));
+const StreamerProfile = lazy(() => import("./pages/StreamerProfile"));
+const Profile = lazy(() => import("./pages/Profile"));
+const CreatePost = lazy(() => import("./pages/CreatePost"));
+const PostDetail = lazy(() => import("./pages/PostDetail"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const Reels = lazy(() => import("./pages/Reels"));
+const Hashtags = lazy(() => import("./pages/Hashtags"));
+const ReelAnalytics = lazy(() => import("./pages/ReelAnalytics"));
+const CreateReel = lazy(() => import("./pages/CreateReel"));
+const Leaderboard = lazy(() => import("./pages/Leaderboard"));
+const About = lazy(() => import("./pages/About"));
+const Live = lazy(() => import("./pages/Live"));
+const Store = lazy(() => import("./pages/Store"));
+const StreamingAnalytics = lazy(() => import("./pages/StreamingAnalytics"));
+const Missions = lazy(() => import("./pages/Missions"));
+const BoostProfile = lazy(() => import("./pages/BoostProfile"));
+const CreatorDashboard = lazy(() => import("./pages/CreatorDashboard"));
+const WatchParties = lazy(() => import("./pages/WatchParties"));
+const WatchPartyRoom = lazy(() => import("./pages/WatchPartyRoom"));
+const SquadUp = lazy(() => import("./pages/SquadUp"));
+const Clips = lazy(() => import("./pages/Clips"));
+const Invite = lazy(() => import("./pages/Invite"));
+const SecurityFindings = lazy(() => import("./pages/SecurityFindings"));
+const StreamSchedule = lazy(() => import("./pages/StreamSchedule"));
+const Reminders = lazy(() => import("./pages/Reminders"));
+const NotificationSettings = lazy(() => import("./pages/NotificationSettings"));
+const AdminReminderLogs = lazy(() => import("./pages/AdminReminderLogs"));
+const AdminPushLogs = lazy(() => import("./pages/AdminPushLogs"));
+const StreamerGames = lazy(() => import("./pages/StreamerGames"));
+const StreamerGear = lazy(() => import("./pages/StreamerGear"));
+const ChatCommands = lazy(() => import("./pages/ChatCommands"));
+const CoStream = lazy(() => import("./pages/CoStream"));
+const Raids = lazy(() => import("./pages/Raids"));
+const Tournaments = lazy(() => import("./pages/Tournaments"));
+const TournamentDetail = lazy(() => import("./pages/TournamentDetail"));
+
+function AppStartupScreen() {
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black">
+      <img src="/pwa-512x512.png" alt="StreamRate" className="h-20 w-20 animate-pulse rounded-2xl object-cover" />
+    </div>
+  );
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -85,6 +93,7 @@ function AppContent() {
         <AuthenticatedFeatures />
         <ErrorBoundary>
         <AppLockGate>
+          <Suspense fallback={<AppStartupScreen />}>
           <Routes>
             <Route path="/" element={<Auth />} />
             <Route path="/auth" element={<Auth />} />
@@ -131,6 +140,7 @@ function AppContent() {
             <Route path="/tournament/:id" element={<TournamentDetail />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </AppLockGate>
         </ErrorBoundary>
         <UpdateBanner />

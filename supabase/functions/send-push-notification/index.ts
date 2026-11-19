@@ -39,7 +39,7 @@ function buildDeepLink(data: Record<string, any>): string {
     return `${APP_ORIGIN}/reels?reelId=${encodeURIComponent(reelId)}`;
   }
 
-  if (postId && ["post_like", "post_share", "comment", "comment_like", "comment_reply", "mention", "new_post"].includes(type)) {
+  if (postId && ["post_like", "post_share", "post_view", "comment", "comment_like", "comment_reply", "mention", "new_post"].includes(type)) {
     const commentQuery = commentId && ["comment", "comment_like", "comment_reply", "mention"].includes(type)
       ? `?commentId=${encodeURIComponent(commentId)}`
       : "";
@@ -51,6 +51,7 @@ function buildDeepLink(data: Record<string, any>): string {
   }
 
   if (type === "party_join") return `${APP_ORIGIN}/watch-parties`;
+  if (type === "profile_boost") return `${APP_ORIGIN}/profile`;
   if (type === "poll_vote" || type === "raid" || type === "co_stream") return `${APP_ORIGIN}/live`;
   if (type === "lfg_response") return fromUserId ? `${APP_ORIGIN}/streamer/${encodeURIComponent(fromUserId)}` : `${APP_ORIGIN}/squad-up`;
   if (type === "tournament") return `${APP_ORIGIN}/tournaments`;
@@ -90,6 +91,41 @@ serve(async (req) => {
     }
 
     const url = buildDeepLink(data);
+    let actorAvatar: string | null = null;
+    let postImage: string | null = null;
+    let postText: string | null = null;
+    let interactionText: string | null = null;
+
+    // Add useful context to Android notifications: the actor's profile photo,
+    // the post image (when present), and a short comment/reply excerpt.
+    if (admin && data?.fromUserId) {
+      const { data: actor } = await admin.from("profiles")
+        .select("avatar_url")
+        .eq("id", String(data.fromUserId))
+        .maybeSingle();
+      actorAvatar = actor?.avatar_url ?? null;
+    }
+    if (admin && data?.postId) {
+      const { data: post } = await admin.from("posts")
+        .select("image_url, content")
+        .eq("id", String(data.postId))
+        .maybeSingle();
+      postImage = post?.image_url ?? null;
+      postText = post?.content ?? null;
+    }
+    if (admin && data?.commentId) {
+      const table = String(data?.type ?? "").startsWith("reel_") ? "reel_comments" : "comments";
+      const { data: comment } = await admin.from(table)
+        .select("content")
+        .eq("id", String(data.commentId))
+        .maybeSingle();
+      interactionText = comment?.content ?? null;
+    }
+
+    const preview = (interactionText || postText || "").replace(/\s+/g, " ").trim().slice(0, 120);
+    const pushMessage = preview && !String(message).toLowerCase().includes(preview.toLowerCase())
+      ? `${message}: “${preview}${preview.length >= 120 ? "…" : ""}”`
+      : message;
 
     const payload = {
       app_id: ONESIGNAL_APP_ID,
@@ -100,15 +136,16 @@ serve(async (req) => {
       isIos: false,
       isAnyWeb: false,
       headings: { en: title },
-      contents: { en: message },
+      contents: { en: pushMessage },
       url,
       web_url: url,
       chrome_web_icon: WEB_ICON_URL,
       chrome_web_badge: WEB_BADGE_URL,
       firefox_icon: WEB_ICON_URL,
-      large_icon: LOGO_URL,
+      large_icon: actorAvatar || LOGO_URL,
+      ...(postImage ? { big_picture: postImage } : {}),
       small_icon: "ic_stat_onesignal_default",
-      data: { ...data, url },
+      data: { ...data, url, actorAvatar, postImage, postText, interactionText },
     };
 
     const response = await fetch("https://api.onesignal.com/notifications", {

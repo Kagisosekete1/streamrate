@@ -85,6 +85,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    let initialSessionResolved = false;
+    let disposed = false;
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
@@ -99,20 +101,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setProfile(null);
           setUserRole(null);
         }
-        setLoading(false);
+        // Do not let the auth callback race the initial persisted-session read.
+        // Otherwise the auth screen can flash before the saved session is restored.
+        if (initialSessionResolved) setLoading(false);
       }
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (disposed) return;
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
+      if (session?.user) void fetchProfile(session.user.id);
+      initialSessionResolved = true;
       setLoading(false);
+    }).catch((error) => {
+      console.error("Unable to restore the saved sign-in session:", error);
+      if (!disposed) {
+        initialSessionResolved = true;
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      disposed = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string, role: "fan" | "streamer" | "seller", gender?: string) => {

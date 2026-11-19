@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Music2, Flag, UserPlus, Eye, Layers, BarChart3, Wifi, WifiOff } from "lucide-react";
+import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Music2, Flag, UserPlus, Eye, Layers, BarChart3, Wifi, WifiOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -54,12 +54,10 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [slideDirection, setSlideDirection] = useState(0);
-  // Android WebView blocks autoplay when video starts with audio enabled and
-  // can display its native grey play prompt over every newly-swiped reel.
-  // Start muted so reels autoplay; viewers can turn sound on with the control.
-  const [isMuted, setIsMuted] = useState(true);
+  // Play original reel audio by default. Android's WebView media gesture
+  // restriction is disabled in MainActivity so swiped reels can autoplay too.
+  const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [isReelReady, setIsReelReady] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [likesData, setLikesData] = useState<Record<string, { count: number; isLiked: boolean }>>({});
   const [commentsCount, setCommentsCount] = useState<Record<string, number>>({});
@@ -104,10 +102,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
 
   // Get current reel safely
   const currentReel = reels[currentIndex] || null;
-
-  useEffect(() => {
-    setIsReelReady(false);
-  }, [currentReel?.id]);
 
   // Fetch likes, comments, and views data
   const fetchReelData = useCallback(async (reelId: string) => {
@@ -357,6 +351,12 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   useEffect(() => {
     setCurrentIndex(initialIndex);
   }, [initialIndex]);
+
+  // Every swipe starts the newly selected reel from autoplay, even if the
+  // viewer paused the previous reel or Android briefly rejected its first play.
+  useEffect(() => {
+    setIsPlaying(true);
+  }, [currentReel?.id]);
 
   // Play/pause video
   useEffect(() => {
@@ -838,9 +838,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                     const vid = e.currentTarget;
                     stalledChecksRef.current = 0;
                     lastVideoTimeRef.current = vid.currentTime;
-                    setIsReelReady(true);
-                    // Android WebView can briefly paint its native grey play
-                    // affordance while a new reel is decoding after a swipe.
                     vid.play().catch(() => {});
                     if (isPlaying && !showComments) {
                       vid.play().catch(() => {});
@@ -849,7 +846,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                   onCanPlayThrough={(e) => {
                     const vid = e.currentTarget;
                     stalledChecksRef.current = 0;
-                    setIsReelReady(true);
                     if (vid.paused) {
                       vid.play().catch(() => {});
                     }
@@ -903,21 +899,6 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                   )}
                 </AnimatePresence>
 
-                {/* Play/Pause overlay */}
-                <AnimatePresence>
-                  {!isPlaying && isReelReady && !showComments && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.5 }}
-                      className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                    >
-                      <div className="w-16 h-16 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                        <Play className="w-8 h-8 text-white fill-white ml-1" />
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </motion.div>
             </AnimatePresence>
 
