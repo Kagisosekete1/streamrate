@@ -278,7 +278,7 @@ export const CommentSection = ({ postId, postOwnerId, highlightCommentId }: Comm
     });
 
     if (error) {
-      toast({ title: "Failed to add comment", variant: "destructive" });
+      toast({ title: "Failed to add comment", description: error.message, variant: "destructive" });
       return;
     }
 
@@ -301,7 +301,7 @@ export const CommentSection = ({ postId, postOwnerId, highlightCommentId }: Comm
     });
 
     if (error) {
-      toast({ title: "Failed to add reply", variant: "destructive" });
+      toast({ title: "Failed to add reply", description: error.message, variant: "destructive" });
       return;
     }
 
@@ -320,13 +320,13 @@ export const CommentSection = ({ postId, postOwnerId, highlightCommentId }: Comm
     if (isLiked) {
       const { error } = await supabase.from("comment_likes").delete().eq("comment_id", commentId).eq("user_id", user.id);
       if (error) {
-        toast({ title: "Couldn't remove like", variant: "destructive" });
+        toast({ title: "Couldn't remove like", description: error.message, variant: "destructive" });
         return;
       }
     } else {
       const { error } = await supabase.from("comment_likes").insert({ comment_id: commentId, user_id: user.id });
       if (error && error.code !== "23505") {
-        toast({ title: "Couldn't save like", variant: "destructive" });
+        toast({ title: "Couldn't save like", description: error.message, variant: "destructive" });
         return;
       }
     }

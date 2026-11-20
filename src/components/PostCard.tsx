@@ -285,7 +285,7 @@ export const PostCard = ({
           setIsLiked(true);
           setLikes((prev) => prev + 1);
         }
-        toast({ title: "Couldn't remove like", variant: "destructive" });
+        toast({ title: "Couldn't remove like", description: error.message, variant: "destructive" });
         void refreshEngagement();
         return;
       }
@@ -303,7 +303,7 @@ export const PostCard = ({
           setIsLiked(false);
           setLikes((prev) => Math.max(0, prev - 1));
         }
-        toast({ title: "Couldn't save like", variant: "destructive" });
+        toast({ title: "Couldn't save like", description: error.message, variant: "destructive" });
         void refreshEngagement();
         return;
       }
@@ -349,7 +349,7 @@ export const PostCard = ({
         setLikes((prev) => Math.max(0, prev - 1));
       }
       setShowHeartAnimation(false);
-      toast({ title: "Couldn't save like", variant: "destructive" });
+      toast({ title: "Couldn't save like", description: error.message, variant: "destructive" });
       void refreshEngagement();
       likeRequestInFlight.current = false;
       return;

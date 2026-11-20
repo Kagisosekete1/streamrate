@@ -4,7 +4,6 @@ import { X, Heart, MessageCircle, Send, ChevronDown, ChevronUp, Smile, Trash2 } 
 import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -12,6 +11,7 @@ import { EmojiPicker } from "@/components/EmojiPicker";
 import { HashtagText } from "@/components/HashtagText";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+import { MentionInput } from "@/components/MentionInput";
 
 import {
   AlertDialog,
@@ -191,7 +191,7 @@ export const PostCommentsModal = ({
     });
 
     if (error) {
-      toast({ title: "Failed to add comment", variant: "destructive" });
+      toast({ title: "Failed to add comment", description: error.message, variant: "destructive" });
       return;
     }
 
@@ -214,7 +214,7 @@ export const PostCommentsModal = ({
     });
 
     if (error) {
-      toast({ title: "Failed to add reply", variant: "destructive" });
+      toast({ title: "Failed to add reply", description: error.message, variant: "destructive" });
       return;
     }
 
@@ -374,12 +374,12 @@ export const PostCommentsModal = ({
             {/* Reply Input */}
             {replyingTo === comment.id && (
               <div className="flex items-center gap-2 mt-2">
-                <Input
+                <MentionInput
                   value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
+                  onChange={setReplyText}
                   placeholder={`Reply to ${comment.profiles?.username || "user"}...`}
-                  className="flex-1 h-8 text-sm"
-                  onKeyDown={(e) => { if (e.key === "Enter") handleAddReply(comment.id); }}
+                  className="h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddReply(comment.id); } }}
                   autoFocus
                 />
                 <button onClick={() => handleAddReply(comment.id)} disabled={!replyText.trim()} className="text-primary disabled:opacity-50">
@@ -465,12 +465,12 @@ export const PostCommentsModal = ({
               >
                 <Smile className="w-6 h-6" />
               </button>
-              <Input
+              <MentionInput
                 value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Add a comment..."
-                className="flex-1"
-                onKeyDown={(e) => e.key === "Enter" && handleAddComment()}
+                onChange={setNewComment}
+                placeholder="Add a comment... type @ to mention"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddComment(); } }}
               />
               <button
                 onClick={handleAddComment}

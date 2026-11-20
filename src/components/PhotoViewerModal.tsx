@@ -4,7 +4,7 @@ import { X, Heart, MessageCircle, Send, Smile, ChevronDown, ChevronUp } from "lu
 import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Input } from "@/components/ui/input";
+import { MentionInput } from "@/components/MentionInput";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -95,7 +95,7 @@ export const PhotoViewerModal = ({
     if (isLiked) {
       const { error } = await supabase.from("post_likes").delete().eq("post_id", postId).eq("user_id", user.id);
       if (error) {
-        toast({ title: "Couldn't remove like", variant: "destructive" });
+        toast({ title: "Couldn't remove like", description: error.message, variant: "destructive" });
         return;
       }
       setIsLiked(false);
@@ -103,7 +103,7 @@ export const PhotoViewerModal = ({
     } else {
       const { error } = await supabase.from("post_likes").insert({ post_id: postId, user_id: user.id });
       if (error && error.code !== "23505") {
-        toast({ title: "Couldn't save like", variant: "destructive" });
+        toast({ title: "Couldn't save like", description: error.message, variant: "destructive" });
         return;
       }
       setIsLiked(true);
@@ -184,7 +184,7 @@ export const PhotoViewerModal = ({
     if (!newComment.trim()) return;
     const { error } = await supabase.from("comments").insert({ post_id: postId, user_id: user.id, content: newComment.trim() });
     if (error) {
-      toast({ title: "Failed to add comment", variant: "destructive" });
+      toast({ title: "Failed to add comment", description: error.message, variant: "destructive" });
       return;
     }
     setNewComment("");
@@ -195,7 +195,7 @@ export const PhotoViewerModal = ({
     if (!user || !replyText.trim()) return;
     const { error } = await supabase.from("comments").insert({ post_id: postId, user_id: user.id, content: replyText.trim(), parent_id: parentId });
     if (error) {
-      toast({ title: "Failed to add reply", variant: "destructive" });
+      toast({ title: "Failed to add reply", description: error.message, variant: "destructive" });
       return;
     }
     setReplyText("");
@@ -209,13 +209,13 @@ export const PhotoViewerModal = ({
     if (commentIsLiked) {
       const { error } = await supabase.from("comment_likes").delete().eq("comment_id", commentId).eq("user_id", user.id);
       if (error) {
-        toast({ title: "Couldn't remove like", variant: "destructive" });
+        toast({ title: "Couldn't remove like", description: error.message, variant: "destructive" });
         return;
       }
     } else {
       const { error } = await supabase.from("comment_likes").insert({ comment_id: commentId, user_id: user.id });
       if (error && error.code !== "23505") {
-        toast({ title: "Couldn't save like", variant: "destructive" });
+        toast({ title: "Couldn't save like", description: error.message, variant: "destructive" });
         return;
       }
     }
@@ -351,7 +351,7 @@ export const PhotoViewerModal = ({
 
                         {replyingTo === comment.id && (
                           <div className="flex items-center gap-2 mt-2">
-                            <Input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder={`Reply to ${comment.profiles?.username || "user"}...`} className="flex-1 h-8 text-sm" onKeyDown={(e) => e.key === "Enter" && handleAddReply(comment.id)} />
+                            <MentionInput value={replyText} onChange={setReplyText} placeholder={`Reply to ${comment.profiles?.username || "user"}...`} className="w-full h-8 rounded-md border border-input bg-background px-3 py-1 text-sm" onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddReply(comment.id); } }} />
                             <button onClick={() => handleAddReply(comment.id)} disabled={!replyText.trim()} className="text-primary disabled:opacity-50"><Send className="w-4 h-4" /></button>
                           </div>
                         )}
@@ -382,7 +382,7 @@ export const PhotoViewerModal = ({
                 <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="text-muted-foreground hover:text-foreground">
                   <Smile className="w-5 h-5" />
                 </button>
-                <Input value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Add a comment..." className="flex-1 h-9" onKeyDown={(e) => e.key === "Enter" && handleAddComment()} />
+                <MentionInput value={newComment} onChange={setNewComment} placeholder="Add a comment... type @ to mention" className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm" onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddComment(); } }} />
                 <button onClick={handleAddComment} disabled={!newComment.trim()} className="text-primary font-semibold text-sm disabled:opacity-50">Post</button>
               </div>
               {showEmojiPicker && (
