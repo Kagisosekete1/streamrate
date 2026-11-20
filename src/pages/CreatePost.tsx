@@ -165,6 +165,7 @@ const CreatePost = () => {
       content: content.trim(),
       image_url: imageUrl,
       is_private: isPrivate,
+      created_at: new Date().toISOString(),
     });
 
     if (error) {

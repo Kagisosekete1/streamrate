@@ -31,7 +31,7 @@ interface Post {
   id: string;
   content: string;
   image_url: string | null;
-  created_at: string;
+  created_at: string | null;
   updated_at: string | null;
   user_id: string;
   is_private: boolean;
@@ -46,6 +46,14 @@ interface Post {
   is_liked: boolean;
   is_bookmarked: boolean;
 }
+
+const getPostCreatedAt = (createdAt: string | null | undefined, updatedAt?: string | null) => {
+  const parsed = createdAt ? new Date(createdAt) : null;
+  if (parsed && Number.isFinite(parsed.getTime()) && parsed.getTime() > 86_400_000) return parsed;
+  const updated = updatedAt ? new Date(updatedAt) : null;
+  if (updated && Number.isFinite(updated.getTime()) && updated.getTime() > 86_400_000) return updated;
+  return new Date();
+};
 
 const POSTS_PER_PAGE = 10;
 
@@ -403,7 +411,7 @@ const Home = () => {
                   imageUrl={post.image_url}
                   likes={post.likes_count}
                   comments={post.comments_count}
-                  createdAt={new Date(post.created_at)}
+                  createdAt={getPostCreatedAt(post.created_at, post.updated_at)}
                   updatedAt={post.updated_at ? new Date(post.updated_at) : undefined}
                   isLiked={post.is_liked}
                   isBookmarked={post.is_bookmarked}

@@ -128,12 +128,15 @@ const PostDetail = () => {
     } else {
       setIsLiked(true);
       setLikesCount((prev) => prev + 1);
-      const { error } = await supabase
-        .from("post_likes")
-        .upsert({ post_id: id, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
-      if (error) toast({ title: "Couldn't save like", variant: "destructive" });
+      const { error } = await supabase.from("post_likes").insert({ post_id: id, user_id: user.id });
+      if (error && error.code !== "23505") {
+        setIsLiked(false);
+        setLikesCount((prev) => Math.max(0, prev - 1));
+        toast({ title: "Couldn't save like", variant: "destructive" });
+      }
     }
-    refreshEngagement();
+    // Realtime reconciles the count after commit; an immediate read can race
+    // the insert and restore stale unliked state.
   };
 
   const formatCount = (count: number) => {

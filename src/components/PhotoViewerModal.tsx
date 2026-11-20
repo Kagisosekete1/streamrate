@@ -101,11 +101,8 @@ export const PhotoViewerModal = ({
       setIsLiked(false);
       setCurrentLikes((p) => Math.max(0, p - 1));
     } else {
-      const { error } = await supabase.from("post_likes").upsert(
-        { post_id: postId, user_id: user.id },
-        { onConflict: "post_id,user_id", ignoreDuplicates: true }
-      );
-      if (error) {
+      const { error } = await supabase.from("post_likes").insert({ post_id: postId, user_id: user.id });
+      if (error && error.code !== "23505") {
         toast({ title: "Couldn't save like", variant: "destructive" });
         return;
       }
@@ -216,11 +213,8 @@ export const PhotoViewerModal = ({
         return;
       }
     } else {
-      const { error } = await supabase.from("comment_likes").upsert(
-        { comment_id: commentId, user_id: user.id },
-        { onConflict: "comment_id,user_id", ignoreDuplicates: true }
-      );
-      if (error) {
+      const { error } = await supabase.from("comment_likes").insert({ comment_id: commentId, user_id: user.id });
+      if (error && error.code !== "23505") {
         toast({ title: "Couldn't save like", variant: "destructive" });
         return;
       }

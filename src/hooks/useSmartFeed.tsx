@@ -111,7 +111,11 @@ export const useSmartFeed = () => {
       }
 
       // Recency boost (newer = higher)
-      const ageHours = (Date.now() - new Date(post.created_at!).getTime()) / (1000 * 60 * 60);
+      const postCreatedAt = post.created_at ? new Date(post.created_at).getTime() : NaN;
+      const safeCreatedAt = Number.isFinite(postCreatedAt) && postCreatedAt > 86_400_000
+        ? postCreatedAt
+        : Date.now();
+      const ageHours = (Date.now() - safeCreatedAt) / (1000 * 60 * 60);
       score += Math.max(0, 100 - ageHours * 2); // decays over ~50 hours
 
       // Fresh-post priority: anything under 24h gets a strong lift so newest sits on top

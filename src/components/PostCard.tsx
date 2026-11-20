@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { Heart, MessageSquareText, Bookmark, MoreHorizontal, Trash2, Edit2, Flag, Eye } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -143,28 +143,34 @@ export const PostCard = ({
   const [showLikesModal, setShowLikesModal] = useState(false);
   const [showSeenList, setShowSeenList] = useState(false);
   const [postViewers, setPostViewers] = useState<Array<{ user_id: string; username: string | null; full_name: string | null; avatar_url: string | null; viewed_at: string }>>([]);
+  const likeMutationVersion = useRef(0);
+  const likeRequestInFlight = useRef(false);
 
   const isOwner = user?.id === streamerId;
   const canSeePostViews = profile?.email?.toLowerCase() === "kagisosekete5@gmail.com";
 
-  useEffect(() => setLikes(initialLikes), [id, initialLikes]);
   useEffect(() => setCommentsCount(comments), [id, comments]);
-  useEffect(() => setIsLiked(initialIsLiked), [id, initialIsLiked]);
   useEffect(() => setIsBookmarked(initialIsBookmarked), [id, initialIsBookmarked]);
   useEffect(() => setContent(initialContent), [id, initialContent]);
   useEffect(() => setImageUrl(initialImageUrl), [id, initialImageUrl]);
 
   const refreshEngagement = useCallback(async () => {
-    const [{ count: likeCount }, { count: commentCount }, likedResult] = await Promise.all([
+    const requestedLikeVersion = likeMutationVersion.current;
+    const [likeResult, commentResult, likedResult] = await Promise.all([
       supabase.from("post_likes").select("*", { count: "exact", head: true }).eq("post_id", id),
       supabase.from("comments").select("*", { count: "exact", head: true }).eq("post_id", id),
       user
         ? supabase.from("post_likes").select("id").eq("post_id", id).eq("user_id", user.id).maybeSingle()
-        : Promise.resolve({ data: null }),
+        : Promise.resolve({ data: null, error: null }),
     ]);
-    setLikes(likeCount || 0);
-    setCommentsCount(commentCount || 0);
-    setIsLiked(!!likedResult.data);
+
+    // Realtime can trigger a refresh while a like is still being written. Do
+    // not let an older or failed read undo the state the user just selected.
+    if (requestedLikeVersion === likeMutationVersion.current) {
+      if (!likeResult.error && likeResult.count !== null) setLikes(likeResult.count);
+      if (!likedResult.error) setIsLiked(!!likedResult.data);
+    }
+    if (!commentResult.error && commentResult.count !== null) setCommentsCount(commentResult.count);
   }, [id, user?.id]);
 
   useEffect(() => {
@@ -259,35 +265,54 @@ export const PostCard = ({
       return;
     }
 
-    if (isLiked) {
-      setIsLiked(false);
-      setLikes((prev) => Math.max(0, prev - 1));
+    if (likeRequestInFlight.current) return;
+    likeRequestInFlight.current = true;
+    const nextLiked = !isLiked;
+    likeMutationVersion.current += 1;
+    const mutationVersion = likeMutationVersion.current;
+    setIsLiked(nextLiked);
+    setLikes((prev) => Math.max(0, prev + (nextLiked ? 1 : -1)));
+
+    try {
+    if (!nextLiked) {
       const { error } = await supabase
         .from("post_likes")
         .delete()
         .eq("post_id", id)
         .eq("user_id", user.id);
       if (error) {
+        if (likeMutationVersion.current === mutationVersion) {
+          setIsLiked(true);
+          setLikes((prev) => prev + 1);
+        }
         toast({ title: "Couldn't remove like", variant: "destructive" });
-        refreshEngagement();
+        void refreshEngagement();
         return;
       }
-      refreshEngagement();
+      // Keep the optimistic state until the committed realtime event arrives.
     } else {
-      setIsLiked(true);
-      setLikes((prev) => prev + 1);
-      const { error } = await supabase.from("post_likes").upsert(
-        { post_id: id, user_id: user.id },
-        { onConflict: "post_id,user_id", ignoreDuplicates: true }
-      );
+      // INSERT matches the table's INSERT policy and avoids requiring UPDATE
+      // privileges merely to make an already-existing like idempotent.
+      const { error } = await supabase.from("post_likes").insert({ post_id: id, user_id: user.id });
       if (error) {
+        if (error.code === "23505") {
+          void refreshEngagement();
+          return;
+        }
+        if (likeMutationVersion.current === mutationVersion) {
+          setIsLiked(false);
+          setLikes((prev) => Math.max(0, prev - 1));
+        }
         toast({ title: "Couldn't save like", variant: "destructive" });
-        refreshEngagement();
+        void refreshEngagement();
         return;
       }
-      refreshEngagement();
+      // The successful write already confirms the optimistic state. A read
+      // here can race the commit and incorrectly turn the heart back off.
 
-      // Award XP for liking
+      // Award XP without holding the like button locked while that separate
+      // request completes.
+      void (async () => {
       try {
         const { data: xpData } = await supabase.from("user_xp").select("total_xp, level").eq("user_id", user.id).single();
         if (xpData) {
@@ -296,6 +321,10 @@ export const PostCard = ({
           await supabase.from("user_xp").update({ total_xp: newXp, level: newLevel }).eq("user_id", user.id);
         }
       } catch {}
+      })();
+    }
+    } finally {
+      likeRequestInFlight.current = false;
     }
   };
 
@@ -303,24 +332,30 @@ export const PostCard = ({
     e.preventDefault();
     e.stopPropagation();
     
-    if (!user || isLiked) return;
+    if (!user || isLiked || likeRequestInFlight.current) return;
 
     setShowHeartAnimation(true);
     setTimeout(() => setShowHeartAnimation(false), 1000);
 
-    const { error } = await supabase.from("post_likes").upsert(
-      { post_id: id, user_id: user.id },
-      { onConflict: "post_id,user_id", ignoreDuplicates: true }
-    );
-    if (error) {
-      setShowHeartAnimation(false);
-      toast({ title: "Couldn't save like", variant: "destructive" });
-      refreshEngagement();
-      return;
-    }
+    likeRequestInFlight.current = true;
+    likeMutationVersion.current += 1;
+    const mutationVersion = likeMutationVersion.current;
     setIsLiked(true);
     setLikes((prev) => prev + 1);
-    refreshEngagement();
+    const { error } = await supabase.from("post_likes").insert({ post_id: id, user_id: user.id });
+    if (error && error.code !== "23505") {
+      if (likeMutationVersion.current === mutationVersion) {
+        setIsLiked(false);
+        setLikes((prev) => Math.max(0, prev - 1));
+      }
+      setShowHeartAnimation(false);
+      toast({ title: "Couldn't save like", variant: "destructive" });
+      void refreshEngagement();
+      likeRequestInFlight.current = false;
+      return;
+    }
+    // Realtime will reconcile the server count after the committed insert.
+    likeRequestInFlight.current = false;
   };
 
   const handleCommentClick = (e: React.MouseEvent) => {
