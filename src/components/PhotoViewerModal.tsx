@@ -1,7 +1,7 @@
+import { formatRelativeTimeSafe } from "@/lib/formatRelativeTimeSafe";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Heart, MessageCircle, Send, Smile, ChevronDown, ChevronUp } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { MentionInput } from "@/components/MentionInput";
@@ -332,7 +332,7 @@ export const PhotoViewerModal = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-sm text-foreground">{comment.profiles?.username || "Anonymous"}</span>
-                          <span className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(comment.created_at), { addSuffix: false })}</span>
+                          <span className="text-xs text-muted-foreground">{formatRelativeTimeSafe(new Date(comment.created_at), { addSuffix: false })}</span>
                         </div>
                         <p className="text-sm text-foreground mt-0.5">{comment.content}</p>
                         <div className="flex items-center gap-4 mt-1.5">

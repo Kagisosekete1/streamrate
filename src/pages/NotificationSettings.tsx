@@ -18,6 +18,7 @@ const NotificationSettings = () => {
   const [raids, setRaids] = useState(true);
   const [coStream, setCoStream] = useState(true);
   const [tourneys, setTourneys] = useState(true);
+  const [social, setSocial] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [perm, setPerm] = useState<PermState>("default");
@@ -31,7 +32,7 @@ const NotificationSettings = () => {
       if (!user) { setLoading(false); return; }
       const { data } = await (supabase as any)
         .from("notification_settings")
-        .select("stream_reminders_enabled, raids_enabled, co_stream_requests_enabled, tournament_events_enabled")
+        .select("stream_reminders_enabled, raids_enabled, co_stream_requests_enabled, tournament_events_enabled, social_activity_enabled")
         .eq("user_id", user.id)
         .maybeSingle();
       if (data) {
@@ -39,6 +40,7 @@ const NotificationSettings = () => {
         setRaids(data.raids_enabled !== false);
         setCoStream(data.co_stream_requests_enabled !== false);
         setTourneys(data.tournament_events_enabled !== false);
+        setSocial(data.social_activity_enabled !== false);
       }
       setLoading(false);
     };
@@ -46,7 +48,7 @@ const NotificationSettings = () => {
   }, [user?.id]);
 
   const saveField = async (
-    field: "stream_reminders_enabled" | "raids_enabled" | "co_stream_requests_enabled" | "tournament_events_enabled",
+    field: "stream_reminders_enabled" | "raids_enabled" | "co_stream_requests_enabled" | "tournament_events_enabled" | "social_activity_enabled",
     value: boolean,
     setter: (v: boolean) => void,
     prev: boolean,
@@ -138,6 +140,16 @@ const NotificationSettings = () => {
                 <Button size="sm" variant="outline" className="mt-3" onClick={() => sendTest("reminder", "Reminder", enabled)}>
                   <Send className="w-3.5 h-3.5 mr-1" /> Send test
                 </Button>
+              </section>
+
+              <section className="bg-card border border-border rounded-2xl p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h2 className="font-semibold text-foreground">Social activity</h2>
+                    <p className="text-sm text-muted-foreground">Likes, comments, replies, mentions, follows, shares, and reel activity.</p>
+                  </div>
+                  <Switch checked={social} disabled={saving} onCheckedChange={(v) => saveField("social_activity_enabled", v, setSocial, social, "Social activity alerts")} />
+                </div>
               </section>
 
               <section className="bg-card border border-border rounded-2xl p-4 divide-y divide-border">

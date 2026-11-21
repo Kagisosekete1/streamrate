@@ -1,7 +1,7 @@
+import { formatRelativeTimeSafe } from "@/lib/formatRelativeTimeSafe";
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Heart, MessageCircle, Send, ChevronDown, ChevronUp, Smile, Trash2 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -69,6 +69,7 @@ export const PostCommentsModal = ({
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
   const [replies, setReplies] = useState<Record<string, Comment[]>>({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const enrichComment = useCallback(async (comment: any): Promise<Comment> => {
@@ -109,26 +110,47 @@ export const PostCommentsModal = ({
   }, [user]);
 
   const fetchComments = useCallback(async () => {
-    if (!postId) return;
-
-    const { data: commentsData, error } = await supabase
-      .from("comments")
-      .select("id, content, created_at, user_id, parent_id")
-      .eq("post_id", postId)
-      .is("parent_id", null)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching comments:", error);
+    if (!postId) {
+      setComments([]);
+      setLoadError("This post is missing its ID. Refresh the feed and try again.");
+      setLoading(false);
       return;
     }
+    setLoading(true);
+    setLoadError(null);
 
-    const commentsWithCounts = await Promise.all(
-      (commentsData || []).map(enrichComment)
-    );
+    try {
+      const { data: commentsData, error } = await supabase
+        .from("comments")
+        .select("id, content, created_at, user_id, parent_id")
+        .eq("post_id", postId)
+        .is("parent_id", null)
+        .order("created_at", { ascending: false })
+        .abortSignal(AbortSignal.timeout(12000));
 
-    setComments(commentsWithCounts);
-    setLoading(false);
+      if (error) throw error;
+
+      const rows = commentsData || [];
+      // Render the actual comment text immediately. Profile/count enrichment
+      // is secondary and must never keep the entire panel on a spinner.
+      setComments(rows.map((comment) => ({
+        ...comment,
+        profiles: null,
+        likes_count: 0,
+        replies_count: 0,
+        is_liked: false,
+      })));
+      setLoadError(null);
+      setLoading(false);
+
+      void Promise.all(rows.map(enrichComment))
+        .then((enriched) => setComments(enriched))
+        .catch((enrichError) => console.error("Could not enrich post comments:", enrichError));
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      setLoadError(error instanceof Error ? error.message : "Request timed out. Check your connection and retry.");
+      setLoading(false);
+    }
   }, [postId, enrichComment]);
 
   const fetchReplies = useCallback(async (commentId: string) => {
@@ -149,7 +171,11 @@ export const PostCommentsModal = ({
 
   useEffect(() => {
     if (isOpen && postId) {
-      fetchComments();
+      const loadingWatchdog = window.setTimeout(() => {
+        setLoading(false);
+        setLoadError("Comments are taking too long to load. Check your connection and retry.");
+      }, 8000);
+      void fetchComments().finally(() => window.clearTimeout(loadingWatchdog));
 
       // Realtime subscription
       const channel = supabase
@@ -173,7 +199,10 @@ export const PostCommentsModal = ({
         )
         .subscribe();
 
-      return () => { supabase.removeChannel(channel); };
+      return () => {
+        window.clearTimeout(loadingWatchdog);
+        supabase.removeChannel(channel);
+      };
     }
   }, [isOpen, postId]);
 
@@ -321,7 +350,7 @@ export const PostCommentsModal = ({
                 {comment.profiles?.username || "Anonymous"}
               </span>
               <span className="text-xs text-muted-foreground">
-                {formatDistanceToNow(new Date(comment.created_at), { addSuffix: false })}
+                {formatRelativeTimeSafe(new Date(comment.created_at), { addSuffix: false })}
               </span>
             </div>
             <div className="text-sm text-foreground mt-0.5">
@@ -444,6 +473,11 @@ export const PostCommentsModal = ({
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+              </div>
+            ) : loadError ? (
+              <div className="py-8 text-center space-y-3">
+                <p className="text-sm text-destructive">Couldn't load comments: {loadError}</p>
+                <button onClick={() => void fetchComments()} className="text-sm text-primary underline">Try again</button>
               </div>
             ) : comments.length === 0 ? (
               <div className="text-center py-8">

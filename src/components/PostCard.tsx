@@ -1,9 +1,9 @@
+import { formatRelativeTimeSafe } from "@/lib/formatRelativeTimeSafe";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { Heart, MessageSquareText, Bookmark, MoreHorizontal, Trash2, Edit2, Flag, Eye } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -413,7 +413,7 @@ export const PostCard = ({
               <VerificationBadge email={streamerEmail} signupNumber={signupNumber} manualBadge={manualBadge} manualExpiresAt={manualExpiresAt} />
             </Link>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span>{formatDistanceToNow(createdAt, { addSuffix: false })}</span>
+              <span>{formatRelativeTimeSafe(createdAt, { addSuffix: false })}</span>
             </div>
           </div>
         </div>
@@ -572,7 +572,7 @@ export const PostCard = ({
                     <div key={`${viewer.user_id}-${viewer.viewed_at}`} className="flex items-center gap-2 text-xs">
                       <ProfileAvatarImage src={viewer.avatar_url || "/placeholder.svg"} alt="" className="w-6 h-6 rounded-full object-cover" />
                       <span className="font-medium text-foreground truncate">{viewer.username || viewer.full_name || "User"}</span>
-                      <span className="ml-auto text-muted-foreground">{formatDistanceToNow(new Date(viewer.viewed_at), { addSuffix: true })}</span>
+                      <span className="ml-auto text-muted-foreground">{formatRelativeTimeSafe(new Date(viewer.viewed_at), { addSuffix: true })}</span>
                     </div>
                   ))
                 )}

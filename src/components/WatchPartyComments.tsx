@@ -1,6 +1,6 @@
+import { formatRelativeTimeSafe } from "@/lib/formatRelativeTimeSafe";
 import { useEffect, useRef, useState } from "react";
 import { Send, Trash2 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -146,7 +146,7 @@ export const WatchPartyComments = ({ partyId }: { partyId: string }) => {
                   <div className="flex items-baseline gap-2">
                     <span className="text-sm font-semibold text-foreground truncate">@{name}</span>
                     <span className="text-[10px] text-muted-foreground">
-                      {formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}
+                      {formatRelativeTimeSafe(new Date(c.created_at), { addSuffix: true })}
                     </span>
                   </div>
                   <p className="text-sm text-foreground/90 break-words whitespace-pre-wrap">{c.content}</p>

@@ -1,8 +1,8 @@
+import { formatRelativeTimeSafe } from "@/lib/formatRelativeTimeSafe";
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Heart, ThumbsUp, Share2, Globe } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { BottomNav } from "@/components/BottomNav";
@@ -168,7 +168,7 @@ const PostDetail = () => {
   }
 
   const previewUrl = extractFirstUrl(post.content);
-  const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
+  const timeAgo = formatRelativeTimeSafe(new Date(post.created_at), { addSuffix: true });
 
   return (
     <div className="min-h-screen bg-muted/30 pb-20">

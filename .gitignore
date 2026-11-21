@@ -31,3 +31,8 @@ emulator-*.png
 *.njsproj
 *.sln
 *.sw?
+
+*.jks
+*.keystore
+!debug.keystore
+keystore.properties

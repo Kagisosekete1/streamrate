@@ -1,3 +1,4 @@
+import { formatRelativeTimeSafe } from "@/lib/formatRelativeTimeSafe";
 import { useState, useEffect } from "react";
 import { Bell } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,7 +12,6 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatDistanceToNow } from "date-fns";
 import { getNotificationRoute } from "@/lib/notificationDeepLinks";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 
@@ -213,7 +213,7 @@ export const NotificationBell = () => {
                         {notification.message}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {formatDistanceToNow(new Date(notification.created_at), {
+                        {formatRelativeTimeSafe(new Date(notification.created_at), {
                           addSuffix: true,
                         })}
                       </p>

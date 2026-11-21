@@ -1,8 +1,8 @@
+import { formatRelativeTimeSafe } from "@/lib/formatRelativeTimeSafe";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Grid3X3, Image, Film, Bookmark, Hash, Trash2, Play, Heart, MessageCircle, Eye, MoreVertical, MoreHorizontal, Target, Rocket, BarChart3, Radio } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
-import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { removeStorageMedia } from "@/lib/removeStorageMedia";
 import { supabase } from "@/integrations/supabase/client";
@@ -525,7 +525,7 @@ export const ProfileContentGrid = ({
                           {formatCount(post.comments_count)}
                         </span>
                         <span className="ml-auto">
-                          {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                          {formatRelativeTimeSafe(new Date(post.created_at), { addSuffix: true })}
                         </span>
                       </div>
                     </div>
@@ -557,7 +557,7 @@ export const ProfileContentGrid = ({
                           {authorName}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                          {formatRelativeTimeSafe(new Date(post.created_at), { addSuffix: true })}
                         </p>
                       </div>
                       {isOwnProfile && (

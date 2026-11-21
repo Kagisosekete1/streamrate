@@ -1,3 +1,4 @@
+import { formatRelativeTimeSafe } from "@/lib/formatRelativeTimeSafe";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -11,7 +12,6 @@ import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { formatDistanceToNow } from "date-fns";
 
 interface ConnectedPlatform {
   id: string;
@@ -276,7 +276,7 @@ const StreamingAnalytics = () => {
 
                     {platform.last_synced_at && (
                       <p className="text-[10px] text-muted-foreground mt-2">
-                        Last synced {formatDistanceToNow(new Date(platform.last_synced_at), { addSuffix: true })}
+                        Last synced {formatRelativeTimeSafe(new Date(platform.last_synced_at), { addSuffix: true })}
                       </p>
                     )}
                   </motion.div>
@@ -365,7 +365,7 @@ const StreamingAnalytics = () => {
                       </div>
                     </div>
                     <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                      {formatDistanceToNow(new Date(snapshot.recorded_at), { addSuffix: true })}
+                      {formatRelativeTimeSafe(new Date(snapshot.recorded_at), { addSuffix: true })}
                     </span>
                   </div>
                 ))}

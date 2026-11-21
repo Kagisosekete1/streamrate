@@ -1,10 +1,10 @@
+import { formatRelativeTimeSafe } from "@/lib/formatRelativeTimeSafe";
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Heart, MessageCircle, ChevronDown, ChevronUp, Trash2, Edit2, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { EmojiPicker } from "@/components/EmojiPicker";
@@ -55,6 +55,7 @@ export const ReelComments = ({
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
 
@@ -81,21 +82,45 @@ export const ReelComments = ({
   }, []);
 
   const fetchComments = useCallback(async () => {
-    setLoading(true);
-    
-    const { data: commentsData } = await supabase
-      .from("reel_comments")
-      .select("*")
-      .eq("reel_id", reelId)
-      .is("parent_id", null)
-      .order("created_at", { ascending: false });
-
-    if (commentsData) {
-      const enriched = await Promise.all(commentsData.map(enrichComment));
-      setComments(enriched);
+    if (!reelId) {
+      setComments([]);
+      setLoadError("This reel is missing its ID. Refresh the feed and try again.");
+      setLoading(false);
+      return;
     }
-    
-    setLoading(false);
+    setLoading(true);
+    setLoadError(null);
+
+    try {
+      const { data: commentsData, error } = await supabase
+        .from("reel_comments")
+        .select("*")
+        .eq("reel_id", reelId)
+        .is("parent_id", null)
+        .order("created_at", { ascending: false })
+        .abortSignal(AbortSignal.timeout(12000));
+
+      if (error) throw error;
+
+      const rows = commentsData || [];
+      setComments(rows.map((comment) => ({
+        ...comment,
+        profiles: null,
+        likes_count: 0,
+        replies_count: 0,
+        is_liked: false,
+      })));
+      setLoadError(null);
+      setLoading(false);
+
+      void Promise.all(rows.map(enrichComment))
+        .then((enriched) => setComments(enriched))
+        .catch((enrichError) => console.error("Could not enrich reel comments:", enrichError));
+    } catch (error) {
+      console.error("Error fetching reel comments:", error);
+      setLoadError(error instanceof Error ? error.message : "Request timed out. Check your connection and retry.");
+      setLoading(false);
+    }
   }, [reelId, enrichComment]);
 
   const fetchReplies = useCallback(async (parentId: string) => {
@@ -117,9 +142,13 @@ export const ReelComments = ({
   }, [enrichComment]);
 
   useEffect(() => {
-    if (isOpen) {
-      fetchComments();
-    }
+    if (!isOpen) return;
+    const loadingWatchdog = window.setTimeout(() => {
+      setLoading(false);
+      setLoadError("Comments are taking too long to load. Check your connection and retry.");
+    }, 8000);
+    void fetchComments().finally(() => window.clearTimeout(loadingWatchdog));
+    return () => window.clearTimeout(loadingWatchdog);
   }, [isOpen, fetchComments]);
 
   useEffect(() => {
@@ -152,7 +181,8 @@ export const ReelComments = ({
     });
 
     if (error) {
-      toast({ title: "Failed to add comment", variant: "destructive" });
+      console.error("Failed to add reel comment:", error);
+      toast({ title: "Failed to add comment", description: error.message, variant: "destructive" });
       return;
     }
 
@@ -165,7 +195,7 @@ export const ReelComments = ({
 
     setNewComment("");
     setReplyingTo(null);
-    fetchComments();
+    await fetchComments();
     onCommentAdded();
   };
 
@@ -264,7 +294,7 @@ export const ReelComments = ({
                 {comment.profiles?.username || "Anonymous"}
               </span>
               <span className="text-xs text-muted-foreground">
-                {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                {formatRelativeTimeSafe(new Date(comment.created_at), { addSuffix: true })}
               </span>
             </div>
 
@@ -387,6 +417,11 @@ export const ReelComments = ({
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : loadError ? (
+            <div className="py-12 text-center space-y-3">
+              <p className="text-sm text-destructive">Couldn't load reel comments: {loadError}</p>
+              <button onClick={() => void fetchComments()} className="text-sm text-primary underline">Try again</button>
             </div>
           ) : comments.length === 0 ? (
             <div className="text-center py-12">

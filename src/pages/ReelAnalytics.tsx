@@ -1,3 +1,4 @@
+import { formatRelativeTimeSafe } from "@/lib/formatRelativeTimeSafe";
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Eye, Heart, MessageCircle, TrendingUp, Clock, Users, Film, BarChart3 } from "lucide-react";
@@ -6,7 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { BottomNav } from "@/components/BottomNav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDistanceToNow } from "date-fns";
 
 interface ReelAnalyticsData {
   id: string;
@@ -330,7 +330,7 @@ const ReelAnalytics = () => {
                             {reel.caption || "No caption"}
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            {formatDistanceToNow(new Date(reel.created_at), { addSuffix: true })}
+                            {formatRelativeTimeSafe(new Date(reel.created_at), { addSuffix: true })}
                           </p>
 
                           {/* Stats row */}

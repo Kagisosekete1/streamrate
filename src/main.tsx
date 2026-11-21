@@ -4,10 +4,12 @@ import App from "./App.tsx";
 import "./index.css";
 import { applyChromePwaRenderingGuards } from "@/lib/chromePwaRenderingGuard";
 import { registerAppServiceWorker } from "@/lib/pwaRegistration";
+import { Capacitor } from "@capacitor/core";
 
-applyChromePwaRenderingGuards();
-
-registerAppServiceWorker();
+if (!Capacitor.isNativePlatform()) {
+  applyChromePwaRenderingGuards();
+  registerAppServiceWorker();
+}
 
 const rootElement = document.getElementById("root");
 if (rootElement) {

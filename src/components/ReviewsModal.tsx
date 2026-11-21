@@ -1,10 +1,10 @@
+import { formatRelativeTimeSafe } from "@/lib/formatRelativeTimeSafe";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { StarRating } from "./StarRating";
-import { formatDistanceToNow } from "date-fns";
 import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 import { VerificationBadge } from "@/utils/verificationBadge";
 
@@ -157,7 +157,7 @@ export const ReviewsModal = ({ isOpen, onClose, userId, userName }: ReviewsModal
                           <p className="text-sm text-foreground/80 mt-1">{review.review_text}</p>
                         )}
                         <p className="text-xs text-muted-foreground mt-1">
-                          {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
+                          {formatRelativeTimeSafe(new Date(review.created_at), { addSuffix: true })}
                         </p>
                       </div>
                     </div>

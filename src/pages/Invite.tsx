@@ -22,8 +22,11 @@ const Invite = () => {
   const PAGE_SIZE = 10;
 
   const referralCode = (profile as any)?.referral_code as string | undefined;
+  const referralOrigin = ["localhost", "127.0.0.1"].includes(window.location.hostname)
+    ? "https://streamrateapp.com"
+    : window.location.origin;
   const referralUrl = referralCode
-    ? `${window.location.origin}/auth?ref=${referralCode}`
+    ? `${referralOrigin}/auth?ref=${encodeURIComponent(referralCode)}`
     : "";
 
   useEffect(() => {

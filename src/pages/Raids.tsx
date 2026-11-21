@@ -68,13 +68,6 @@ export default function Raids() {
       message: form.message || null,
     });
     if (error) { toast.error(error.message); return; }
-    await supabase.from("notifications").insert({
-      user_id: form.to_user_id,
-      from_user_id: user.id,
-      type: "raid_incoming",
-      title: "🔥 Incoming raid!",
-      message: `Sending ${form.raider_count} raiders your way${form.message ? " — " + form.message : ""}`,
-    });
     toast.success("Raid sent!");
     setOpen(false);
     setForm({ to_user_id: "", raider_count: 5, message: "" });

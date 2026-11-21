@@ -246,3 +246,25 @@ video.reel-video::-internal-media-controls-overlay-cast-button {
   opacity: 0 !important;
   pointer-events: none !important;
 }
+
+/* The Android Media3 TextureView sits underneath the Capacitor WebView.
+   Make the WebView canvas transparent only while the native reel player is open. */
+html.native-reel-viewer,
+html.native-reel-viewer body,
+html.native-reel-viewer #root {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+html.native-reel-viewer .native-reel-preview {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+.reel-native-surface {
+  background: transparent !important;
+}
+/* Profile content must not paint over the native Android video behind the WebView. */
+html.native-reel-viewer body:has(> [data-zyiro-reel-viewer]) #root {
+  visibility: hidden;
+}

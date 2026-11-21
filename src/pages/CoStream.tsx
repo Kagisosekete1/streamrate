@@ -85,13 +85,6 @@ export default function CoStream() {
       message: form.message || null,
     });
     if (error) { toast.error(error.message); return; }
-    await supabase.from("notifications").insert({
-      user_id: form.to_user_id,
-      from_user_id: user.id,
-      type: "co_stream_request",
-      title: "Co-stream request",
-      message: `Wants to co-stream${form.game ? " " + form.game : ""}`,
-    });
     toast.success("Request sent");
     setOpen(false);
     setForm({ to_user_id: "", game: "", scheduled_at: "", message: "" });
@@ -102,13 +95,6 @@ export default function CoStream() {
   const respond = async (r: Req, status: "accepted" | "declined") => {
     const { error } = await supabase.from("co_stream_requests").update({ status }).eq("id", r.id);
     if (error) { toast.error(error.message); return; }
-    await supabase.from("notifications").insert({
-      user_id: r.from_user_id,
-      from_user_id: user!.id,
-      type: "co_stream_response",
-      title: status === "accepted" ? "Co-stream accepted" : "Co-stream declined",
-      message: status === "accepted" ? "Your co-stream request was accepted" : "Your co-stream request was declined",
-    });
     load();
   };
 

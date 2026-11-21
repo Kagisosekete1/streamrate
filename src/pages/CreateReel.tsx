@@ -25,6 +25,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { ReelTrimmer } from "@/components/ReelTrimmer";
 import { MusicUploader } from "@/components/MusicUploader";
 import { Progress } from "@/components/ui/progress";
+import { Capacitor } from "@capacitor/core";
+import { NativeReelPlayer } from "@/plugins/NativeReelPlayer";
 
 interface DuetStitchState {
   mode: "duet" | "stitch";
@@ -61,6 +63,7 @@ const CreateReel = () => {
   const [customThumbnailFile, setCustomThumbnailFile] = useState<File | null>(null);
   const [useCustomThumbnail, setUseCustomThumbnail] = useState(false);
   const [isGeneratingThumbnails, setIsGeneratingThumbnails] = useState(false);
+  const [nativePreviewReady, setNativePreviewReady] = useState(false);
 
   // Music state
   const [musicFile, setMusicFile] = useState<File | null>(null);
@@ -71,6 +74,26 @@ const CreateReel = () => {
   const originalVideoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
+  const nativePreviewSurfaceRef = useRef<HTMLDivElement>(null);
+  const isAndroidNative = Capacitor.getPlatform() === "android";
+
+  const updateNativePreviewBounds = useCallback(() => {
+    const rect = nativePreviewSurfaceRef.current?.getBoundingClientRect();
+    if (!rect || !nativePreviewReady) return Promise.resolve();
+    return NativeReelPlayer.setBounds({ left: rect.left, top: rect.top, width: rect.width, height: rect.height });
+  }, [nativePreviewReady]);
+
+  useEffect(() => {
+    if (!isAndroidNative || !nativePreviewReady) return;
+    void updateNativePreviewBounds().then(() => NativeReelPlayer.showLocalPreview());
+    window.addEventListener("resize", updateNativePreviewBounds);
+    const observer = nativePreviewSurfaceRef.current ? new ResizeObserver(updateNativePreviewBounds) : null;
+    if (nativePreviewSurfaceRef.current) observer?.observe(nativePreviewSurfaceRef.current);
+    return () => {
+      window.removeEventListener("resize", updateNativePreviewBounds);
+      observer?.disconnect();
+    };
+  }, [isAndroidNative, nativePreviewReady, updateNativePreviewBounds]);
 
   useEffect(() => {
     if (!user) {
@@ -86,6 +109,7 @@ const CreateReel = () => {
       thumbnails.forEach((t) => {
         if (t.startsWith("blob:")) URL.revokeObjectURL(t);
       });
+      if (isAndroidNative) void NativeReelPlayer.clearLocalPreview();
     };
   }, []);
 
@@ -202,6 +226,26 @@ const CreateReel = () => {
     setUseCustomThumbnail(false);
 
     setVideoFile(file);
+    setNativePreviewReady(false);
+    if (isAndroidNative) {
+      try {
+        await NativeReelPlayer.clearLocalPreview();
+        await NativeReelPlayer.beginLocalPreview({ mimeType: file.type || "video/mp4" });
+        const chunkSize = 256 * 1024;
+        for (let offset = 0; offset < file.size; offset += chunkSize) {
+          const bytes = new Uint8Array(await file.slice(offset, offset + chunkSize).arrayBuffer());
+          let binary = "";
+          for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+          await NativeReelPlayer.appendLocalPreviewChunk({ base64: btoa(binary) });
+        }
+        await NativeReelPlayer.finishLocalPreview();
+        await NativeReelPlayer.setMuted({ muted: isMuted });
+        setNativePreviewReady(true);
+      } catch (error) {
+        console.warn("Native reel preview unavailable; using browser preview", error);
+        setNativePreviewReady(false);
+      }
+    }
     const url = URL.createObjectURL(file);
     setVideoPreview(url);
 
@@ -225,6 +269,11 @@ const CreateReel = () => {
   };
 
   const togglePlay = () => {
+    if (isAndroidNative && nativePreviewReady) {
+      void (isPlaying ? NativeReelPlayer.pause() : NativeReelPlayer.play());
+      setIsPlaying(!isPlaying);
+      return;
+    }
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
@@ -236,6 +285,11 @@ const CreateReel = () => {
   };
 
   const toggleMute = () => {
+    if (isAndroidNative && nativePreviewReady) {
+      void NativeReelPlayer.setMuted({ muted: !isMuted });
+      setIsMuted(!isMuted);
+      return;
+    }
     if (videoRef.current) {
       videoRef.current.muted = !isMuted;
       setIsMuted(!isMuted);
@@ -302,20 +356,31 @@ const CreateReel = () => {
       const { data: urlData } = supabase.storage.from("reels").getPublicUrl(videoFileName);
       setUploadProgress(70);
 
-      // Upload custom thumbnail if selected
+      // Persist the chosen frame (or custom cover) for feed and push previews.
       let thumbnailUrl: string | null = null;
       if (useCustomThumbnail && customThumbnailFile) {
         const thumbFileName = `${user.id}/thumbnails/${Date.now()}_thumb.jpg`;
         const { error: thumbError } = await supabase.storage
           .from("reels")
-          .upload(thumbFileName, customThumbnailFile);
+          .upload(thumbFileName, customThumbnailFile, { contentType: customThumbnailFile.type, upsert: false });
 
-        if (!thumbError) {
+        if (thumbError) throw thumbError;
+        {
           const { data: thumbUrlData } = supabase.storage
             .from("reels")
             .getPublicUrl(thumbFileName);
           thumbnailUrl = thumbUrlData.publicUrl;
         }
+      } else if (thumbnails[selectedThumbnail]) {
+        const selectedCover = await fetch(thumbnails[selectedThumbnail]).then((response) => response.blob());
+        const thumbFileName = `${user.id}/thumbnails/${Date.now()}_frame.jpg`;
+        const { error: thumbError } = await supabase.storage
+          .from("reels")
+          .upload(thumbFileName, selectedCover, { contentType: "image/jpeg", upsert: false });
+        if (thumbError) throw thumbError;
+        thumbnailUrl = supabase.storage.from("reels").getPublicUrl(thumbFileName).data.publicUrl;
+      } else {
+        throw new Error("Choose a reel cover frame before uploading.");
       }
 
       setUploadProgress(85);
@@ -351,6 +416,7 @@ const CreateReel = () => {
         .insert({
           user_id: user.id,
           video_url: urlData.publicUrl,
+          thumbnail_url: thumbnailUrl,
           caption: finalCaption,
           duration: Math.round(trimEnd - trimStart),
         })
@@ -414,6 +480,8 @@ const CreateReel = () => {
   };
 
   const clearVideo = () => {
+    if (isAndroidNative) void NativeReelPlayer.clearLocalPreview();
+    setNativePreviewReady(false);
     if (videoPreview) URL.revokeObjectURL(videoPreview);
     if (customThumbnail) URL.revokeObjectURL(customThumbnail);
     setVideoFile(null);
@@ -427,7 +495,7 @@ const CreateReel = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className={`min-h-screen bg-background pb-24 ${nativePreviewReady ? "native-reel-preview" : ""}`}>
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between p-4">
@@ -475,7 +543,7 @@ const CreateReel = () => {
                 <video
                   ref={originalVideoRef}
                   src={duetStitchState.originalVideoUrl}
-                  className="w-full h-full object-cover"
+                  className={`w-full h-full object-contain ${nativePreviewReady ? "opacity-0" : ""}`}
                   muted
                   loop
                   playsInline
@@ -537,7 +605,7 @@ const CreateReel = () => {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="aspect-[9/16] max-h-[60vh] rounded-3xl overflow-hidden bg-black relative"
+                className={`aspect-[9/16] max-h-[60vh] rounded-3xl overflow-hidden relative ${nativePreviewReady ? "bg-transparent" : "bg-black"}`}
               >
                 <video
                   ref={videoRef}
@@ -549,6 +617,9 @@ const CreateReel = () => {
                   onLoadedMetadata={handleVideoLoad}
                   onClick={togglePlay}
                 />
+                {isAndroidNative && (
+                  <div ref={nativePreviewSurfaceRef} className="reel-native-surface absolute inset-0 w-full h-full" aria-hidden="true" />
+                )}
 
                 {/* Play/Pause overlay */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

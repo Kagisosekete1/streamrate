@@ -1,3 +1,5 @@
+import { createPortal } from "react-dom";
+import { formatRelativeTimeSafe } from "@/lib/formatRelativeTimeSafe";
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Music2, Flag, UserPlus, Eye, Layers, BarChart3, Wifi, WifiOff } from "lucide-react";
@@ -5,7 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { HashtagText } from "@/components/HashtagText";
@@ -18,6 +19,8 @@ import { AvatarViewModal } from "@/components/AvatarViewModal";
 import { OnlineIndicator } from "@/hooks/useOnlinePresence";
 import { ReportBlockModal } from "@/components/ReportBlockModal";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
+import { Capacitor } from "@capacitor/core";
+import { NativeReelPlayer } from "@/plugins/NativeReelPlayer";
 
 import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
 
@@ -29,6 +32,7 @@ interface Reel {
   user_id: string;
   created_at: string;
   view_count?: number;
+  thumbnail_url?: string | null;
   user?: {
     username: string | null;
     avatar_url: string | null;
@@ -51,6 +55,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   const { toast } = useToast();
   const navigate = useNavigate();
   const { recordView, updateUserInterest, updateHashtagInterests } = useForYouAlgorithm();
+  const useNativePlayer = Capacitor.getPlatform() === "android";
   
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   // Play original reel audio by default. Android's WebView media gesture
@@ -77,12 +82,12 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   recordViewRef.current = recordView;
   const userRef = useRef(user);
   userRef.current = user;
-  const videoSlotsRef = useRef<[HTMLVideoElement | null, HTMLVideoElement | null]>([null, null]);
-  const [activeVideoSlot, setActiveVideoSlot] = useState<0 | 1>(0);
+  // Keep a single inline decoder mounted. Two overlapping HTML video surfaces
+  // can leave Android WebView's native paused/play overlay visible after a swipe.
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const playerSurfaceRef = useRef<HTMLDivElement | null>(null);
   const [isVideoTransitioning, setIsVideoTransitioning] = useState(false);
-  const activeVideoSlotRef = useRef<0 | 1>(0);
   const swipeDirectionRef = useRef<-1 | 1>(-1);
-  const videoChangeSequenceRef = useRef(0);
   const ignoreVideoTapUntilRef = useRef(0);
   const transitionStartedAtRef = useRef(0);
   const transitionRevealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -92,13 +97,43 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
   useEffect(() => {
     return () => {
       if (transitionRevealTimeoutRef.current) clearTimeout(transitionRevealTimeoutRef.current);
-      videoSlotsRef.current.forEach((video) => {
-        video?.pause();
-        video?.removeAttribute("src");
-        video?.load();
-      });
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.removeAttribute("src");
+        videoRef.current.load();
+      }
+      if (useNativePlayer) void NativeReelPlayer.hide();
     };
-  }, []);
+  }, [useNativePlayer]);
+
+  useEffect(() => {
+    const shouldExposeNativeSurface = useNativePlayer && isOpen;
+    document.documentElement.classList.toggle("native-reel-viewer", shouldExposeNativeSurface);
+    return () => document.documentElement.classList.remove("native-reel-viewer");
+  }, [useNativePlayer, isOpen]);
+
+  useEffect(() => {
+    if (!useNativePlayer || !isOpen) return;
+    let cancelled = false;
+    let removeListener: (() => Promise<void>) | undefined;
+    NativeReelPlayer.addListener("playbackState", (event) => {
+      if (cancelled) return;
+      if (event.state === "ready") {
+        const remaining = Math.max(0, 30 - (Date.now() - transitionStartedAtRef.current));
+        if (transitionRevealTimeoutRef.current) clearTimeout(transitionRevealTimeoutRef.current);
+        transitionRevealTimeoutRef.current = setTimeout(() => setIsVideoTransitioning(false), remaining);
+      } else if (event.state === "error") {
+        console.warn("Native reel playback failed", event.message);
+        setIsVideoTransitioning(false);
+      }
+    }).then((listener) => {
+      removeListener = listener.remove;
+    }).catch((error) => console.warn("Native reel player bridge unavailable", error));
+    return () => {
+      cancelled = true;
+      if (removeListener) void removeListener();
+    };
+  }, [useNativePlayer, isOpen]);
 
   // Get current reel safely
   const currentReel = reels[currentIndex] || null;
@@ -301,127 +336,108 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     setIsPlaying(true);
   }, [currentReel?.id]);
 
-  // Keep the playing reel on one surface while the second surface prepares
-  // the requested reel. Swap only after the incoming clip has decoded a frame.
+  // Change the source on one stable video surface. Keep the transition black
+  // until the next clip is actually playing, so no WebView play placeholder leaks through.
   useLayoutEffect(() => {
+    const video = videoRef.current;
     if (!isOpen || !currentReel) {
-      videoSlotsRef.current.forEach((video) => video?.pause());
+      video?.pause();
+      if (useNativePlayer) void NativeReelPlayer.hide();
       return;
     }
-
-    const sequence = ++videoChangeSequenceRef.current;
-    const currentSlot = activeVideoSlotRef.current;
-    const currentVideo = videoSlotsRef.current[currentSlot];
-    const targetSlot: 0 | 1 = currentVideo?.dataset.reelId === currentReel.id
-      ? currentSlot
-      : (currentSlot === 0 ? 1 : 0);
-    const incoming = videoSlotsRef.current[targetSlot];
-    if (!incoming) return;
-
-    let cancelled = false;
-    const onPlaying = () => {
-      if (cancelled || sequence !== videoChangeSequenceRef.current) return;
-      if (activeVideoSlotRef.current === targetSlot && viewStartTime.current === 0) {
-        viewStartTime.current = Date.now();
-      }
-      if (activeVideoSlotRef.current === targetSlot && !showComments) {
-        if (transitionRevealTimeoutRef.current) clearTimeout(transitionRevealTimeoutRef.current);
-        const remainingCoverMs = Math.max(0, 350 - (Date.now() - transitionStartedAtRef.current));
-        transitionRevealTimeoutRef.current = setTimeout(() => {
-          if (!cancelled && sequence === videoChangeSequenceRef.current) {
-            setIsVideoTransitioning(false);
-          }
-        }, remainingCoverMs);
-      }
-    };
-    const activate = () => {
-      if (cancelled || sequence !== videoChangeSequenceRef.current) return;
-      if (incoming.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || incoming.videoWidth === 0) return;
-
-      const outgoing = videoSlotsRef.current[activeVideoSlotRef.current];
-      if (outgoing && outgoing !== incoming) outgoing.pause();
-      activeVideoSlotRef.current = targetSlot;
-      setActiveVideoSlot(targetSlot);
-      incoming.muted = isMuted;
-      if (isPlaying && !showComments) {
-        incoming.play().catch(() => undefined);
-      } else {
-        setIsVideoTransitioning(false);
-      }
-    };
-
-    const onError = () => {
-      if (cancelled || sequence !== videoChangeSequenceRef.current) return;
-      if (incoming.dataset.retryAttempted === "true") {
-        console.warn("Reel video failed to load", currentReel.id, incoming.error?.code);
-        return;
-      }
-      incoming.dataset.retryAttempted = "true";
-      window.setTimeout(() => {
-        if (cancelled || sequence !== videoChangeSequenceRef.current) return;
-        incoming.src = currentReel.video_url;
-        incoming.load();
-      }, 500);
-    };
-
-    incoming.addEventListener("loadeddata", activate);
-    incoming.addEventListener("canplay", activate);
-    incoming.addEventListener("playing", onPlaying);
-    incoming.addEventListener("error", onError);
-
-    if (incoming.dataset.reelId !== currentReel.id || incoming.currentSrc !== currentReel.video_url) {
-      incoming.pause();
-      incoming.dataset.reelId = currentReel.id;
-      incoming.dataset.retryAttempted = "false";
-      incoming.preload = "auto";
-      incoming.src = currentReel.video_url;
-      incoming.load();
+    if (useNativePlayer) {
+      const surface = playerSurfaceRef.current;
+      if (!surface || surface.dataset.reelId === currentReel.id) return;
+      surface.dataset.reelId = currentReel.id;
+      transitionStartedAtRef.current = Date.now();
+      setIsVideoTransitioning(true);
+      const rect = surface.getBoundingClientRect();
+      const nextUrl = reels[currentIndex + 1]?.video_url;
+      void NativeReelPlayer.setBounds({ left: rect.left, top: rect.top, width: rect.width, height: rect.height })
+        .then(() => NativeReelPlayer.show({ url: currentReel.video_url, nextUrl }))
+        .then(() => NativeReelPlayer.setMuted({ muted: isMuted }))
+        .catch((error) => {
+          console.warn("Unable to start native reel playback", error);
+          setIsVideoTransitioning(false);
+        });
+      return;
     }
+    if (!video || video.dataset.reelId === currentReel.id) return;
 
-    activate();
+    transitionStartedAtRef.current = Date.now();
+    setIsVideoTransitioning(true);
+    let cancelled = false;
+    const reveal = () => {
+      if (cancelled) return;
+      if (viewStartTime.current === 0) viewStartTime.current = Date.now();
+      if (transitionRevealTimeoutRef.current) clearTimeout(transitionRevealTimeoutRef.current);
+      const remainingCoverMs = Math.max(0, 30 - (Date.now() - transitionStartedAtRef.current));
+      transitionRevealTimeoutRef.current = setTimeout(() => {
+        if (!cancelled) setIsVideoTransitioning(false);
+      }, remainingCoverMs);
+    };
+    const startPlayback = () => {
+      if (cancelled) return;
+      video.muted = isMuted;
+      if (!showComments) video.play().catch((error) => {
+        console.warn("Reel autoplay was blocked", currentReel.id, error);
+      });
+    };
+    const onError = () => console.warn("Reel video failed to load", currentReel.id, video.error?.code);
+    video.addEventListener("loadeddata", startPlayback);
+    video.addEventListener("canplay", startPlayback);
+    video.addEventListener("playing", reveal);
+    video.addEventListener("error", onError);
+    video.pause();
+    video.dataset.reelId = currentReel.id;
+    video.muted = isMuted;
+    video.src = currentReel.video_url;
+    video.load();
 
     return () => {
       cancelled = true;
-      incoming.removeEventListener("loadeddata", activate);
-      incoming.removeEventListener("canplay", activate);
-      incoming.removeEventListener("playing", onPlaying);
-      incoming.removeEventListener("error", onError);
+      video.removeEventListener("loadeddata", startPlayback);
+      video.removeEventListener("canplay", startPlayback);
+      video.removeEventListener("playing", reveal);
+      video.removeEventListener("error", onError);
     };
-  }, [currentReel?.id, currentReel?.video_url, isPlaying, isOpen, showComments]);
+  }, [currentReel?.id, currentReel?.video_url, currentIndex, reels, isOpen, isMuted, useNativePlayer]);
 
-  // Keep the current clip's sound/pause state in sync without disturbing the
-  // hidden buffer while it is waiting for its first decoded frame.
   useEffect(() => {
-    const video = videoSlotsRef.current[activeVideoSlotRef.current];
-    if (!video || !isOpen) return;
+    if (!useNativePlayer || !isOpen) return;
+    const updateBounds = () => {
+      const rect = playerSurfaceRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      void NativeReelPlayer.setBounds({ left: rect.left, top: rect.top, width: rect.width, height: rect.height });
+    };
+    updateBounds();
+    window.addEventListener("resize", updateBounds);
+    const observer = playerSurfaceRef.current ? new ResizeObserver(updateBounds) : null;
+    if (playerSurfaceRef.current) observer?.observe(playerSurfaceRef.current);
+    return () => {
+      window.removeEventListener("resize", updateBounds);
+      observer?.disconnect();
+    };
+  }, [useNativePlayer, isOpen]);
+
+  // Keep original audio enabled by default and pause while comments are open.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!isOpen) return;
+    if (useNativePlayer) {
+      void NativeReelPlayer.setMuted({ muted: isMuted });
+      void (isPlaying && !showComments ? NativeReelPlayer.play() : NativeReelPlayer.pause());
+      return;
+    }
+    if (!video) return;
     video.muted = isMuted;
     if (isPlaying && !showComments) video.play().catch(() => undefined);
     else video.pause();
-  }, [activeVideoSlot, isMuted, isPlaying, isOpen, showComments]);
-
-  // Prime exactly one neighboring reel in the inactive surface. Direction is
-  // remembered so both upward and downward swipes can be ready in advance.
-  useEffect(() => {
-    if (!isOpen || reels.length < 2 || !currentReel) return;
-    const activeSlot = activeVideoSlotRef.current;
-    if (videoSlotsRef.current[activeSlot]?.dataset.reelId !== currentReel.id) return;
-    const inactiveSlot: 0 | 1 = activeSlot === 0 ? 1 : 0;
-    const standby = videoSlotsRef.current[inactiveSlot];
-    if (!standby) return;
-    const neighborIndex = currentIndex - swipeDirectionRef.current;
-    const neighbor = reels[neighborIndex];
-    if (!neighbor || neighbor.id === currentReel.id || standby.dataset.reelId === neighbor.id) return;
-    standby.pause();
-    standby.dataset.reelId = neighbor.id;
-    standby.dataset.retryAttempted = "false";
-    standby.preload = "auto";
-    standby.src = neighbor.video_url;
-    standby.load();
-  }, [activeVideoSlot, currentIndex, currentReel?.id, isOpen, reels]);
+  }, [isMuted, isPlaying, isOpen, showComments, useNativePlayer]);
 
   // Video progress
   useEffect(() => {
-    const video = videoSlotsRef.current[activeVideoSlotRef.current];
+    const video = videoRef.current;
     if (!video || !isOpen || !currentReel) return;
 
     const handleTimeUpdate = () => {
@@ -432,7 +448,23 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
 
     video.addEventListener("timeupdate", handleTimeUpdate);
     return () => video.removeEventListener("timeupdate", handleTimeUpdate);
-  }, [activeVideoSlot, currentIndex, isOpen, currentReel]);
+  }, [currentIndex, isOpen, currentReel, useNativePlayer]);
+
+  useEffect(() => {
+    if (!useNativePlayer || !isOpen || !currentReel) return;
+    let cancelled = false;
+    const poll = async () => {
+      const state = await NativeReelPlayer.getState().catch(() => null);
+      if (cancelled || !state?.duration) return;
+      setVideoProgress((state.position || 0) / state.duration * 100);
+    };
+    void poll();
+    const interval = window.setInterval(poll, 250);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [useNativePlayer, isOpen, currentReel?.id]);
 
   // Haptic feedback helper
   const triggerHaptic = useCallback(() => {
@@ -453,7 +485,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
       transitionStartedAtRef.current = Date.now();
       if (transitionRevealTimeoutRef.current) clearTimeout(transitionRevealTimeoutRef.current);
       setIsVideoTransitioning(true);
-      videoSlotsRef.current[activeVideoSlotRef.current]?.pause();
+      if (!useNativePlayer) videoRef.current?.pause();
       setCurrentIndex(prev => prev + 1);
       setIsPlaying(true);
       setVideoProgress(0);
@@ -466,7 +498,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
       transitionStartedAtRef.current = Date.now();
       if (transitionRevealTimeoutRef.current) clearTimeout(transitionRevealTimeoutRef.current);
       setIsVideoTransitioning(true);
-      videoSlotsRef.current[activeVideoSlotRef.current]?.pause();
+      if (!useNativePlayer) videoRef.current?.pause();
       setCurrentIndex(prev => prev - 1);
       setIsPlaying(true);
       setVideoProgress(0);
@@ -586,12 +618,9 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
         ...prev,
         [reelId]: { count: (currentLikeState?.count || 0) + 1, isLiked: true }
       }));
-      const { error } = await supabase.from("reel_likes").upsert(
-        { reel_id: reelId, user_id: user.id },
-        { onConflict: "reel_id,user_id", ignoreDuplicates: true }
-      );
-      if (error) {
-        toast({ title: "Couldn't save like", variant: "destructive" });
+      const { error } = await supabase.from("reel_likes").insert({ reel_id: reelId, user_id: user.id });
+      if (error && error.code !== "23505") {
+        toast({ title: "Couldn't save like", description: error.message, variant: "destructive" });
         await fetchReelData(reelId);
         return;
       }
@@ -713,15 +742,13 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
     return count.toString();
   };
 
-  return (
-    <AnimatePresence>
-      {isOpen && currentReel && (
+  return createPortal(<AnimatePresence>{isOpen && currentReel && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-black"
-          ref={containerRef}
+          className={cn("fixed inset-0 z-50", useNativePlayer ? "bg-transparent" : "bg-black")}
+          data-zyiro-reel-viewer="" ref={containerRef}
         >
           {/* Progress bar at top */}
           <div className="absolute top-0 left-0 right-0 z-50 h-0.5 bg-white/20">
@@ -805,33 +832,37 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                 className="absolute inset-0 flex items-center justify-center"
                 onClick={handleVideoTap}
               >
-                {[0, 1].map((slot) => (
+                {useNativePlayer ? (
+                  <div
+                    ref={playerSurfaceRef}
+                    className="reel-native-surface absolute inset-0 w-full h-full max-w-lg mx-auto pointer-events-none"
+                    aria-hidden="true"
+                  />
+                ) : (
                   <video
-                    key={slot}
-                    ref={(element) => { videoSlotsRef.current[slot] = element; }}
-                    className={cn(
-                      "reel-video absolute inset-0 w-full h-full object-contain max-w-lg mx-auto transition-opacity duration-100",
-                      activeVideoSlot === slot ? "opacity-100" : "opacity-0 pointer-events-none",
-                    )}
+                    ref={videoRef}
+                    className="reel-video absolute inset-0 w-full h-full object-contain max-w-lg mx-auto"
                     loop
                     playsInline
                     muted={isMuted}
                     controls={false}
-                    preload="auto"
+                    preload="metadata"
                     disablePictureInPicture
                     disableRemotePlayback
                     controlsList="nodownload nofullscreen noremoteplayback"
                     // @ts-ignore - webkit specific
                     webkit-playsinline="true"
                     x-webkit-airplay="deny"
-                    style={{ WebkitAppearance: "none" } as React.CSSProperties}
+                    style={{ WebkitAppearance: "none", backgroundColor: "#000" } as React.CSSProperties}
                   />
-                ))}
-                {isVideoTransitioning && (
+                )}
+                {isVideoTransitioning && currentReel.thumbnail_url && (
                   <div
-                    className="absolute inset-0 z-10 bg-black"
+                    className="absolute inset-0 z-10 pointer-events-none"
                     aria-hidden="true"
-                  />
+                  >
+                    {currentReel.thumbnail_url && <img src={currentReel.thumbnail_url} alt="" className="w-full h-full object-contain" />}
+                  </div>
                 )}
 
                 {/* Double tap heart animation */}
@@ -859,7 +890,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                 <ProfileAvatarImage
                   src={currentReel.user?.avatar_url || getDefaultAvatar()}
                   alt={currentReel.user?.username || "User"}
-                  className="w-10 h-10 rounded-full object-cover border-2 border-white cursor-pointer"
+                  className="w-12 h-12 rounded-full object-cover border-2 border-white cursor-pointer shadow-lg"
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowAvatarView(true);
@@ -1034,7 +1065,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                   <span>{formatCount(viewCount)} views</span>
                 </div>
                 <span>•</span>
-                <span>{formatDistanceToNow(new Date(currentReel.created_at), { addSuffix: true })}</span>
+                <span>{formatRelativeTimeSafe(new Date(currentReel.created_at), { addSuffix: true })}</span>
               </div>
 
             </div>
@@ -1077,6 +1108,5 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
           />
         </motion.div>
       )}
-    </AnimatePresence>
-  );
+    </AnimatePresence>, document.body);
 };

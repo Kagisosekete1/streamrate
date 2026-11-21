@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 interface PushLogRow {
   id: string;
+  notification_id: string | null;
   user_id: string | null;
   notification_type: string | null;
   title: string | null;
@@ -79,20 +80,18 @@ const AdminPushLogs = () => {
   };
 
   const retryDispatch = async (row: PushLogRow) => {
+    if (!row.notification_id) {
+      toast.error("This older log has no notification record to retry.");
+      return;
+    }
     if (!row.user_id || !row.title || !row.message) {
       toast.error("This log is missing required notification details.");
       return;
     }
 
     setRetryingId(row.id);
-    const retryBody = {
-      userId: row.user_id,
-      title: row.title,
-      message: row.message,
-      data: row.payload?.data ?? { type: row.notification_type },
-    };
-    const { error } = await supabase.functions.invoke("send-push-notification", {
-      body: retryBody,
+    const { error } = await (supabase as any).rpc("retry_push_notification", {
+      _notification_id: row.notification_id,
     });
 
     await (supabase as any)

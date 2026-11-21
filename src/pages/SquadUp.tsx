@@ -70,18 +70,9 @@ const SquadUp = () => {
     }
     // Notify the request poster (don't notify self)
     if (request.user_id !== user.id) {
-      const { data: me } = await supabase
-        .from("profiles")
-        .select("username, full_name")
-        .eq("id", user.id)
-        .maybeSingle();
-      const myName = me?.username || me?.full_name || "Someone";
-      const { error } = await supabase.from("notifications").insert({
-        user_id: request.user_id,
-        from_user_id: user.id,
-        title: "Squad Interest",
-        message: `${myName} wants to squad up for ${request.game}`,
-        type: "lfg_response",
+      const { error } = await (supabase as any).from("squad_request_interests").insert({
+        request_id: request.id,
+        user_id: user.id,
       });
       if (!error) {
         toast.success(`${request.user_name || "Poster"} was notified you're interested!`);

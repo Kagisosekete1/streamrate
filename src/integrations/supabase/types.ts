@@ -1192,6 +1192,7 @@ export type Database = {
           updated_at: string
           user_id: string
           video_url: string
+          thumbnail_url: string | null
           view_count: number
         }
         Insert: {
@@ -1202,6 +1203,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           video_url: string
+          thumbnail_url?: string | null
           view_count?: number
         }
         Update: {
@@ -1212,6 +1214,8 @@ export type Database = {
           updated_at?: string
           user_id?: string
           video_url?: string
+          thumbnail_url?: string | null
+          thumbnail_url?: string | null
           view_count?: number
         }
         Relationships: []

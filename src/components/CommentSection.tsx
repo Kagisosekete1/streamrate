@@ -1,7 +1,7 @@
+import { formatRelativeTimeSafe } from "@/lib/formatRelativeTimeSafe";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, MessageCircle, Send, ChevronDown, ChevronUp, Trash2, Edit2, X, Check } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
@@ -60,6 +60,7 @@ export const CommentSection = ({ postId, postOwnerId, highlightCommentId }: Comm
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
   const [replies, setReplies] = useState<Record<string, Comment[]>>({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [replyToUsername, setReplyToUsername] = useState<string | null>(null);
@@ -140,24 +141,35 @@ export const CommentSection = ({ postId, postOwnerId, highlightCommentId }: Comm
   }, [user]);
 
   const fetchComments = useCallback(async () => {
-    const { data: commentsData, error } = await supabase
-      .from("comments")
-      .select("id, content, created_at, user_id, parent_id")
-      .eq("post_id", postId)
-      .is("parent_id", null)
-      .order("created_at", { ascending: false });
+    setLoadError(null);
+    try {
+      const { data: commentsData, error } = await supabase
+        .from("comments")
+        .select("id, content, created_at, user_id, parent_id")
+        .eq("post_id", postId)
+        .is("parent_id", null)
+        .order("created_at", { ascending: false })
+        .abortSignal(AbortSignal.timeout(12000));
 
-    if (error) {
+      if (error) throw error;
+
+      const rows = commentsData || [];
+      setComments(rows.map((comment) => ({
+        ...comment,
+        profiles: null,
+        likes_count: 0,
+        replies_count: 0,
+        is_liked: false,
+      })));
+      setLoading(false);
+      void Promise.all(rows.map(enrichComment))
+        .then((enriched) => setComments(enriched))
+        .catch((enrichError) => console.error("Could not enrich comments:", enrichError));
+    } catch (error) {
       console.error("Error fetching comments:", error);
-      return;
+      setLoadError(error instanceof Error ? error.message : "Request timed out. Check your connection and retry.");
+      setLoading(false);
     }
-
-    const commentsWithCounts = await Promise.all(
-      (commentsData || []).map(enrichComment)
-    );
-
-    setComments(commentsWithCounts);
-    setLoading(false);
   }, [postId, enrichComment]);
 
   const fetchReplies = useCallback(async (commentId: string) => {
@@ -454,7 +466,7 @@ export const CommentSection = ({ postId, postOwnerId, highlightCommentId }: Comm
                   {comment.profiles?.username || "Anonymous"}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                  {formatRelativeTimeSafe(new Date(comment.created_at), { addSuffix: true })}
                 </span>
               </div>
 
@@ -590,6 +602,8 @@ export const CommentSection = ({ postId, postOwnerId, highlightCommentId }: Comm
       <div className="divide-y divide-border/30">
         {loading ? (
           <div className="py-4 text-center text-muted-foreground">Loading comments...</div>
+        ) : loadError ? (
+          <div className="py-4 text-center text-destructive">Couldn't load comments: {loadError}<button onClick={() => void fetchComments()} className="ml-2 text-primary underline">Retry</button></div>
         ) : comments.length === 0 ? (
           <div className="py-4 text-center text-muted-foreground">No comments yet. Be the first!</div>
         ) : (

@@ -502,14 +502,18 @@ const Settings = () => {
     const deletionDate = new Date();
     deletionDate.setDate(deletionDate.getDate() + 10);
     
-    await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .update({ 
         scheduled_deletion_at: deletionDate.toISOString(),
         is_deactivated: true,
         deactivated_at: new Date().toISOString()
       } as any)
-      .eq("id", user.id);
+      .eq("id", user.id).select("id").maybeSingle();
+    if (error || !data) {
+      toast({ title: "Deletion request could not be saved", description: "Please try again or contact support.", variant: "destructive" });
+      return;
+    }
     
     await signOut();
     toast({ title: "Account scheduled for deletion", description: "Your account will be permanently deleted in 10 days. Log back in to cancel." });

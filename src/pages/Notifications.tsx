@@ -1,3 +1,4 @@
+import { formatRelativeTimeSafe } from "@/lib/formatRelativeTimeSafe";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -8,7 +9,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { formatDistanceToNow } from "date-fns";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 import { getNotificationRoute } from "@/lib/notificationDeepLinks";
 
@@ -76,10 +76,13 @@ const Notifications = () => {
       navigate("/invite");
       return;
     }
-    const url = `${window.location.origin}/auth?ref=${encodeURIComponent(code)}`;
+    const referralOrigin = ["localhost", "127.0.0.1"].includes(window.location.hostname)
+      ? "https://streamrateapp.com"
+      : window.location.origin;
+    const url = `${referralOrigin}/auth?ref=${encodeURIComponent(code)}`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: "Join me", url });
+        await navigator.share({ title: "Join Zyiro", url });
       } else {
         await navigator.clipboard.writeText(url);
         toast.success("Referral link copied");
@@ -444,7 +447,7 @@ const Notifications = () => {
                             <p className="text-sm font-semibold text-foreground">New Followers</p>
                             <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">{message}</p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                              {formatRelativeTimeSafe(new Date(notification.created_at), { addSuffix: true })}
                             </p>
                           </>
                         );
@@ -455,7 +458,7 @@ const Notifications = () => {
                         {notification.message}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {formatDistanceToNow(new Date(notification.created_at), {
+                        {formatRelativeTimeSafe(new Date(notification.created_at), {
                           addSuffix: true,
                         })}
                       </p>
@@ -581,7 +584,7 @@ const Notifications = () => {
                               @{f.from_user?.username || "Someone"}
                             </h3>
                             <p className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(f.created_at), { addSuffix: true })}
+                              {formatRelativeTimeSafe(new Date(f.created_at), { addSuffix: true })}
                             </p>
                           </div>
                         </motion.button>

@@ -61,10 +61,9 @@ const Reels = () => {
 
         const profileMap = profiles ? Object.fromEntries(profiles.map(p => [p.id, p])) : {};
 
-        // Shuffle and enrich in one pass
-        const enriched = [...reelsData]
-          .sort(() => Math.random() - 0.5)
-          .map(reel => ({
+        // Keep the database order. The Latest feed is already sorted by
+        // created_at, and randomizing it breaks swipe order and deep links.
+        const enriched = reelsData.map(reel => ({
             ...reel,
             user: profileMap[reel.user_id]
               ? { username: profileMap[reel.user_id].username, avatar_url: profileMap[reel.user_id].avatar_url }

@@ -1,5 +1,6 @@
+import { formatRelativeTimeSafe } from "@/lib/formatRelativeTimeSafe";
 import { useState, useEffect } from "react";
-import { formatDistanceToNow, format } from "date-fns";
+import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Clock } from "lucide-react";
@@ -83,7 +84,7 @@ export const LastSeenDisplay = ({ userId, className = "" }: LastSeenDisplayProps
     <div className={`flex items-center gap-1.5 text-xs text-muted-foreground ${className}`}>
       <Clock className="w-3 h-3" />
       <span>
-        Last seen {formatDistanceToNow(lastSeenDate, { addSuffix: true })}
+        Last seen {formatRelativeTimeSafe(lastSeenDate, { addSuffix: true })}
       </span>
     </div>
   );
