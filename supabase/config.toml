@@ -10,4 +10,6 @@ project_id = "oczrdiyvubwxttrrajhe"
   [functions.send-miss-you-email]
     verify_jwt = false
   [functions.send-push-notification]
-    verify_jwt = false
+  verify_jwt = false
+  [functions.admin-password-recovery]
+    verify_jwt = true
