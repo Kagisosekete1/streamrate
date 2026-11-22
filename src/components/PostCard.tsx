@@ -25,6 +25,8 @@ import { removeStorageMedia } from "@/lib/removeStorageMedia";
 
 import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
 
+let postCardRealtimeChannelSequence = 0;
+
 const CaptionWithSeeMore = ({ streamerName, streamerId, content, hasImage }: { streamerName: string; streamerId: string; content: string; hasImage?: boolean }) => {
   const [expanded, setExpanded] = useState(false);
   const shouldTruncate = hasImage ? content.length > 80 : content.length > 250;
@@ -176,8 +178,13 @@ export const PostCard = ({
 
   // Realtime likes & comments count
   useEffect(() => {
+    // A post can render more than once in a feed, and React can re-run this
+    // effect while auth state changes. Realtime topics must be unique per
+    // subscription instance; reusing post-counts-${id} can return an already
+    // subscribed channel and make `.on()` throw, crashing the whole screen.
+    const channelTopic = `post-counts-${id}-${++postCardRealtimeChannelSequence}`;
     const channel = supabase
-      .channel(`post-counts-${id}`)
+      .channel(channelTopic)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "post_likes", filter: `post_id=eq.${id}` },
@@ -190,7 +197,7 @@ export const PostCard = ({
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => { void supabase.removeChannel(channel); };
   }, [id, refreshEngagement]);
 
 

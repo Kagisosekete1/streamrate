@@ -28,6 +28,14 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({ hasError: false, error: null });
   };
 
+  handleGoHome = () => {
+    window.location.assign("/home");
+  };
+
+  handleReload = () => {
+    window.location.reload();
+  };
+
   render() {
     if (this.state.hasError) {
       return (
@@ -47,6 +55,14 @@ export class ErrorBoundary extends Component<Props, State> {
               <RefreshCw className="w-4 h-4" />
               Try Again
             </button>
+            <div className="mt-3 flex justify-center gap-4 text-sm">
+              <button onClick={this.handleGoHome} className="text-primary hover:underline">
+                Go to Home
+              </button>
+              <button onClick={this.handleReload} className="text-muted-foreground hover:text-foreground hover:underline">
+                Reload app
+              </button>
+            </div>
           </div>
         </div>
       );
