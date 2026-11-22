@@ -44,6 +44,12 @@ const Toast = React.forwardRef<
       onOpenChange?: (open: boolean) => void;
     }
 >(({ className, variant, open, onOpenChange, ...props }, ref) => {
+  React.useEffect(() => {
+    if (open === false || !onOpenChange) return;
+    const timeout = window.setTimeout(() => onOpenChange(false), 3000);
+    return () => window.clearTimeout(timeout);
+  }, [open, onOpenChange]);
+
   if (open === false) return null;
   return <div ref={ref} className={cn(toastVariants({ variant }), className)} {...props} />;
 });
