@@ -141,7 +141,6 @@ const WatchParties = () => {
       // section useful by falling back to profiles with a public stream link.
       if (!profiles.length) {
         const result = await supabase.from("profiles").select("id, username, full_name, avatar_url")
-          .or("twitch_url.not.is.null,kick_url.not.is.null,youtube_gaming_url.not.is.null")
           .eq("is_deactivated", false).limit(40);
         profiles = result.data || [];
       }

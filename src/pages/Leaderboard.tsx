@@ -22,6 +22,7 @@ const Leaderboard = () => {
   const navigate = useNavigate();
   const [streamers, setStreamers] = useState<Streamer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchLeaderboard();
@@ -47,24 +48,40 @@ const Leaderboard = () => {
   }, []);
 
   const fetchLeaderboard = async () => {
-    // Get all users with streamer role
-    const { data: roleData } = await supabase
+    setLoadError(null);
+    // Role rows are missing for some migrated/legacy creators. Query them,
+    // but don't let an empty or inaccessible role table hide public profiles.
+    const { data: roleData, error: roleError } = await supabase
       .from("user_roles")
       .select("user_id")
       .eq("role", "streamer");
-
-    const streamerIds = roleData?.map((r) => r.user_id) || [];
-
-    if (streamerIds.length === 0) {
+    const { data: allProfiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, full_name, username, avatar_url, country, twitch_url, kick_url, youtube_gaming_url")
+      .eq("is_deactivated", false)
+      .limit(1000);
+    if (profilesError) {
+      setLoadError("Could not load creator rankings. Please try again.");
+      setStreamers([]);
       setLoading(false);
       return;
     }
-
-    // Get streamer profiles
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, full_name, username, avatar_url, country")
-      .in("id", streamerIds);
+    const roleIds = new Set((roleData || []).map((r) => r.user_id));
+    // Union role-backed streamers with legacy creator profiles, since account
+    // migrations did not always create a user_roles row.
+    let profiles = (allProfiles || []).filter((profile) =>
+      roleIds.has(profile.id) || profile.twitch_url || profile.kick_url || profile.youtube_gaming_url
+    );
+    // A subset of restored accounts has neither role metadata nor channel
+    // links. Keep the leaderboard populated from real profiles while their
+    // rating totals still determine the order.
+    if (profiles.length === 0) profiles = allProfiles || [];
+    if (roleError && !profiles.length) {
+      setLoadError("Could not determine creator rankings. Please try again.");
+      setStreamers([]);
+      setLoading(false);
+      return;
+    }
 
     // Get ratings for each streamer
     const streamersWithRatings = await Promise.all(
@@ -249,7 +266,8 @@ const Leaderboard = () => {
           ) : streamers.length === 0 ? (
             <div className="text-center py-12">
               <Trophy className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
-              <p className="text-muted-foreground">No streamers ranked yet</p>
+              <p className="text-muted-foreground">{loadError || "No ranked creators found yet"}</p>
+              {loadError && <button onClick={() => { setLoading(true); void fetchLeaderboard(); }} className="mt-3 text-sm text-primary">Try again</button>}
             </div>
           ) : (
             <div className="space-y-2">
