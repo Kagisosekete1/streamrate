@@ -766,9 +766,16 @@ const Profile = () => {
     setShowEditModal(false);
     } catch (error) {
       console.error("Failed to save profile", error);
+      const saveErrorMessage =
+        error && typeof error === "object" && "message" in error &&
+        typeof error.message === "string"
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : "Please try again.";
       toast({
         title: "Failed to update profile",
-        description: error instanceof Error ? error.message : "Please try again.",
+        description: saveErrorMessage,
         variant: "destructive",
       });
     } finally {
