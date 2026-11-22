@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Users, Play } from "lucide-react";
+import { ArrowLeft, Users } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,7 +10,6 @@ import { normalizeStreamUrl, validateStreamUrl, StreamPlatform } from "@/lib/str
 import { WatchPartyComments } from "@/components/WatchPartyComments";
 import { toast } from "sonner";
 import { Capacitor } from "@capacitor/core";
-import { Browser } from "@capacitor/browser";
 import { NativeReelPlayer } from "@/plugins/NativeReelPlayer";
 
 const REACTIONS = ["🔥", "😂", "💯", "🎮", "👏", "❤️", "😱", "🏆"];
@@ -28,7 +27,6 @@ const WatchPartyRoom = () => {
   const [party, setParty] = useState<any>(null);
   const [memberCount, setMemberCount] = useState(0);
   const [floating, setFloating] = useState<{ id: string; emoji: string; x: number }[]>([]);
-  const [playRequested, setPlayRequested] = useState(false);
   const [playerError, setPlayerError] = useState<string | null>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -48,7 +46,6 @@ const WatchPartyRoom = () => {
         return;
       }
       setParty(data);
-      setPlayRequested(false);
       setPlayerError(null);
 
       // A transient Realtime Presence session is the source of viewer counts;
@@ -124,12 +121,34 @@ const WatchPartyRoom = () => {
   const rawStreamUrl = party?.stream_url || "";
   const validated = validateStreamUrl(platform, rawStreamUrl);
   const canonicalUrl = validated.ok ? validated.url : normalizeStreamUrl(platform, rawStreamUrl) || rawStreamUrl;
-  const externalUrl = canonicalUrl;
   const isDirectMedia = platform === "custom" && /\.(mp4|m4v|webm|m3u8)(?:[?#]|$)/i.test(canonicalUrl);
   const isNativeAndroid = Capacitor.getPlatform() === "android";
+  const embedUrl = (() => {
+    if (!canonicalUrl) return null;
+    if (platform === "twitch") {
+      const channel = new URL(canonicalUrl).pathname.split("/").filter(Boolean)[0]?.replace(/^@/, "");
+      if (!channel) return null;
+      const parents = Array.from(new Set([window.location.hostname, "streamrateapp.com", "www.streamrateapp.com"]));
+      const parentParams = parents.map((parent) => `parent=${encodeURIComponent(parent)}`).join("&");
+      return `https://player.twitch.tv/?channel=${encodeURIComponent(channel)}&${parentParams}&autoplay=true&muted=false`;
+    }
+    if (platform === "kick") {
+      const channel = new URL(canonicalUrl).pathname.split("/").filter(Boolean)[0]?.replace(/^@/, "");
+      return channel ? `https://player.kick.com/${encodeURIComponent(channel)}?autoplay=true&muted=false` : null;
+    }
+    if (platform === "youtube") {
+      const videoId = canonicalUrl.match(/(?:youtu\.be\/|v=|\/embed\/|\/live\/)([A-Za-z0-9_-]{11})/)?.[1];
+      if (videoId) return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=0&controls=1&playsinline=1`;
+      const channel = new URL(canonicalUrl).pathname.replace(/^\//, "").split("/")[0];
+      return channel ? `https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(channel)}&autoplay=1&mute=0&controls=1&playsinline=1` : null;
+    }
+    // Custom website streams that aren't direct media may still offer an
+    // embeddable in-app player. Sites that block framing show the fallback.
+    return canonicalUrl;
+  })();
 
   useEffect(() => {
-    if (!party || !isDirectMedia || !playRequested || !isNativeAndroid) return;
+    if (!party || !isDirectMedia || !isNativeAndroid) return;
     const positionPlayer = () => {
       const rect = playerContainerRef.current?.getBoundingClientRect();
       if (!rect) return;
@@ -159,21 +178,13 @@ const WatchPartyRoom = () => {
       void playbackListener?.remove();
       void NativeReelPlayer.hide();
     };
-  }, [canonicalUrl, isDirectMedia, isNativeAndroid, party, playRequested]);
+  }, [canonicalUrl, isDirectMedia, isNativeAndroid, party]);
 
   useEffect(() => {
-    if (!party || !isDirectMedia || !playRequested || isNativeAndroid) return;
+    if (!party || !isDirectMedia || isNativeAndroid) return;
     void videoRef.current?.play().catch(() => setPlayerError("Tap play in the video controls to begin."));
     return () => videoRef.current?.pause();
-  }, [canonicalUrl, isDirectMedia, isNativeAndroid, party, playRequested]);
-
-  const openOfficialPlayer = async () => {
-    try {
-      await Browser.open({ url: externalUrl });
-    } catch {
-      window.open(externalUrl, "_blank", "noopener,noreferrer");
-    }
-  };
+  }, [canonicalUrl, isDirectMedia, isNativeAndroid, party]);
 
   if (!party) return null;
 
@@ -191,28 +202,28 @@ const WatchPartyRoom = () => {
         </header>
 
         <div ref={playerContainerRef} className="relative bg-black aspect-video w-full max-w-5xl mx-auto overflow-hidden">
-          {isDirectMedia && playRequested && !isNativeAndroid && (
-            <video ref={videoRef} src={canonicalUrl} controls playsInline className="absolute inset-0 h-full w-full bg-black object-contain" />
+          {isDirectMedia && !isNativeAndroid && (
+            <video ref={videoRef} src={canonicalUrl} controls autoPlay playsInline className="absolute inset-0 h-full w-full bg-black object-contain" />
           )}
-          {(!isDirectMedia || !playRequested) && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black text-center p-6">
-              <div className="text-sm font-medium text-white/75">
-                {isDirectMedia
-                  ? isNativeAndroid ? "Direct stream · Android Media3 player" : "Direct video stream"
-                  : `${platform === "custom" ? "Stream" : `${platform[0].toUpperCase()}${platform.slice(1)}`} opens in its official player`}
-              </div>
-              {playerError && <p className="max-w-md text-sm text-red-300">{playerError}</p>}
-              {isDirectMedia ? (
-                <Button variant="gaming" className="min-w-44 gap-2" onClick={() => { setPlayerError(null); setPlayRequested(true); }}>
-                  <Play className="w-4 h-4 fill-current" />
-                  Start watching
-                </Button>
-              ) : (
-                <Button variant="gaming" className="min-w-44 gap-2" onClick={openOfficialPlayer}>
-                  <Play className="w-4 h-4 fill-current" />
-                  Open official player
-                </Button>
-              )}
+          {!isDirectMedia && embedUrl && (
+            <iframe
+              key={embedUrl}
+              src={embedUrl}
+              className="absolute inset-0 h-full w-full border-0"
+              allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+              allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
+              title={`${platform} watch party stream`}
+            />
+          )}
+          {playerError && (
+            <div className="absolute inset-x-0 bottom-0 z-10 bg-black/80 px-3 py-2 text-center text-sm text-red-300">
+              {playerError}
+            </div>
+          )}
+          {!isDirectMedia && !embedUrl && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black p-5 text-center text-sm text-white/75">
+              This stream link cannot be played inside Zyiro. Use a supported Twitch, Kick, YouTube, or direct video link.
             </div>
           )}
 
