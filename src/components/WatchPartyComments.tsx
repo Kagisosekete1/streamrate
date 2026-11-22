@@ -119,8 +119,28 @@ export const WatchPartyComments = ({ partyId }: { partyId: string }) => {
   };
 
   const remove = async (id: string) => {
-    const { error } = await supabase.from("watch_party_comments").delete().eq("id", id);
-    if (error) toast.error("Couldn't delete");
+    if (!user) {
+      toast.error("Sign in to delete your comment");
+      return;
+    }
+    const { data, error } = await supabase
+      .from("watch_party_comments")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .select("id")
+      .maybeSingle();
+    if (error) {
+      console.error("Couldn't delete watch party comment", error);
+      toast.error(error.message || "Couldn't delete comment");
+      return;
+    }
+    if (!data) {
+      toast.error("Comment was not deleted. You can delete only your own comments.");
+      return;
+    }
+    setComments((current) => current.filter((comment) => comment.id !== id));
+    toast.success("Comment deleted");
   };
 
   return (
@@ -163,7 +183,7 @@ export const WatchPartyComments = ({ partyId }: { partyId: string }) => {
                   <button
                     onClick={() => remove(c.id)}
                     aria-label="Delete comment"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-muted-foreground hover:text-destructive"
+                    className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity p-2 text-muted-foreground hover:text-destructive"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

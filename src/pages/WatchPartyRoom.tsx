@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Users, Play } from "lucide-react";
@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button";
 import { normalizeStreamUrl, validateStreamUrl, StreamPlatform } from "@/lib/streamLinks";
 import { WatchPartyComments } from "@/components/WatchPartyComments";
 import { toast } from "sonner";
+import { Capacitor } from "@capacitor/core";
+import { Browser } from "@capacitor/browser";
+import { NativeReelPlayer } from "@/plugins/NativeReelPlayer";
 
 const REACTIONS = ["🔥", "😂", "💯", "🎮", "👏", "❤️", "😱", "🏆"];
 
@@ -25,8 +28,10 @@ const WatchPartyRoom = () => {
   const [party, setParty] = useState<any>(null);
   const [memberCount, setMemberCount] = useState(0);
   const [floating, setFloating] = useState<{ id: string; emoji: string; x: number }[]>([]);
-  const [embedLoaded, setEmbedLoaded] = useState(false);
   const [playRequested, setPlayRequested] = useState(false);
+  const [playerError, setPlayerError] = useState<string | null>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -43,6 +48,8 @@ const WatchPartyRoom = () => {
         return;
       }
       setParty(data);
+      setPlayRequested(false);
+      setPlayerError(null);
 
       // A transient Realtime Presence session is the source of viewer counts;
       // stored membership rows can outlive disconnected devices and must not be counted.
@@ -113,48 +120,62 @@ const WatchPartyRoom = () => {
     }
   };
 
-  if (!party) return null;
-
-  // Validate + normalize once so embeds are reliable on laptops too.
-  const platform = party.platform as StreamPlatform;
-  const validated = validateStreamUrl(platform, party.stream_url);
-  const canonicalUrl = validated.ok ? validated.url : normalizeStreamUrl(platform, party.stream_url) || party.stream_url;
+  const platform = (party?.platform || "custom") as StreamPlatform;
+  const rawStreamUrl = party?.stream_url || "";
+  const validated = validateStreamUrl(platform, rawStreamUrl);
+  const canonicalUrl = validated.ok ? validated.url : normalizeStreamUrl(platform, rawStreamUrl) || rawStreamUrl;
   const externalUrl = canonicalUrl;
+  const isDirectMedia = platform === "custom" && /\.(mp4|m4v|webm|m3u8)(?:[?#]|$)/i.test(canonicalUrl);
+  const isNativeAndroid = Capacitor.getPlatform() === "android";
 
-  const embedUrl = (() => {
-    const url = canonicalUrl;
-    const host = window.location.hostname;
-    // Twitch requires every embedding parent host. Cover the current host
-    // plus the Lovable preview/published domains so laptop previews work.
-    const parents = Array.from(new Set([
-      host,
-      "streamrateapp.com",
-      "www.streamrateapp.com",
-    ].filter(Boolean)));
-    const parentParams = parents.map((p) => `parent=${encodeURIComponent(p)}`).join("&");
+  useEffect(() => {
+    if (!party || !isDirectMedia || !playRequested || !isNativeAndroid) return;
+    const positionPlayer = () => {
+      const rect = playerContainerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      void NativeReelPlayer.setBounds({ left: rect.left, top: rect.top, width: rect.width, height: rect.height });
+    };
+    let playbackListener: { remove: () => Promise<void> } | undefined;
+    let disposed = false;
+    void NativeReelPlayer.addListener("playbackState", (state) => {
+      if (state.state === "error") {
+        setPlayerError(state.message || "This direct stream could not be played.");
+      }
+    }).then((listener) => {
+      if (disposed) void listener.remove();
+      else playbackListener = listener;
+    });
+    positionPlayer();
+    void NativeReelPlayer.show({ url: canonicalUrl }).catch((error) => {
+      console.error("Watch party Media3 playback failed", error);
+      setPlayerError("This direct stream could not be played. Check that the link is a public MP4, WebM, or HLS stream.");
+    });
+    window.addEventListener("resize", positionPlayer);
+    window.addEventListener("scroll", positionPlayer, true);
+    return () => {
+      disposed = true;
+      window.removeEventListener("resize", positionPlayer);
+      window.removeEventListener("scroll", positionPlayer, true);
+      void playbackListener?.remove();
+      void NativeReelPlayer.hide();
+    };
+  }, [canonicalUrl, isDirectMedia, isNativeAndroid, party, playRequested]);
 
-    if (platform === "twitch") {
-      const channel = url.split("/").filter(Boolean).pop()?.replace(/^@/, "") || "";
-      if (!channel) return null;
-      return `https://player.twitch.tv/?channel=${encodeURIComponent(channel)}&${parentParams}&muted=false&autoplay=true`;
+  useEffect(() => {
+    if (!party || !isDirectMedia || !playRequested || isNativeAndroid) return;
+    void videoRef.current?.play().catch(() => setPlayerError("Tap play in the video controls to begin."));
+    return () => videoRef.current?.pause();
+  }, [canonicalUrl, isDirectMedia, isNativeAndroid, party, playRequested]);
+
+  const openOfficialPlayer = async () => {
+    try {
+      await Browser.open({ url: externalUrl });
+    } catch {
+      window.open(externalUrl, "_blank", "noopener,noreferrer");
     }
-    if (platform === "kick") {
-      const channel = url.split("/").filter(Boolean).pop()?.replace(/^@/, "") || "";
-      if (!channel) return null;
-      return `https://player.kick.com/${encodeURIComponent(channel)}?autoplay=true&muted=false`;
-    }
-    if (platform === "youtube") {
-      const m = url.match(/(?:youtu\.be\/|v=|\/embed\/|\/live\/)([A-Za-z0-9_-]{11})/);
-      if (m) return `https://www.youtube.com/embed/${m[1]}?autoplay=1&mute=0&controls=0&playsinline=1`;
-      const handle = url.split("/").filter(Boolean).pop()?.replace(/^@/, "") || "";
-      if (handle) return `https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(handle)}&autoplay=1&mute=0&controls=0&playsinline=1`;
-    }
-    if (platform === "custom") {
-      // Best-effort: try to load the URL itself (works for sites that allow framing).
-      return url;
-    }
-    return null;
-  })();
+  };
+
+  if (!party) return null;
 
   return (
     <AppLayout showBottomNav={false}>
@@ -169,42 +190,29 @@ const WatchPartyRoom = () => {
           </div>
         </header>
 
-        <div className="relative bg-black aspect-video w-full max-w-5xl mx-auto overflow-hidden">
-          {embedUrl && playRequested ? (
-            <>
-              <iframe
-                key={embedUrl}
-                src={embedUrl}
-                className="absolute inset-0 w-full h-full border-0"
-                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                allowFullScreen
-                onLoad={() => setEmbedLoaded(true)}
-                referrerPolicy="strict-origin-when-cross-origin"
-                title="Stream"
-              />
-              {!embedLoaded && <div className="absolute inset-0 bg-black pointer-events-none" />}
-            </>
-          ) : embedUrl ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#08080b] text-center p-6">
-              <div className="text-sm font-medium text-white/75">Ready when you are</div>
-              <Button
-                variant="gaming"
-                className="min-w-44 gap-2"
-                onClick={() => {
-                  setEmbedLoaded(false);
-                  setPlayRequested(true);
-                }}
-              >
-                <Play className="w-4 h-4 fill-current" />
-                Start watching
-              </Button>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center p-4">
-              <p className="text-white mb-3">Open the stream in a new tab to watch with the party</p>
-              <a href={externalUrl} target="_blank" rel="noopener noreferrer">
-                <Button variant="gaming">Open Stream</Button>
-              </a>
+        <div ref={playerContainerRef} className="relative bg-black aspect-video w-full max-w-5xl mx-auto overflow-hidden">
+          {isDirectMedia && playRequested && !isNativeAndroid && (
+            <video ref={videoRef} src={canonicalUrl} controls playsInline className="absolute inset-0 h-full w-full bg-black object-contain" />
+          )}
+          {(!isDirectMedia || !playRequested) && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black text-center p-6">
+              <div className="text-sm font-medium text-white/75">
+                {isDirectMedia
+                  ? isNativeAndroid ? "Direct stream · Android Media3 player" : "Direct video stream"
+                  : `${platform === "custom" ? "Stream" : `${platform[0].toUpperCase()}${platform.slice(1)}`} opens in its official player`}
+              </div>
+              {playerError && <p className="max-w-md text-sm text-red-300">{playerError}</p>}
+              {isDirectMedia ? (
+                <Button variant="gaming" className="min-w-44 gap-2" onClick={() => { setPlayerError(null); setPlayRequested(true); }}>
+                  <Play className="w-4 h-4 fill-current" />
+                  Start watching
+                </Button>
+              ) : (
+                <Button variant="gaming" className="min-w-44 gap-2" onClick={openOfficialPlayer}>
+                  <Play className="w-4 h-4 fill-current" />
+                  Open official player
+                </Button>
+              )}
             </div>
           )}
 
