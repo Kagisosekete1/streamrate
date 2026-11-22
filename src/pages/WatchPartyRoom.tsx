@@ -1,12 +1,11 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Users, Send, X } from "lucide-react";
+import { ArrowLeft, Users, Play } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { normalizeStreamUrl, validateStreamUrl, StreamPlatform } from "@/lib/streamLinks";
 import { WatchPartyComments } from "@/components/WatchPartyComments";
 import { toast } from "sonner";
@@ -27,7 +26,7 @@ const WatchPartyRoom = () => {
   const [memberCount, setMemberCount] = useState(0);
   const [floating, setFloating] = useState<{ id: string; emoji: string; x: number }[]>([]);
   const [embedLoaded, setEmbedLoaded] = useState(false);
-  const channelRef = useRef<any>(null);
+  const [playRequested, setPlayRequested] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -69,7 +68,6 @@ const WatchPartyRoom = () => {
         })
       .subscribe();
 
-    channelRef.current = channel;
     return () => {
       supabase.removeChannel(channel);
       if (user && id) supabase.from("watch_party_members").delete().eq("party_id", id).eq("user_id", user.id);
@@ -121,18 +119,18 @@ const WatchPartyRoom = () => {
     if (platform === "twitch") {
       const channel = url.split("/").filter(Boolean).pop()?.replace(/^@/, "") || "";
       if (!channel) return null;
-      return `https://player.twitch.tv/?channel=${encodeURIComponent(channel)}&${parentParams}&muted=true&autoplay=true`;
+      return `https://player.twitch.tv/?channel=${encodeURIComponent(channel)}&${parentParams}&muted=false&autoplay=true`;
     }
     if (platform === "kick") {
       const channel = url.split("/").filter(Boolean).pop()?.replace(/^@/, "") || "";
       if (!channel) return null;
-      return `https://player.kick.com/${encodeURIComponent(channel)}?autoplay=true&muted=true`;
+      return `https://player.kick.com/${encodeURIComponent(channel)}?autoplay=true&muted=false`;
     }
     if (platform === "youtube") {
       const m = url.match(/(?:youtu\.be\/|v=|\/embed\/|\/live\/)([A-Za-z0-9_-]{11})/);
-      if (m) return `https://www.youtube.com/embed/${m[1]}?autoplay=1&mute=1&controls=0&playsinline=1`;
+      if (m) return `https://www.youtube.com/embed/${m[1]}?autoplay=1&mute=0&controls=0&playsinline=1`;
       const handle = url.split("/").filter(Boolean).pop()?.replace(/^@/, "") || "";
-      if (handle) return `https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(handle)}&autoplay=1&mute=1&controls=0&playsinline=1`;
+      if (handle) return `https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(handle)}&autoplay=1&mute=0&controls=0&playsinline=1`;
     }
     if (platform === "custom") {
       // Best-effort: try to load the URL itself (works for sites that allow framing).
@@ -154,13 +152,11 @@ const WatchPartyRoom = () => {
           </div>
         </header>
 
-        <div className="relative bg-black aspect-video w-full max-w-5xl mx-auto">
-          {embedUrl ? (
+        <div className="relative bg-black aspect-video w-full max-w-5xl mx-auto overflow-hidden">
+          {embedUrl && playRequested ? (
             <>
-              {!embedLoaded && (
-                <Skeleton className="absolute inset-0 w-full h-full bg-muted/40" />
-              )}
               <iframe
+                key={embedUrl}
                 src={embedUrl}
                 className="absolute inset-0 w-full h-full border-0"
                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
@@ -169,7 +165,23 @@ const WatchPartyRoom = () => {
                 referrerPolicy="strict-origin-when-cross-origin"
                 title="Stream"
               />
+              {!embedLoaded && <div className="absolute inset-0 bg-black pointer-events-none" />}
             </>
+          ) : embedUrl ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#08080b] text-center p-6">
+              <div className="text-sm font-medium text-white/75">Ready when you are</div>
+              <Button
+                variant="gaming"
+                className="min-w-44 gap-2"
+                onClick={() => {
+                  setEmbedLoaded(false);
+                  setPlayRequested(true);
+                }}
+              >
+                <Play className="w-4 h-4 fill-current" />
+                Start watching
+              </Button>
+            </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center p-4">
               <p className="text-white mb-3">Open the stream in a new tab to watch with the party</p>
