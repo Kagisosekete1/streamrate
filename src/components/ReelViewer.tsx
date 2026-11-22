@@ -773,7 +773,7 @@ export const ReelViewer = ({ reels, initialIndex = 0, isOpen, onClose, onLoadMor
                 onClick={() => onTabChange("latest")}
                 className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${activeTab === "latest" ? "bg-white text-black" : "text-white/70"}`}
               >
-                Latest
+                Shuffle
               </button>
               <button
                 onClick={() => onTabChange("foryou")}

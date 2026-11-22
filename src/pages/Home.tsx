@@ -1,3 +1,4 @@
+import { shuffleFeed } from "@/lib/shuffleFeed";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
@@ -112,7 +113,8 @@ const Home = () => {
     if (newPosts.length < POSTS_PER_PAGE) {
       setHasMorePosts(false);
     }
-    setPosts((prev) => [...prev, ...newPosts]);
+    const nextPage = shuffleFeed(newPosts);
+    setPosts((prev) => [...prev, ...nextPage]);
     setLoadingMore(false);
   }, [loadingMore, hasMorePosts, posts.length]);
 
@@ -337,7 +339,7 @@ const Home = () => {
         });
       }
     }
-    setPosts(postsWithCounts);
+    setPosts(shuffleFeed(postsWithCounts));
     setHasMorePosts(postsWithCounts.length >= POSTS_PER_PAGE);
     if (postsWithCounts.length > 0) {
       latestPostId.current = postsWithCounts[0].id;

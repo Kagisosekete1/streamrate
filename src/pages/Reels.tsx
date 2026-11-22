@@ -1,3 +1,4 @@
+import { shuffleFeed } from "@/lib/shuffleFeed";
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,8 +62,6 @@ const Reels = () => {
 
         const profileMap = profiles ? Object.fromEntries(profiles.map(p => [p.id, p])) : {};
 
-        // Keep the database order. The Latest feed is already sorted by
-        // created_at, and randomizing it breaks swipe order and deep links.
         const enriched = reelsData.map(reel => ({
             ...reel,
             user: profileMap[reel.user_id]
@@ -70,7 +69,7 @@ const Reels = () => {
               : { username: null, avatar_url: null }
           }));
 
-        setReels(enriched);
+        setReels(shuffleFeed(enriched));
         setHasMore(reelsData.length >= REELS_PER_PAGE);
       } else {
         setReels([]);
@@ -120,7 +119,8 @@ const Reels = () => {
           : { username: null, avatar_url: null }
       }));
 
-      setReels(prev => [...prev, ...enriched]);
+      const nextPage = shuffleFeed(enriched);
+      setReels(prev => [...prev, ...nextPage]);
     } catch (err) {
       console.error("Error loading more reels:", err);
     } finally {
@@ -129,9 +129,12 @@ const Reels = () => {
   }, [loadingMore, hasMore, reels.length]);
 
   useEffect(() => {
-    fetchReels();
-    fetchForYouReels();
-  }, [fetchReels, fetchForYouReels]);
+    void fetchReels();
+  }, [fetchReels]);
+
+  useEffect(() => {
+    void fetchForYouReels();
+  }, [fetchForYouReels]);
 
   const currentReelsList = activeTab === "foryou" ? forYouReels : reels;
 
