@@ -516,7 +516,7 @@ const Settings = () => {
     }
     
     await signOut();
-    toast({ title: "Account scheduled for deletion", description: "Your account will be permanently deleted in 10 days. Log back in to cancel." });
+    toast({ title: "Deletion request saved", description: "For updates, contact the Zyiro team from your account email." });
     navigate("/auth");
   };
 
@@ -1027,7 +1027,7 @@ const Settings = () => {
           <SettingItem
             icon={UserX}
             title="Delete Account"
-            subtitle="10-day recovery window before permanent deletion"
+            subtitle="Request removal of your account and content"
             onClick={() => setActiveModal("deleteAccount")}
             destructive
           />
@@ -1507,9 +1507,9 @@ const Settings = () => {
         {activeModal === "deleteAccount" && (
           <Modal title="Delete Account">
             <div className="p-4 bg-destructive/10 rounded-xl mb-4">
-              <p className="text-destructive font-medium">⚠️ 10-Day Recovery Window</p>
+              <p className="text-destructive font-medium">Request permanent deletion</p>
               <p className="text-sm text-destructive/80 mt-1">
-                Your account will be scheduled for deletion. You have 10 days to log back in and cancel. After 10 days, all your data (profile, posts, reviews) will be permanently removed.
+                Submitting this request marks your account for deletion and signs you out. The request covers your profile and associated content, including posts, photos and reels. For updates, email kagisosekete5@gmail.com from your account email.
               </p>
             </div>
             <div className="flex gap-3">
@@ -1517,7 +1517,7 @@ const Settings = () => {
                 Cancel
               </Button>
               <Button variant="destructive" onClick={handleDeleteAccount} className="flex-1">
-                Schedule Deletion
+                Request deletion
               </Button>
             </div>
           </Modal>
