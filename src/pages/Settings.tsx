@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import QRCode from "qrcode";
 import {
   ChevronLeft,
   User,
@@ -33,9 +32,6 @@ import {
   Monitor,
   Clock,
   Info,
-  QrCode,
-  Download,
-  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,9 +49,6 @@ import { PrivacyPolicyModal } from "@/components/settings/PrivacyPolicyModal";
 import { TermsOfServiceModal } from "@/components/settings/TermsOfServiceModal";
 import { ReportProblemModal } from "@/components/settings/ReportProblemModal";
 import { AppLockModal } from "@/components/settings/AppLockModal";
-import { getDefaultAvatar } from "@/utils/defaultAvatar";
-import { buildProfileQrUrl, checkQrHandleAvailable, sanitizeQrHandle } from "@/lib/profileQr";
-import { cn } from "@/lib/utils";
 
 import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
 
@@ -243,8 +236,8 @@ const NotificationsModal = ({
     </motion.div>
   );
 };
-const APP_VERSION = "1.0.0";
-const BUILD_NUMBER = "1";
+const APP_VERSION = "1.1.1";
+const BUILD_NUMBER = "3";
 const LAST_UPDATE = "2025-01-12";
 
 const UPDATE_HISTORY = [
@@ -277,7 +270,6 @@ type ModalType =
   | "appUpdate"
   | "appLock"
   | "lastSeenVisibility"
-  | "qrCode"
   | null;
 
 const Modal = ({
@@ -343,18 +335,10 @@ const Settings = () => {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { toast } = useToast();
   const [activeModal, setActiveModal] = useState<ModalType>(null);
-  const [qrDataUrl, setQrDataUrl] = useState("");
   const [editForm, setEditForm] = useState({
     username: "",
-    qrHandle: "",
     bio: "",
     country: "",
-  });
-  const [qrHandleStatus, setQrHandleStatus] = useState<{ checking: boolean; available: boolean | null; reason: string | null; normalized: string }>({
-    checking: false,
-    available: null,
-    reason: null,
-    normalized: "",
   });
 
   // Sync form data only when modal opens
@@ -362,7 +346,6 @@ const Settings = () => {
     if (activeModal === "editProfile" && profile) {
       setEditForm({
         username: profile.username || "",
-        qrHandle: (profile as any).qr_handle || profile.username || "",
         bio: profile.bio || "",
         country: profile.country || "",
       });
@@ -393,109 +376,6 @@ const Settings = () => {
     localStorage.setItem("notification_prefs", JSON.stringify(notifications));
   }, [notifications]);
 
-  const qrHandle = (profile as any)?.qr_handle || profile?.username || `user_${(profile as any)?.signup_number || user?.id}`;
-  const profileUrl = user ? buildProfileQrUrl(qrHandle) : "";
-  const editingQrHandle = sanitizeQrHandle(editForm.qrHandle || editForm.username || profile?.full_name || "");
-  const editingQrUrl = buildProfileQrUrl(editingQrHandle || "your_handle");
-  const currentQrHandle = (profile as any)?.qr_handle as string | undefined;
-  const willRedirectFromLegacy = !!currentQrHandle && !!editingQrHandle && currentQrHandle !== editingQrHandle;
-  const displayName = profile?.username ? `@${profile.username}` : profile?.full_name || "Zyiro profile";
-  const avatarUrl = profile?.avatar_url || getDefaultAvatar();
-
-  useEffect(() => {
-    if (activeModal !== "editProfile" || !user) return;
-    const nextHandle = sanitizeQrHandle(editForm.qrHandle || editForm.username || profile?.full_name || "");
-    setQrHandleStatus({ checking: !!nextHandle, available: null, reason: null, normalized: nextHandle });
-    if (!nextHandle) return;
-
-    const timer = window.setTimeout(async () => {
-      const result = await checkQrHandleAvailable(nextHandle, user.id);
-      setQrHandleStatus({ checking: false, available: result.available, reason: result.reason, normalized: result.normalized });
-    }, 350);
-
-    return () => window.clearTimeout(timer);
-  }, [activeModal, editForm.qrHandle, editForm.username, profile?.full_name, user]);
-
-  const generateProfileQr = async () => {
-    if (!profileUrl) return;
-
-    const qrCanvas = document.createElement("canvas");
-    await QRCode.toCanvas(qrCanvas, profileUrl, {
-      width: 960,
-      margin: 3,
-      color: {
-        dark: resolvedTheme === "dark" ? "#f8fafc" : "#0f172a",
-        light: resolvedTheme === "dark" ? "#020617" : "#ffffff",
-      },
-    });
-
-    const canvas = document.createElement("canvas");
-    canvas.width = 1080;
-    canvas.height = 1280;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const bg = resolvedTheme === "dark" ? "#020617" : "#ffffff";
-    const fg = resolvedTheme === "dark" ? "#f8fafc" : "#0f172a";
-    const muted = resolvedTheme === "dark" ? "#94a3b8" : "#64748b";
-    const primary = "#0066ff";
-
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = primary;
-    ctx.beginPath();
-    ctx.roundRect(80, 80, 920, 1120, 40);
-    ctx.fill();
-    ctx.fillStyle = bg;
-    ctx.beginPath();
-    ctx.roundRect(100, 100, 880, 1080, 32);
-    ctx.fill();
-
-    ctx.drawImage(qrCanvas, 110, 210, 860, 860);
-    ctx.fillStyle = bg;
-    ctx.beginPath();
-    ctx.arc(540, 640, 104, 0, Math.PI * 2);
-    ctx.fill();
-
-    await new Promise<void>((resolve) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(540, 640, 82, 0, Math.PI * 2);
-        ctx.clip();
-        ctx.drawImage(img, 458, 558, 164, 164);
-        ctx.restore();
-        ctx.strokeStyle = primary;
-        ctx.lineWidth = 10;
-        ctx.beginPath();
-        ctx.arc(540, 640, 86, 0, Math.PI * 2);
-        ctx.stroke();
-        resolve();
-      };
-      img.onerror = () => resolve();
-      img.src = avatarUrl;
-    });
-
-    ctx.fillStyle = fg;
-    ctx.font = "700 54px Inter, system-ui, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("Zyiro", 540, 165);
-    ctx.font = "700 38px Inter, system-ui, sans-serif";
-    ctx.fillText(displayName, 540, 1110);
-    ctx.fillStyle = muted;
-    ctx.font = "500 24px Inter, system-ui, sans-serif";
-    ctx.fillText("Scan to view, sign up, and follow", 540, 1150);
-
-    setQrDataUrl(canvas.toDataURL("image/png"));
-  };
-
-  useEffect(() => {
-    if (activeModal === "qrCode") {
-      generateProfileQr();
-    }
-  }, [activeModal, profileUrl, avatarUrl, displayName, resolvedTheme]);
   const [settings, setSettings] = useState({
     profileVisibility: "public",
     whoCanComment: "everyone",
@@ -594,18 +474,36 @@ const Settings = () => {
   };
 
   const handleSaveProfile = async () => {
-    const cleanUsername = editForm.username ? editForm.username.replace(/\s/g, "").toLowerCase() : "";
-    const requestedHandle = sanitizeQrHandle(editForm.qrHandle || cleanUsername || profile?.full_name || "");
-    const handleCheck = await checkQrHandleAvailable(requestedHandle, user?.id);
-
-    if (!handleCheck.available) {
-      toast({ title: "QR handle unavailable", description: handleCheck.reason || "Choose another handle.", variant: "destructive" });
+    if (!user) {
+      toast({ title: "Sign in to save your profile", variant: "destructive" });
       return;
+    }
+
+    const cleanUsername = editForm.username ? editForm.username.replace(/\s/g, "").toLowerCase() : "";
+    if (cleanUsername && !/^[a-z0-9_]+$/.test(cleanUsername)) {
+      toast({ title: "Invalid username", description: "Use lowercase letters, numbers, and underscores only.", variant: "destructive" });
+      return;
+    }
+
+    if (cleanUsername && cleanUsername !== profile?.username?.toLowerCase()) {
+      const { data: existingUser, error: usernameLookupError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", cleanUsername)
+        .neq("id", user.id)
+        .maybeSingle();
+      if (usernameLookupError) {
+        toast({ title: "Could not check username", description: usernameLookupError.message, variant: "destructive" });
+        return;
+      }
+      if (existingUser) {
+        toast({ title: "Username taken", description: "Choose a different username.", variant: "destructive" });
+        return;
+      }
     }
 
     const { error } = await updateProfile({
       username: cleanUsername,
-      qr_handle: handleCheck.normalized,
       bio: editForm.bio,
       country: editForm.country,
     } as any);
@@ -666,20 +564,6 @@ const Settings = () => {
     toast({ title: "Report submitted. Our team will review it." });
     setReportForm({ type: "Bug", message: "" });
     setActiveModal(null);
-  };
-
-  const handleDownloadQr = () => {
-    if (!qrDataUrl) return;
-    const link = document.createElement("a");
-    link.href = qrDataUrl;
-    link.download = `streamrate-${qrHandle || "profile"}-qr.png`;
-    link.click();
-    toast({ title: "QR code saved", description: "Your profile QR image was generated and downloaded." });
-  };
-
-  const handleCopyProfileLink = async () => {
-    await navigator.clipboard.writeText(profileUrl);
-    toast({ title: "Profile link copied" });
   };
 
   const SettingItem = ({
@@ -857,12 +741,6 @@ const Settings = () => {
             title="Role"
             subtitle={userRole === "streamer" ? "Streamer" : userRole === "seller" ? "Seller" : "Fan"}
             onClick={() => toast({ title: "Your role cannot be changed after signup." })}
-          />
-          <SettingItem
-            icon={QrCode}
-            title="Your QR Code"
-            subtitle="Download a scannable profile card"
-            onClick={() => setActiveModal("qrCode")}
           />
         </div>
 
@@ -1070,34 +948,6 @@ const Settings = () => {
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">
-                  QR handle
-                </label>
-                <Input
-                  value={editForm.qrHandle}
-                  onChange={(e) => setEditForm({ ...editForm, qrHandle: sanitizeQrHandle(e.target.value) })}
-                  placeholder="stable_profile_link"
-                />
-                <div className="mt-2 rounded-lg border border-border bg-secondary/40 p-3">
-                  <p className="break-all text-xs font-medium text-foreground">{editingQrUrl}</p>
-                  <p className={cn("mt-1 text-xs", qrHandleStatus.available === false ? "text-destructive" : qrHandleStatus.available ? "text-primary" : "text-muted-foreground")}>
-                    {qrHandleStatus.checking
-                      ? "Checking availability..."
-                      : qrHandleStatus.available === true
-                        ? "Available — this QR link is ready."
-                        : qrHandleStatus.available === false
-                          ? qrHandleStatus.reason || "This QR handle is unavailable."
-                          : "Your QR code stays stable even if your display username changes."}
-                  </p>
-                  {willRedirectFromLegacy && qrHandleStatus.available !== false && (
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      <span className="font-semibold text-foreground">Redirect note:</span>{" "}
-                      Scanning your previous handle “{currentQrHandle}” will redirect to /u/{editingQrHandle}.
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">
                   Bio
                 </label>
                 <textarea
@@ -1174,39 +1024,6 @@ const Settings = () => {
               <p className="text-sm text-muted-foreground">
                 Your email is used for login and account recovery.
               </p>
-            </div>
-          </Modal>
-        )}
-
-        {activeModal === "qrCode" && (
-          <Modal onClose={() => setActiveModal(null)} title="Your QR Code">
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-border bg-secondary/30 p-4 text-center">
-                {qrDataUrl ? (
-                  <img
-                    src={qrDataUrl}
-                    alt="Your Zyiro profile QR code"
-                    className="mx-auto w-full max-w-[280px] rounded-xl border border-border bg-background"
-                  />
-                ) : (
-                  <div className="mx-auto flex h-[280px] max-w-[280px] items-center justify-center rounded-xl bg-secondary">
-                    <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                )}
-                <p className="mt-3 text-sm font-medium text-foreground">{displayName}</p>
-                <p className="mt-1 text-xs text-muted-foreground break-all">{profileUrl}</p>
-                <p className="mt-2 text-xs text-primary">Scan test: this resolves to your signed-in Zyiro profile.</p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Button variant="outline" onClick={handleCopyProfileLink}>
-                  <Copy className="mr-2 h-4 w-4" />
-                  Copy Link
-                </Button>
-                <Button variant="gaming" onClick={handleDownloadQr} disabled={!qrDataUrl}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download
-                </Button>
-              </div>
             </div>
           </Modal>
         )}

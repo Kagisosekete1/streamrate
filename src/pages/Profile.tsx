@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, LogOut, Edit2, Users, Star, MessageCircle, Camera, X, ImageIcon, Eye, MapPin, ToggleLeft, ToggleRight, Copy, Check, Share2, Gift, Sparkles } from "lucide-react";
+import { Settings, LogOut, Edit2, Users, Star, MessageCircle, Camera, X, ImageIcon, Eye, MapPin, ToggleLeft, ToggleRight } from "lucide-react";
 import { VerificationBadge } from "@/utils/verificationBadge";
 import { XPLevelBadge } from "@/components/XPLevelBadge";
 import { SellerVerificationBadge, SellerVerificationApply } from "@/components/SellerVerificationBadge";
@@ -24,8 +24,6 @@ import { LastSeenDisplay } from "@/components/LastSeenDisplay";
 import { SocialLinks } from "@/components/SocialLinks";
 import { ReviewsModal } from "@/components/ReviewsModal";
 import { TwitchLiveEmbed } from "@/components/TwitchLiveEmbed";
-import { buildProfileQrUrl, checkQrHandleAvailable, sanitizeQrHandle } from "@/lib/profileQr";
-import { cn } from "@/lib/utils";
 import { getDefaultAvatar } from "@/utils/defaultAvatar";
 import { removeStorageMedia } from "@/lib/removeStorageMedia";
 
@@ -66,7 +64,6 @@ const Profile = () => {
   const [editForm, setEditForm] = useState({
     full_name: "",
     username: "",
-    qrHandle: "",
     bio: "",
     country: "",
     twitch_url: "",
@@ -115,17 +112,6 @@ const Profile = () => {
   const [isUpdatingPosts, setIsUpdatingPosts] = useState(false);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
-  const [qrHandleStatus, setQrHandleStatus] = useState<{ checking: boolean; available: boolean | null; reason: string | null; normalized: string }>({
-    checking: false,
-    available: null,
-    reason: null,
-    normalized: "",
-  });
-  const editingQrHandle = sanitizeQrHandle(editForm.qrHandle || editForm.username || profile?.full_name || "");
-  const editingQrUrl = buildProfileQrUrl(editingQrHandle || "your_handle");
-  const currentQrHandle = (profile as any)?.qr_handle as string | undefined;
-  const willRedirectFromLegacy = !!currentQrHandle && !!editingQrHandle && currentQrHandle !== editingQrHandle;
-
 
   useEffect(() => {
     // Redirect only after auth check completes
@@ -195,7 +181,6 @@ const Profile = () => {
       setEditForm({
         full_name: profile.full_name || "",
         username: profile.username || "",
-        qrHandle: (profile as any).qr_handle || profile.username || "",
         bio: profile.bio || "",
         country: profile.country || "",
         twitch_url: socialLinks.twitch_url || "",
@@ -209,20 +194,6 @@ const Profile = () => {
       });
     }
   }, [showEditModal]);
-
-  useEffect(() => {
-    if (!showEditModal || !user) return;
-    const nextHandle = sanitizeQrHandle(editForm.qrHandle || editForm.username || profile?.full_name || "");
-    setQrHandleStatus({ checking: !!nextHandle, available: null, reason: null, normalized: nextHandle });
-    if (!nextHandle) return;
-
-    const timer = window.setTimeout(async () => {
-      const result = await checkQrHandleAvailable(nextHandle, user.id);
-      setQrHandleStatus({ checking: false, available: result.available, reason: result.reason, normalized: result.normalized });
-    }, 350);
-
-    return () => window.clearTimeout(timer);
-  }, [showEditModal, editForm.qrHandle, editForm.username, profile?.full_name, user]);
 
   const fetchHeaderUrl = async () => {
     if (!user) return;
@@ -746,23 +717,12 @@ const Profile = () => {
       }
     }
 
-    const handleCheck = await checkQrHandleAvailable(editForm.qrHandle || cleanUsername || profile?.full_name || "", user.id);
-    if (!handleCheck.available) {
-      toast({
-        title: "QR handle unavailable",
-        description: handleCheck.reason || "This profile QR handle is already taken.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     // Update profile with basic info and social links
     const { data: savedProfile, error } = await supabase
       .from("profiles")
       .update({
         full_name: editForm.full_name,
         username: cleanUsername,
-        qr_handle: handleCheck.normalized,
         bio: editForm.bio,
         country: editForm.country,
         twitch_url: editForm.twitch_url || null,
@@ -1115,9 +1075,9 @@ const Profile = () => {
                 <button
                   onClick={handleSaveProfile}
                   disabled={isSavingProfile}
-                  className="min-w-16 h-10 rounded-full bg-primary px-3 flex items-center justify-center text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg disabled:opacity-60"
+                  className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg disabled:opacity-60"
                 >
-                  {isSavingProfile ? "Saving…" : "Save"}
+                  Save
                 </button>
               </div>
 
@@ -1133,35 +1093,6 @@ const Profile = () => {
                     }
                     placeholder="yourname (lowercase, no spaces)"
                   />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-1 block">
-                    QR handle
-                  </label>
-                  <Input
-                    value={editForm.qrHandle}
-                    onChange={(e) => setEditForm({ ...editForm, qrHandle: sanitizeQrHandle(e.target.value) })}
-                    placeholder="stable_profile_link"
-                  />
-                  <div className="mt-2 rounded-lg border border-border bg-secondary/40 p-3">
-                    <p className="break-all text-xs font-medium text-foreground">{editingQrUrl}</p>
-                    <p className={cn("mt-1 text-xs", qrHandleStatus.available === false ? "text-destructive" : qrHandleStatus.available ? "text-primary" : "text-muted-foreground")}>
-                      {qrHandleStatus.checking
-                        ? "Checking availability..."
-                        : qrHandleStatus.available === true
-                          ? "Available — this QR link is ready."
-                          : qrHandleStatus.available === false
-                            ? qrHandleStatus.reason || "This QR handle is unavailable."
-                            : "Old QR links keep redirecting to this current profile URL."}
-                    </p>
-                    {willRedirectFromLegacy && qrHandleStatus.available !== false && (
-                      <p className="mt-1 text-[11px] text-muted-foreground">
-                        <span className="font-semibold text-foreground">Redirect note:</span>{" "}
-                        Heads up: scanning your previous handle “{currentQrHandle}” will redirect to /u/{editingQrHandle}.
-                      </p>
-                    )}
-                  </div>
                 </div>
 
                 <div>
