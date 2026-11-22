@@ -44,7 +44,6 @@ const WatchParties = lazy(() => import("./pages/WatchParties"));
 const WatchPartyRoom = lazy(() => import("./pages/WatchPartyRoom"));
 const SquadUp = lazy(() => import("./pages/SquadUp"));
 const Clips = lazy(() => import("./pages/Clips"));
-const Invite = lazy(() => import("./pages/Invite"));
 const SecurityFindings = lazy(() => import("./pages/SecurityFindings"));
 const StreamSchedule = lazy(() => import("./pages/StreamSchedule"));
 const Reminders = lazy(() => import("./pages/Reminders"));
@@ -143,7 +142,6 @@ function AppContent() {
             <Route path="/watch-party/:id" element={<WatchPartyRoom />} />
             <Route path="/squad-up" element={<SquadUp />} />
             <Route path="/clips" element={<Clips />} />
-            <Route path="/invite" element={<Invite />} />
             <Route path="/schedule" element={<StreamSchedule />} />
             <Route path="/reminders" element={<Reminders />} />
             <Route path="/settings/notifications" element={<NotificationSettings />} />

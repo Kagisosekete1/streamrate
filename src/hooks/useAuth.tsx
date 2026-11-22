@@ -13,7 +13,6 @@ interface Profile {
   avatar_url: string | null;
   bio: string | null;
   country: string | null;
-  referral_code?: string | null;
   manual_verification_badge?: string | null;
   manual_verification_expires_at?: string | null;
 }
@@ -45,7 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       supabase
         .from("profiles")
         .select(
-          "id, username, qr_handle, full_name, avatar_url, bio, country, referral_code, manual_verification_badge, manual_verification_expires_at"
+          "id, username, qr_handle, full_name, avatar_url, bio, country, manual_verification_badge, manual_verification_expires_at"
         )
         .eq("id", userId)
         .maybeSingle(),
