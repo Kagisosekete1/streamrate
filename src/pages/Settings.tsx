@@ -283,6 +283,8 @@ type ModalType =
 const Settings = () => {
   const navigate = useNavigate();
   const { user, profile, userRole, signOut, updateProfile } = useAuth();
+  const canSetPassword = Boolean(user?.email_confirmed_at && user.identities?.some(identity => identity.provider === "google"));
+
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { toast } = useToast();
   const [activeModal, setActiveModal] = useState<ModalType>(null);
@@ -569,22 +571,23 @@ const Settings = () => {
       toast({ title: "Password must be at least 8 characters", variant: "destructive" });
       return;
     }
-    if (!passwordForm.currentPassword) {
-      toast({ title: "Please enter your current password", variant: "destructive" });
-      return;
-    }
+    if (!canSetPassword) {
+      if (!passwordForm.currentPassword) {
+        toast({ title: "Please enter your current password", variant: "destructive" });
+        return;
+      }
 
-    // Verify current password by re-authenticating
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: profile?.email || "",
-      password: passwordForm.currentPassword,
-    });
+      // Verify current password by re-authenticating
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || "",
+        password: passwordForm.currentPassword,
+      });
 
-    if (signInError) {
-      toast({ title: "Current password is incorrect", variant: "destructive" });
-      return;
+      if (signInError) {
+        toast({ title: "Current password is incorrect", variant: "destructive" });
+        return;
+      }
     }
-    
     const { error } = await supabase.auth.updateUser({
       password: passwordForm.newPassword,
     });
@@ -831,7 +834,7 @@ const Settings = () => {
         <div className="space-y-2">
           <SettingItem
             icon={Lock}
-            title="Change Password"
+            title={canSetPassword ? "Set password" : "Change Password"}
             subtitle="Update your password"
             onClick={() => setActiveModal("changePassword")}
           />
@@ -1119,9 +1122,9 @@ const Settings = () => {
         )}
 
         {activeModal === "changePassword" && (
-          <Modal title="Change Password" showSave onSave={handleChangePassword}>
+          <Modal title={canSetPassword ? "Set password" : "Change Password"} showSave onSave={handleChangePassword}>
             <div className="space-y-4">
-              <div>
+              {!canSetPassword && <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">
                   Current Password
                 </label>
@@ -1130,7 +1133,7 @@ const Settings = () => {
                   value={passwordForm.currentPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
                 />
-              </div>
+              </div>}
               <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">
                   New Password

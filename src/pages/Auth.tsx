@@ -252,6 +252,10 @@ const Auth = () => {
               {isSubmitting ? "Please wait..." : passwordRecovery ? "Save new password" : "Send reset link"}
             </Button>
           </form>
+          {!passwordRecovery && <div className="mt-5 text-center">
+            <Button type="button" variant="outline" onClick={handleGoogleSignIn}>Recover with Google</Button>
+            <p className="mt-2 text-sm text-muted-foreground">Choose the Google account with your Zyiro email. Then open Settings → Set password.</p>
+          </div>}
           {resetEmailSent && <p className="text-center text-sm text-primary mt-5">If an account exists for this email, a reset link has been sent.</p>}
           {!passwordRecovery && <button type="button" onClick={() => { setShowPasswordReset(false); setResetEmailSent(false); }} className="w-full text-center text-sm text-primary hover:underline mt-6">Back to sign in</button>}
         </div>
