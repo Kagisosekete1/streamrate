@@ -44,33 +44,50 @@ const WatchPartyRoom = () => {
       }
       setParty(data);
 
-      if (user) {
-        await supabase.from("watch_party_members").upsert({ party_id: id, user_id: user.id }, { onConflict: "party_id,user_id" });
-      }
-      const { count } = await supabase.from("watch_party_members").select("*", { count: "exact", head: true }).eq("party_id", id);
-      setMemberCount(count || 0);
+      // A transient Realtime Presence session is the source of viewer counts;
+      // stored membership rows can outlive disconnected devices and must not be counted.
+      const channel = supabase
+        .channel(`watch-party-presence-${id}`, {
+          config: { presence: { key: `${user?.id || "guest"}-${crypto.randomUUID()}` } },
+        })
+        .on("presence", { event: "sync" }, () => {
+          const viewers = Object.values(channel.presenceState()).reduce((total, entries) => total + entries.length, 0);
+          setMemberCount(viewers);
+        })
+        .on("presence", { event: "join" }, () => {
+          const viewers = Object.values(channel.presenceState()).reduce((total, entries) => total + entries.length, 0);
+          setMemberCount(viewers);
+        })
+        .on("presence", { event: "leave" }, () => {
+          const viewers = Object.values(channel.presenceState()).reduce((total, entries) => total + entries.length, 0);
+          setMemberCount(viewers);
+        })
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "watch_party_reactions", filter: `party_id=eq.${id}` },
+          (payload) => {
+            const r = payload.new as Reaction;
+            const fl = { id: r.id, emoji: r.emoji, x: Math.random() * 80 + 10 };
+            setFloating((prev) => prev.some((item) => item.id === fl.id) ? prev : [...prev, fl]);
+            setTimeout(() => setFloating((prev) => prev.filter((p) => p.id !== fl.id)), 3000);
+          })
+        .subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            void channel.track({ user_id: user?.id ?? null, joined_at: new Date().toISOString() });
+          }
+        });
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     };
-    load();
-
-    const channel = supabase
-      .channel(`party-${id}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "watch_party_reactions", filter: `party_id=eq.${id}` },
-        (payload) => {
-          const r = payload.new as Reaction;
-          const fl = { id: r.id, emoji: r.emoji, x: Math.random() * 80 + 10 };
-          setFloating((prev) => prev.some((item) => item.id === fl.id) ? prev : [...prev, fl]);
-          setTimeout(() => setFloating((prev) => prev.filter((p) => p.id !== fl.id)), 3000);
-        })
-      .on("postgres_changes", { event: "*", schema: "public", table: "watch_party_members", filter: `party_id=eq.${id}` },
-        async () => {
-          const { count } = await supabase.from("watch_party_members").select("*", { count: "exact", head: true }).eq("party_id", id);
-          setMemberCount(count || 0);
-        })
-      .subscribe();
-
+    let cancelled = false;
+    let cleanup: (() => void) | undefined;
+    void load().then((dispose) => {
+      if (cancelled) dispose?.();
+      else cleanup = dispose;
+    });
     return () => {
-      supabase.removeChannel(channel);
-      if (user && id) supabase.from("watch_party_members").delete().eq("party_id", id).eq("user_id", user.id);
+      cancelled = true;
+      cleanup?.();
     };
   }, [id, user, navigate]);
 

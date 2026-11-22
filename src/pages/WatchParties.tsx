@@ -89,10 +89,6 @@ const WatchParties = () => {
     if (data) {
       const enriched = await Promise.all(
         data.map(async (p) => {
-          const { count } = await supabase
-            .from("watch_party_members")
-            .select("*", { count: "exact", head: true })
-            .eq("party_id", p.id);
           const { data: host } = await supabase
             .from("profiles")
             .select("username, full_name")
@@ -100,7 +96,7 @@ const WatchParties = () => {
             .maybeSingle();
           return {
             ...p,
-            member_count: count || 0,
+            member_count: 0,
             host_name: host?.username || host?.full_name || "Host",
             host_username: host?.username || "",
           };
@@ -114,6 +110,44 @@ const WatchParties = () => {
   useEffect(() => {
     fetchParties();
   }, []);
+
+  useEffect(() => {
+    const refresh = () => void fetchParties();
+    const channel = supabase
+      .channel("watch-party-list-presence")
+      .on("postgres_changes", { event: "*", schema: "public", table: "watch_parties" }, refresh)
+      .subscribe();
+    const timer = window.setInterval(refresh, 30_000);
+    return () => {
+      window.clearInterval(timer);
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const partyIds = parties.map((party) => party.id).join("|");
+  useEffect(() => {
+    if (!partyIds) return;
+    const channels = partyIds.split("|").map((partyId) => {
+      const channel = supabase.channel(`watch-party-presence-${partyId}`, {
+        config: { presence: { key: `party-list-${crypto.randomUUID()}` } },
+      });
+      const refreshPresenceCount = () => {
+        const count = Object.values(channel.presenceState()).reduce((total, entries) => total + entries.length, 0);
+        setParties((current) => current.map((party) =>
+          party.id === partyId ? { ...party, member_count: count } : party,
+        ));
+      };
+      channel
+        .on("presence", { event: "sync" }, refreshPresenceCount)
+        .on("presence", { event: "join" }, refreshPresenceCount)
+        .on("presence", { event: "leave" }, refreshPresenceCount)
+        .subscribe((status) => {
+          if (status === "SUBSCRIBED") refreshPresenceCount();
+        });
+      return channel;
+    });
+    return () => channels.forEach((channel) => void supabase.removeChannel(channel));
+  }, [partyIds]);
 
   const endParty = async (party: Party) => {
     if (!user || user.id !== party.host_id) return;
