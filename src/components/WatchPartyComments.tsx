@@ -99,15 +99,23 @@ export const WatchPartyComments = ({ partyId }: { partyId: string }) => {
       return;
     }
     setSending(true);
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("watch_party_comments")
-      .insert({ party_id: partyId, user_id: user.id, content });
+      .insert({ party_id: partyId, user_id: user.id, content })
+      .select("id, user_id, content, created_at")
+      .single();
     setSending(false);
     if (error) {
-      toast.error("Couldn't send comment");
+      console.error("Couldn't send watch party comment", error);
+      toast.error(error.message || "Couldn't send comment");
       return;
     }
     setText("");
+    if (data) {
+      const [enriched] = await enrich([data]);
+      setComments((prev) => prev.some((comment) => comment.id === data.id) ? prev : [...prev, enriched]);
+      setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }), 50);
+    }
   };
 
   const remove = async (id: string) => {

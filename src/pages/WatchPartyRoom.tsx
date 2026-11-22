@@ -59,7 +59,7 @@ const WatchPartyRoom = () => {
         (payload) => {
           const r = payload.new as Reaction;
           const fl = { id: r.id, emoji: r.emoji, x: Math.random() * 80 + 10 };
-          setFloating((prev) => [...prev, fl]);
+          setFloating((prev) => prev.some((item) => item.id === fl.id) ? prev : [...prev, fl]);
           setTimeout(() => setFloating((prev) => prev.filter((p) => p.id !== fl.id)), 3000);
         })
       .on("postgres_changes", { event: "*", schema: "public", table: "watch_party_members", filter: `party_id=eq.${id}` },
@@ -77,8 +77,25 @@ const WatchPartyRoom = () => {
   }, [id, user, navigate]);
 
   const sendReaction = async (emoji: string) => {
-    if (!user || !id) return;
-    await supabase.from("watch_party_reactions").insert({ party_id: id, user_id: user.id, emoji });
+    if (!user || !id) {
+      toast.error("Sign in to react");
+      return;
+    }
+    const { data, error } = await supabase
+      .from("watch_party_reactions")
+      .insert({ party_id: id, user_id: user.id, emoji })
+      .select("id")
+      .single();
+    if (error) {
+      console.error("Couldn't send watch party reaction", error);
+      toast.error(error.message || "Couldn't send reaction");
+      return;
+    }
+    if (data) {
+      const fl = { id: data.id, emoji, x: Math.random() * 80 + 10 };
+      setFloating((prev) => prev.some((item) => item.id === fl.id) ? prev : [...prev, fl]);
+      setTimeout(() => setFloating((prev) => prev.filter((item) => item.id !== fl.id)), 3000);
+    }
   };
 
   if (!party) return null;
@@ -109,13 +126,13 @@ const WatchPartyRoom = () => {
     if (platform === "kick") {
       const channel = url.split("/").filter(Boolean).pop()?.replace(/^@/, "") || "";
       if (!channel) return null;
-      return `https://player.kick.com/${encodeURIComponent(channel)}?muted=true&autoplay=true`;
+      return `https://player.kick.com/${encodeURIComponent(channel)}?autoplay=true&muted=true`;
     }
     if (platform === "youtube") {
       const m = url.match(/(?:youtu\.be\/|v=|\/embed\/|\/live\/)([A-Za-z0-9_-]{11})/);
-      if (m) return `https://www.youtube.com/embed/${m[1]}?autoplay=1&mute=1`;
+      if (m) return `https://www.youtube.com/embed/${m[1]}?autoplay=1&mute=1&controls=0&playsinline=1`;
       const handle = url.split("/").filter(Boolean).pop()?.replace(/^@/, "") || "";
-      if (handle) return `https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(handle)}&autoplay=1&mute=1`;
+      if (handle) return `https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(handle)}&autoplay=1&mute=1&controls=0&playsinline=1`;
     }
     if (platform === "custom") {
       // Best-effort: try to load the URL itself (works for sites that allow framing).
@@ -145,10 +162,11 @@ const WatchPartyRoom = () => {
               )}
               <iframe
                 src={embedUrl}
-                className="w-full h-full"
+                className="absolute inset-0 w-full h-full border-0"
                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                 allowFullScreen
                 onLoad={() => setEmbedLoaded(true)}
+                referrerPolicy="strict-origin-when-cross-origin"
                 title="Stream"
               />
             </>
