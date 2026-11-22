@@ -55,7 +55,11 @@ const Clips = () => {
   const createClip = async () => {
     if (!user) { toast.error("Sign in first"); return; }
     if (!form.stream_url.trim() || !form.chapter_title.trim()) { toast.error("Chapter title and stream URL required"); return; }
+    let url: URL;
+    try { url = new URL(form.stream_url.trim()); } catch { toast.error("Enter a complete stream URL"); return; }
+    if (!["https:", "http:"].includes(url.protocol)) { toast.error("Use a web link for the stream"); return; }
     const ts = parseTs(form.timestamp);
+    if (form.timestamp.trim() && (ts == null || !Number.isSafeInteger(ts) || ts < 0)) { toast.error("Enter a valid timestamp, such as 1:30"); return; }
     setSaving(true);
     const { data, error } = await supabase.from("stream_clips").insert({
       clipper_id: user.id,

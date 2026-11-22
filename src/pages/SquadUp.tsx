@@ -74,7 +74,7 @@ const SquadUp = () => {
         request_id: request.id,
         user_id: user.id,
       });
-      if (!error) {
+      if (error) { toast.error(error.message); return; } else {
         toast.success(`${request.user_name || "Poster"} was notified you're interested!`);
       }
     }
@@ -86,7 +86,7 @@ const SquadUp = () => {
     const { error } = await supabase.from("squad_requests").insert({
       user_id: user.id, game, rank: rank || null, region, playstyle, message: message || null,
     });
-    if (error) { toast.error("Failed to post"); return; }
+    if (error) { toast.error(error.message); return; }
     updateMissionProgress("post_lfg");
     toast.success("Squad request posted!");
     setOpen(false);

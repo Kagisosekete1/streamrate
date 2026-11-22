@@ -108,24 +108,9 @@ const StreamerProfile = () => {
   useEffect(() => {
     if (id) {
       fetchStreamerData();
-      // Track profile view
-      trackProfileView();
     }
   }, [id, user]);
 
-  const trackProfileView = async () => {
-    if (!id) return;
-    const profileId = await resolveProfileId();
-    if (!profileId) return;
-    
-    // Insert profile view (will trigger notification via database trigger)
-    await supabase
-      .from("profile_views")
-      .insert({
-        profile_id: profileId,
-        viewer_id: user?.id || null,
-      });
-  };
 
   const fetchStreamerData = async () => {
     if (!id) return;
@@ -355,7 +340,7 @@ const StreamerProfile = () => {
     );
 
     if (error) {
-      toast({ title: "Failed to submit review", variant: "destructive" });
+      toast({ title: "Failed to submit review", description: error.message, variant: "destructive" });
       setIsSubmitting(false);
       return;
     }

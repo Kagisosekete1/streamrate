@@ -1,3 +1,4 @@
+import { parseInTimeZone } from "@/lib/schedule";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -102,27 +103,6 @@ const formatWhen = (iso: string) => {
     : { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" };
   return date.toLocaleString(undefined, opts);
 };
-
-// Convert a "YYYY-MM-DDTHH:mm" wall-clock string in tz to a real Date (UTC instant).
-function parseInTimeZone(local: string, tz: string): Date {
-  try {
-    const naive = new Date(local);
-    const dtf = new Intl.DateTimeFormat("en-US", {
-      timeZone: tz, hour12: false,
-      year: "numeric", month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", second: "2-digit",
-    });
-    const parts = dtf.formatToParts(naive).reduce<Record<string, string>>((a, p) => { a[p.type] = p.value; return a; }, {});
-    const asTz = Date.UTC(
-      parseInt(parts.year, 10), parseInt(parts.month, 10) - 1, parseInt(parts.day, 10),
-      parseInt(parts.hour, 10), parseInt(parts.minute, 10), parseInt(parts.second, 10),
-    );
-    const offset = asTz - naive.getTime();
-    return new Date(naive.getTime() - offset);
-  } catch {
-    return new Date(local);
-  }
-}
 
 const StreamSchedule = () => {
   const { user } = useAuth();

@@ -17,7 +17,6 @@ interface Stats {
   totalReelViews: number;
   totalPostLikes: number;
   totalComments: number;
-  profileViews: number;
   reelsCount: number;
   postsCount: number;
 }
@@ -41,7 +40,6 @@ const CreatorDashboard = () => {
         { count: postsCount },
         { data: postLikesData },
         { data: commentsData },
-        { count: profileViews },
       ] = await Promise.all([
         supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", user.id),
         supabase.from("ratings").select("stars, fan_id").eq("streamer_id", user.id),
@@ -49,7 +47,6 @@ const CreatorDashboard = () => {
         supabase.from("posts").select("*", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("post_likes").select("post_id, posts!inner(user_id)").eq("posts.user_id", user.id),
         supabase.from("comments").select("post_id, posts!inner(user_id)").eq("posts.user_id", user.id),
-        supabase.from("profile_views").select("*", { count: "exact", head: true }).eq("profile_id", user.id),
       ]);
 
       const ratings = ratingsData || [];
@@ -76,7 +73,6 @@ const CreatorDashboard = () => {
         totalReelViews,
         totalPostLikes: postLikesData?.length || 0,
         totalComments: commentsData?.length || 0,
-        profileViews: profileViews || 0,
         reelsCount: reelsData?.length || 0,
         postsCount: postsCount || 0,
       });
@@ -99,7 +95,6 @@ const CreatorDashboard = () => {
     { label: "Followers", value: stats?.followers || 0, icon: Users, color: "text-primary" },
     { label: "Avg Rating", value: stats?.avgRating || 0, icon: Star, color: "text-yellow-500" },
     { label: "Reviews", value: stats?.ratings || 0, icon: Star, color: "text-accent" },
-    { label: "Profile Views", value: stats?.profileViews || 0, icon: Eye, color: "text-green-500" },
     { label: "Reel Views", value: stats?.totalReelViews || 0, icon: Clapperboard, color: "text-purple-500" },
     { label: "Post Likes", value: stats?.totalPostLikes || 0, icon: TrendingUp, color: "text-pink-500" },
     { label: "Comments", value: stats?.totalComments || 0, icon: MessageCircle, color: "text-blue-400" },

@@ -81,15 +81,18 @@ const StreamingAnalytics = () => {
       })
       .subscribe();
 
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id]);
+
+  useEffect(() => {
     // Auto-sync every 5 minutes
     const autoSyncInterval = setInterval(() => {
       platforms.forEach(p => {
-        if (p.is_active) syncPlatform(p.platform);
+        if (p.is_active && p.platform === "twitch") syncPlatform(p.platform);
       });
     }, 5 * 60 * 1000);
 
     return () => {
-      supabase.removeChannel(channel);
       clearInterval(autoSyncInterval);
     };
   }, [user, platforms]);
@@ -132,19 +135,21 @@ const StreamingAnalytics = () => {
   };
 
   const handleDisconnect = async (platformId: string, platform: string) => {
-    await supabase.from("connected_platforms").delete().eq("id", platformId);
+    const { error } = await supabase.from("connected_platforms").delete().eq("id", platformId);
+    if (error) { toast({ title: "Disconnect failed", description: error.message, variant: "destructive" }); return; }
     toast({ title: `${PLATFORM_LABELS[platform]} disconnected` });
     fetchData();
   };
 
   const syncPlatform = async (platform: string) => {
     try {
-      await supabase.functions.invoke("sync-streaming-analytics", {
+      const { error } = await supabase.functions.invoke("sync-streaming-analytics", {
         body: { platform, userId: user?.id },
       });
-      toast({ title: "Syncing analytics..." });
+      if (error) throw error;
+      await fetchData();
     } catch {
-      // Edge function may not be deployed yet
+      toast({ title: "Could not sync channel analytics", variant: "destructive" });
     }
   };
 
@@ -154,7 +159,7 @@ const StreamingAnalytics = () => {
   };
 
   const connectedPlatformNames = platforms.map(p => p.platform);
-  const availablePlatforms = ["twitch", "kick", "discord"].filter(
+  const availablePlatforms = ["twitch"].filter(
     p => !connectedPlatformNames.includes(p)
   );
 
@@ -186,7 +191,7 @@ const StreamingAnalytics = () => {
             </button>
             <div>
               <h1 className="text-xl font-bold text-foreground">Streaming Analytics</h1>
-              <p className="text-xs text-muted-foreground">Track your Twitch, Kick & Discord stats</p>
+              <p className="text-xs text-muted-foreground">Track your connected streaming channels</p>
             </div>
           </div>
         </header>
@@ -197,19 +202,19 @@ const StreamingAnalytics = () => {
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               className="bg-card border border-border rounded-xl p-4 text-center">
               <Users className="w-5 h-5 text-primary mx-auto mb-1" />
-              <p className="text-2xl font-bold text-foreground">{totalFollowers.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-foreground">{analytics.length ? totalFollowers.toLocaleString() : "—"}</p>
               <p className="text-xs text-muted-foreground">Total Followers</p>
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
               className="bg-card border border-border rounded-xl p-4 text-center">
               <Eye className="w-5 h-5 text-primary mx-auto mb-1" />
-              <p className="text-2xl font-bold text-foreground">{totalViewers.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-foreground">{analytics.length ? totalViewers.toLocaleString() : "—"}</p>
               <p className="text-xs text-muted-foreground">Live Viewers</p>
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
               className="bg-card border border-border rounded-xl p-4 text-center">
               {isAnyLive ? <Wifi className="w-5 h-5 text-green-500 mx-auto mb-1" /> : <WifiOff className="w-5 h-5 text-muted-foreground mx-auto mb-1" />}
-              <p className="text-2xl font-bold text-foreground">{isAnyLive ? "LIVE" : "Offline"}</p>
+              <p className="text-2xl font-bold text-foreground">{analytics.length ? (isAnyLive ? "LIVE" : "Offline") : "—"}</p>
               <p className="text-xs text-muted-foreground">Stream Status</p>
             </motion.div>
           </div>
@@ -254,19 +259,19 @@ const StreamingAnalytics = () => {
                     {latest ? (
                       <div className="grid grid-cols-4 gap-2">
                         <div className="bg-secondary/50 rounded-lg p-2 text-center">
-                          <p className="text-sm font-bold text-foreground">{latest.viewer_count.toLocaleString()}</p>
+                          <p className="text-sm font-bold text-foreground">{latest.viewer_count?.toLocaleString() ?? "—"}</p>
                           <p className="text-[10px] text-muted-foreground">Viewers</p>
                         </div>
                         <div className="bg-secondary/50 rounded-lg p-2 text-center">
-                          <p className="text-sm font-bold text-foreground">{latest.peak_viewers.toLocaleString()}</p>
+                          <p className="text-sm font-bold text-foreground">{latest.peak_viewers?.toLocaleString() ?? "—"}</p>
                           <p className="text-[10px] text-muted-foreground">Peak</p>
                         </div>
                         <div className="bg-secondary/50 rounded-lg p-2 text-center">
-                          <p className="text-sm font-bold text-foreground">{latest.follower_count.toLocaleString()}</p>
+                          <p className="text-sm font-bold text-foreground">{latest.follower_count?.toLocaleString() ?? "—"}</p>
                           <p className="text-[10px] text-muted-foreground">Followers</p>
                         </div>
                         <div className="bg-secondary/50 rounded-lg p-2 text-center">
-                          <p className="text-sm font-bold text-foreground">{latest.chat_messages_count.toLocaleString()}</p>
+                          <p className="text-sm font-bold text-foreground">{latest.chat_messages_count?.toLocaleString() ?? "—"}</p>
                           <p className="text-[10px] text-muted-foreground">Chat Msgs</p>
                         </div>
                       </div>

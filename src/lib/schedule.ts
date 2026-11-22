@@ -42,9 +42,9 @@ export function filterSchedule(rows: ScheduleRowLite[], opts: FilterOpts): Sched
 // Convert a "YYYY-MM-DDTHH:mm" wall-clock string in tz to a real Date (UTC instant).
 export function parseInTimeZone(local: string, tz: string): Date {
   try {
-    const naive = new Date(local);
+    const naive = new Date(local + "Z");
     const dtf = new Intl.DateTimeFormat("en-US", {
-      timeZone: tz, hour12: false,
+      timeZone: tz, hourCycle: "h23",
       year: "numeric", month: "2-digit", day: "2-digit",
       hour: "2-digit", minute: "2-digit", second: "2-digit",
     });

@@ -20,15 +20,9 @@ export const UnderratedCreators = () => {
 
   useEffect(() => {
     const fetchStreamers = async () => {
-      // Get all streamer role users
-      const { data: streamerRoles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "streamer");
-
-      if (!streamerRoles || streamerRoles.length === 0) return;
-
-      const streamerIds = streamerRoles.map((r) => r.user_id);
+      const { data: ratingsData } = await supabase.from("ratings").select("streamer_id, stars");
+      const streamerIds = [...new Set((ratingsData || []).map(r => r.streamer_id))];
+      if (!streamerIds.length) return;
 
       // Get profiles for streamers only
       const { data: profiles } = await supabase
@@ -45,8 +39,7 @@ export const UnderratedCreators = () => {
         followCounts[f.following_id] = (followCounts[f.following_id] || 0) + 1;
       });
 
-      // Get ratings
-      const { data: ratingsData } = await supabase.from("ratings").select("streamer_id, stars");
+
       const ratingMap: Record<string, number[]> = {};
       (ratingsData || []).forEach((r) => {
         if (!ratingMap[r.streamer_id]) ratingMap[r.streamer_id] = [];
@@ -78,8 +71,8 @@ export const UnderratedCreators = () => {
     <div className="px-4 py-3">
       <div className="flex items-center gap-2 mb-3">
         <Flame className="w-4 h-4 text-accent" />
-        <h3 className="font-semibold text-sm text-foreground">Overrated Streamers</h3>
-        <span className="text-xs text-muted-foreground">🔥 Most hyped</span>
+        <h3 className="font-semibold text-sm text-foreground">Top 10 Rated Streamers</h3>
+        <span className="text-xs text-muted-foreground">By community rating</span>
       </div>
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
         {streamers.map((streamer, i) => (

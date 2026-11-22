@@ -87,11 +87,12 @@ const Auth = () => {
   const handlePasswordResetRequest = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsSubmitting(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+    setResetEmailSent(false);
+    const { error } = await supabase.auth.resetPasswordForEmail(formData.email.trim(), {
       // Open the recovery email in the public app page. Supabase redirects
       // back to this URL with the recovery code, which the web client can
       // exchange reliably even when the request originated in the native app.
-      redirectTo: "https://streamrateapp.com/auth",
+      redirectTo: "https://streamrateapp.com/auth?recovery=1",
     });
     setIsSubmitting(false);
     if (error) {
