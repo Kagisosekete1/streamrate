@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import { VitePWA } from "vite-plugin-pwa";
+import { copyFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -45,6 +46,18 @@ export default defineConfig(({ mode }) => ({
         share_target: { action: "/create-post", method: "GET", params: { text: "content" } },
       },
     }),
+    {
+      // GitHub Pages serves /404.html for client-side routes such as /auth.
+      // Copy the built SPA shell there so recovery links keep their path,
+      // query string, and Supabase token fragment for React Router to handle.
+      name: "github-pages-spa-fallback",
+      apply: "build",
+      closeBundle() {
+        const indexFile = path.resolve(rootDir, "dist/index.html");
+        const notFoundFile = path.resolve(rootDir, "dist/404.html");
+        if (existsSync(indexFile)) copyFileSync(indexFile, notFoundFile);
+      },
+    },
   ],
   resolve: {
     alias: [
