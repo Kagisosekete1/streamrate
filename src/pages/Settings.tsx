@@ -280,6 +280,61 @@ type ModalType =
   | "qrCode"
   | null;
 
+const Modal = ({
+  onClose,
+  title,
+  children,
+  showSave = false,
+  onSave,
+}: {
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+  showSave?: boolean;
+  onSave?: () => void;
+}) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+    onMouseDown={(e) => {
+      if (e.target === e.currentTarget) {
+        onClose();
+      }
+    }}
+  >
+    <motion.div
+      initial={{ scale: 0.95, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      exit={{ scale: 0.95, opacity: 0 }}
+      transition={{ type: "spring", damping: 25, stiffness: 300 }}
+      className="w-full max-w-md bg-card rounded-3xl p-6 border border-border shadow-2xl max-h-[85vh] overflow-y-auto"
+    >
+      <div className="flex items-center justify-between mb-6">
+        <button 
+          onClick={() => onClose()}
+          className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
+        >
+          <X className="w-5 h-5 text-muted-foreground" />
+        </button>
+        <h2 className="text-lg font-bold text-foreground">{title}</h2>
+        {showSave ? (
+          <button
+            onClick={onSave}
+            className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg"
+          >
+            Save
+          </button>
+        ) : (
+          <div className="w-10" />
+        )}
+      </div>
+      {children}
+    </motion.div>
+  </motion.div>
+);
+
 const Settings = () => {
   const navigate = useNavigate();
   const { user, profile, userRole, signOut, updateProfile } = useAuth();
@@ -667,59 +722,6 @@ const Settings = () => {
     </h3>
   );
 
-  const Modal = ({
-    title,
-    children,
-    showSave = false,
-    onSave,
-  }: {
-    title: string;
-    children: React.ReactNode;
-    showSave?: boolean;
-    onSave?: () => void;
-  }) => (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) {
-          setActiveModal(null);
-        }
-      }}
-    >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="w-full max-w-md bg-card rounded-3xl p-6 border border-border shadow-2xl max-h-[85vh] overflow-y-auto"
-      >
-        <div className="flex items-center justify-between mb-6">
-          <button 
-            onClick={() => setActiveModal(null)}
-            className="w-10 h-10 rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
-          >
-            <X className="w-5 h-5 text-muted-foreground" />
-          </button>
-          <h2 className="text-lg font-bold text-foreground">{title}</h2>
-          {showSave ? (
-            <button
-              onClick={onSave}
-              className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg"
-            >
-              Save
-            </button>
-          ) : (
-            <div className="w-10" />
-          )}
-        </div>
-        {children}
-      </motion.div>
-    </motion.div>
-  );
-
   // Blocked Users Modal with actual data
   const BlockedUsersModal = ({ onClose }: { onClose: () => void }) => {
     const [blockedUsers, setBlockedUsers] = useState<Array<{
@@ -778,7 +780,7 @@ const Settings = () => {
     };
 
     return (
-      <Modal title="Blocked Users">
+      <Modal onClose={() => setActiveModal(null)} title="Blocked Users">
         {loading ? (
           <div className="text-center py-8">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
@@ -1054,7 +1056,7 @@ const Settings = () => {
       {/* Modals */}
       <AnimatePresence>
         {activeModal === "editProfile" && (
-          <Modal title="Edit Profile" showSave onSave={handleSaveProfile}>
+          <Modal onClose={() => setActiveModal(null)} title="Edit Profile" showSave onSave={handleSaveProfile}>
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">
@@ -1122,7 +1124,7 @@ const Settings = () => {
         )}
 
         {activeModal === "changePassword" && (
-          <Modal title={canSetPassword ? "Set password" : "Change Password"} showSave onSave={handleChangePassword}>
+          <Modal onClose={() => setActiveModal(null)} title={canSetPassword ? "Set password" : "Change Password"} showSave onSave={handleChangePassword}>
             <div className="space-y-4">
               {!canSetPassword && <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">
@@ -1164,7 +1166,7 @@ const Settings = () => {
         )}
 
         {activeModal === "email" && (
-          <Modal title="Email Address">
+          <Modal onClose={() => setActiveModal(null)} title="Email Address">
             <div className="space-y-4">
               <div className="p-4 rounded-lg bg-secondary/50">
                 <p className="text-foreground font-medium">{profile?.email}</p>
@@ -1177,7 +1179,7 @@ const Settings = () => {
         )}
 
         {activeModal === "qrCode" && (
-          <Modal title="Your QR Code">
+          <Modal onClose={() => setActiveModal(null)} title="Your QR Code">
             <div className="space-y-4">
               <div className="rounded-2xl border border-border bg-secondary/30 p-4 text-center">
                 {qrDataUrl ? (
@@ -1210,7 +1212,7 @@ const Settings = () => {
         )}
 
         {activeModal === "profileVisibility" && (
-          <Modal title="Profile Visibility" showSave onSave={async () => {
+          <Modal onClose={() => setActiveModal(null)} title="Profile Visibility" showSave onSave={async () => {
             if (!user) return;
             const { error } = await supabase
               .from("profiles")
@@ -1247,7 +1249,7 @@ const Settings = () => {
         )}
 
         {activeModal === "whoCanComment" && (
-          <Modal title="Who Can Comment" showSave onSave={async () => {
+          <Modal onClose={() => setActiveModal(null)} title="Who Can Comment" showSave onSave={async () => {
             if (!user) return;
             const { error } = await supabase
               .from("profiles")
@@ -1285,7 +1287,7 @@ const Settings = () => {
         )}
 
         {activeModal === "whoCanRate" && (
-          <Modal title="Who Can Rate Me" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
+          <Modal onClose={() => setActiveModal(null)} title="Who Can Rate Me" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
             <div className="space-y-3">
               {[
                 { value: "everyone", label: "Everyone" },
@@ -1315,7 +1317,7 @@ const Settings = () => {
         )}
 
         {activeModal === "lastSeenVisibility" && (
-          <Modal title="Last Seen Visibility" showSave onSave={handleSaveLastSeenVisibility}>
+          <Modal onClose={() => setActiveModal(null)} title="Last Seen Visibility" showSave onSave={handleSaveLastSeenVisibility}>
             <p className="text-sm text-muted-foreground mb-4">
               Control who can see when you were last active.
             </p>
@@ -1354,7 +1356,7 @@ const Settings = () => {
 
 
         {activeModal === "language" && (
-          <Modal title="Preferred Language" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
+          <Modal onClose={() => setActiveModal(null)} title="Preferred Language" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
             <div className="space-y-3">
               {["English", "Spanish", "French", "German", "Portuguese"].map((lang) => (
                 <button
@@ -1377,7 +1379,7 @@ const Settings = () => {
         )}
 
         {activeModal === "preferredCountry" && (
-          <Modal title="Preferred Country" showSave onSave={handleSaveProfile}>
+          <Modal onClose={() => setActiveModal(null)} title="Preferred Country" showSave onSave={handleSaveProfile}>
             <div className="space-y-4">
               <Input
                 value={editForm.country}
@@ -1392,7 +1394,7 @@ const Settings = () => {
         )}
 
         {activeModal === "trendingStreamers" && (
-          <Modal title="Show Trending Streamers" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
+          <Modal onClose={() => setActiveModal(null)} title="Show Trending Streamers" showSave onSave={() => { toast({ title: "Settings saved!" }); setActiveModal(null); }}>
             <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-xl">
               <span className="text-foreground">Show trending section</span>
               <Switch
@@ -1407,7 +1409,7 @@ const Settings = () => {
         )}
 
         {activeModal === "darkMode" && (
-          <Modal title="Dark Mode" showSave onSave={() => { toast({ title: "Theme updated!" }); setActiveModal(null); }}>
+          <Modal onClose={() => setActiveModal(null)} title="Dark Mode" showSave onSave={() => { toast({ title: "Theme updated!" }); setActiveModal(null); }}>
             <div className="space-y-3">
               {[
                 { value: "dark", label: "Dark", icon: Moon, description: "Always use dark theme" },
@@ -1435,7 +1437,7 @@ const Settings = () => {
         )}
 
         {activeModal === "dataSaver" && (
-          <Modal title="Data Saver Mode" showSave onSave={() => {
+          <Modal onClose={() => setActiveModal(null)} title="Data Saver Mode" showSave onSave={() => {
             localStorage.setItem("data_saver", settings.dataSaver ? "true" : "false");
             toast({ title: "Settings saved!" });
             setActiveModal(null);
@@ -1454,7 +1456,7 @@ const Settings = () => {
         )}
 
         {activeModal === "clearCache" && (
-          <Modal title="Clear Cache">
+          <Modal onClose={() => setActiveModal(null)} title="Clear Cache">
             <p className="text-muted-foreground mb-4">
               Clears temporary files to free up space.
             </p>
@@ -1492,7 +1494,7 @@ const Settings = () => {
         )}
 
         {activeModal === "logout" && (
-          <Modal title="Log Out">
+          <Modal onClose={() => setActiveModal(null)} title="Log Out">
             <p className="text-muted-foreground mb-4">
               Are you sure you want to log out?
             </p>
@@ -1508,7 +1510,7 @@ const Settings = () => {
         )}
 
         {activeModal === "deleteAccount" && (
-          <Modal title="Delete Account">
+          <Modal onClose={() => setActiveModal(null)} title="Delete Account">
             <div className="p-4 bg-destructive/10 rounded-xl mb-4">
               <p className="text-destructive font-medium">Request permanent deletion</p>
               <p className="text-sm text-destructive/80 mt-1">
@@ -1527,7 +1529,7 @@ const Settings = () => {
         )}
 
         {activeModal === "deactivateAccount" && (
-          <Modal title="Deactivate Account">
+          <Modal onClose={() => setActiveModal(null)} title="Deactivate Account">
             <div className="p-4 bg-secondary/50 rounded-xl mb-4">
               <p className="font-medium text-foreground">Temporarily deactivate</p>
               <p className="text-sm text-muted-foreground mt-1">
@@ -1546,7 +1548,7 @@ const Settings = () => {
         )}
 
         {activeModal === "appUpdate" && (
-          <Modal title="App Updates">
+          <Modal onClose={() => setActiveModal(null)} title="App Updates">
             <div className="space-y-6">
               {/* Current Version */}
               <div className="p-4 rounded-xl bg-gradient-to-r from-primary/20 to-primary/5 border border-primary/20">
