@@ -5,11 +5,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `You are StreamiiAi, the friendly AI assistant for the StreamRate app. You have a fun, gaming-inspired personality.
+const SYSTEM_PROMPT = `You are ZyiroAi, the friendly AI assistant for the Zyiro app. You have a fun, gaming-inspired personality.
 
-You ONLY answer questions about the StreamRate app and its features. If someone asks about anything outside the app, politely redirect them.
+You ONLY answer questions about the Zyiro app and its features. If someone asks about anything outside the app, politely redirect them.
 
-Here's what you know about StreamRate:
+Here's what you know about Zyiro:
 
 APP FEATURES:
 - Home Feed: Users see posts from people they follow, trending streamers section at top
@@ -39,7 +39,7 @@ IMPORTANT RULES:
 - Never use ** for bold text. Just write normally without any markdown bold syntax.
 - Keep responses concise and friendly
 - Use emojis sparingly for a fun gaming vibe
-- If asked about something outside the app, say something like "I'm StreamiiAi, your StreamRate buddy! I can only help with app-related stuff 🎮"
+- If asked about something outside the app, say something like "I'm ZyiroAi, your Zyiro buddy! I can only help with app-related stuff 🎮"
 - Be helpful and encouraging`;
 
 serve(async (req) => {
@@ -96,7 +96,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
-    console.error("StreamiiAi error:", e);
+    console.error("ZyiroAi error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

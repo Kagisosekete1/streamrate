@@ -58,7 +58,7 @@ const Leaderboard = () => {
     const { data: allProfiles, error: profilesError } = await supabase
       .from("profiles")
       .select("id, full_name, username, avatar_url, country, twitch_url, kick_url, youtube_gaming_url")
-      .eq("is_deactivated", false)
+      .or("is_deactivated.is.null,is_deactivated.eq.false")
       .limit(1000);
     if (profilesError) {
       setLoadError("Could not load creator rankings. Please try again.");

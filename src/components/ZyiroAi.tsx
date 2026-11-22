@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   role: "user" | "assistant";
@@ -11,8 +11,8 @@ interface Message {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/streamii-ai`;
 
-export const StreamiiAi = () => {
-  const { toast } = useToast();
+export const ZyiroAi = () => {
+
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -42,26 +42,18 @@ export const StreamiiAi = () => {
     let assistantSoFar = "";
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({ messages: allMessages }),
       });
 
-      if (resp.status === 429) {
-        toast({ title: "Too many requests", description: "Please wait a moment and try again.", variant: "destructive" });
-        setIsLoading(false);
-        return;
-      }
-      if (resp.status === 402) {
-        toast({ title: "AI credits exhausted", description: "Please try again later.", variant: "destructive" });
-        setIsLoading(false);
-        return;
-      }
-      if (!resp.ok || !resp.body) throw new Error("Failed to connect to StreamiiAi");
+      if (!resp.ok || !resp.body) throw new Error("Failed to connect to ZyiroAi");
 
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
@@ -130,9 +122,18 @@ export const StreamiiAi = () => {
           } catch { /* ignore */ }
         }
       }
-    } catch (e) {
-      console.error("StreamiiAi error:", e);
-      toast({ title: "StreamiiAi Error", description: "Couldn't get a response. Try again!", variant: "destructive" });
+      if (!assistantSoFar.trim()) throw new Error("Empty reply");
+    } catch {
+      if (!assistantSoFar) {
+        const guides = [
+          [/market|product|store|sell/i, "Open Market to browse products. Sellers can add a name, price, up to five photos and a purchase link."],
+          [/rank|leaderboard/i, "Open Leaderboard to see creators ordered by average rating, with review count breaking ties."],
+          [/party|parties/i, "Open Watch Parties and tap Host. Enter a title, choose the platform, add the stream link and tap Start Party."],
+          [/password|reset/i, "On the sign-in screen, tap Forgot your password and enter your account email."],
+        ] as const;
+        const guide = guides.find(([pattern]) => pattern.test(userMsg.content));
+        setMessages(prev => [...prev, { role: "assistant", content: "Live AI is unavailable. " + (guide?.[1] || "I can still help with Watch Parties, Market, rankings or password resets. Which one do you need?") }]);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -145,7 +146,7 @@ export const StreamiiAi = () => {
         onClick={() => setIsOpen(true)}
         className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-40 w-14 h-14 rounded-full bg-primary shadow-lg shadow-primary/30 flex items-center justify-center hover:scale-105 transition-transform"
         whileTap={{ scale: 0.9 }}
-        aria-label="Open StreamiiAi"
+        aria-label="Open ZyiroAi"
       >
         <Bot className="w-7 h-7 text-primary-foreground" />
       </motion.button>
@@ -175,7 +176,7 @@ export const StreamiiAi = () => {
                     <Bot className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-sm text-foreground">StreamiiAi</h3>
+                    <h3 className="font-semibold text-sm text-foreground">ZyiroAi</h3>
                     <p className="text-[10px] text-muted-foreground">Your Zyiro buddy</p>
                   </div>
                 </div>
@@ -192,7 +193,7 @@ export const StreamiiAi = () => {
                       <Bot className="w-9 h-9 text-primary" />
                     </div>
                     <h4 className="font-semibold text-foreground mb-1">Hey there! 🎮</h4>
-                    <p className="text-sm text-muted-foreground">I'm StreamiiAi, your Zyiro assistant. Ask me anything about the app!</p>
+                    <p className="text-sm text-muted-foreground">I'm ZyiroAi, your Zyiro assistant. Ask me anything about the app!</p>
                     <div className="mt-4 space-y-2">
                       {["How do I create a reel?", "What are trending hashtags?", "How do I rate a streamer?"].map((q) => (
                         <button
@@ -246,7 +247,7 @@ export const StreamiiAi = () => {
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask StreamiiAi..."
+                    placeholder="Ask ZyiroAi..."
                     className="flex-1 bg-secondary rounded-full px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30"
                     disabled={isLoading}
                   />

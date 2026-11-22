@@ -134,14 +134,14 @@ const WatchParties = () => {
       let profiles: SuggestedCreator[] = [];
       if (creatorIds.length) {
         const result = await supabase.from("profiles").select("id, username, full_name, avatar_url")
-          .in("id", creatorIds).eq("is_deactivated", false).limit(40);
+          .in("id", creatorIds).or("is_deactivated.is.null,is_deactivated.eq.false").limit(40);
         profiles = result.data || [];
       }
       // Some legacy creator profiles predate the user_roles row. Keep the
       // section useful by falling back to profiles with a public stream link.
       if (!profiles.length) {
         const result = await supabase.from("profiles").select("id, username, full_name, avatar_url")
-          .eq("is_deactivated", false).limit(40);
+          .or("is_deactivated.is.null,is_deactivated.eq.false").limit(40);
         profiles = result.data || [];
       }
       if (active) {

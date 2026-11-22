@@ -105,29 +105,16 @@ const Streamers = () => {
 
   const fetchStreamers = async () => {
     // Get all users with streamer role
-    const { data: roleData, error: roleError } = await supabase
+    const { data: roleData } = await supabase
       .from("user_roles")
       .select("user_id")
       .eq("role", "streamer");
 
-    if (roleError) {
-      console.error("Error fetching streamers:", roleError);
-      setLoading(false);
-      return;
-    }
-
-    const streamerIds = roleData?.map((r) => r.user_id) || [];
-
-    if (streamerIds.length === 0) {
-      setLoading(false);
-      return;
-    }
-
-    // Get streamer profiles
-    const { data: profiles, error: profileError } = await supabase
-      .from("profiles")
+    const roleIds = new Set(roleData?.map(row => row.user_id));
+    const { data: visible, error: profileError } = await supabase.from("profiles")
       .select("id, full_name, username, avatar_url, country, bio, created_at, twitch_url, kick_url, youtube_gaming_url")
-      .in("id", streamerIds);
+      .or("is_deactivated.is.null,is_deactivated.eq.false");
+    const profiles = visible?.filter(p => roleIds.has(p.id) || p.twitch_url || p.kick_url || p.youtube_gaming_url);
 
     if (profileError) {
       console.error("Error fetching profiles:", profileError);
@@ -384,6 +371,15 @@ const Streamers = () => {
               </Link>
             </section>
           )}
+          {!searchQuery && <section>
+            <h2 className="mb-3 font-semibold">Creators you may know</h2>
+            <div className="flex gap-3 overflow-x-auto">{streamers.slice(0, 12).map(creator =>
+              <Link key={creator.id} to={`/streamer/${creator.id}`} className="w-24 shrink-0 text-center">
+                <ProfileAvatarImage src={creator.avatar_url || ""} alt="" className="mx-auto h-14 w-14 rounded-full object-cover" />
+                <span className="block truncate text-xs">{creator.username || creator.full_name}</span>
+              </Link>)}</div>
+            {!streamers.length && <p className="text-sm text-muted-foreground">{loading ? "Loading creators…" : "No creators available."}</p>}
+          </section>}
           {/* Leaderboard Section - Collapsible */}
           {!searchQuery && topStreamers.length > 0 && (
             <section>
