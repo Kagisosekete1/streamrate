@@ -7,7 +7,6 @@ import { PostCard } from "@/components/PostCard";
 import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 import { NewPostsBanner } from "@/components/NewPostsBanner";
 
-import { ZyiroAi } from "@/components/ZyiroAi";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSmartFeed } from "@/hooks/useSmartFeed";
@@ -443,7 +442,6 @@ const Home = () => {
         </main>
 
         
-        <ZyiroAi />
         <IOSInstallBanner />
       </div>
     </AppLayout>
