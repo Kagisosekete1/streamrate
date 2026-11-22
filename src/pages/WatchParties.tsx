@@ -1,3 +1,4 @@
+import { CreatorSuggestions } from "@/components/CreatorSuggestions";
 import { useEffect, useState } from "react";
 import { useNavigate, useInRouterContext } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -15,13 +16,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { validateStreamUrl, StreamPlatform } from "@/lib/streamLinks";
 import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
-
-interface SuggestedCreator {
-  id: string;
-  username: string | null;
-  full_name: string | null;
-  avatar_url: string | null;
-}
 
 const SORT_STORAGE_KEY = "wp:sortMode";
 const PAGE_SIZE = 8;
@@ -60,8 +54,7 @@ const WatchParties = () => {
     if (typeof window !== "undefined") window.location.assign(to);
   };
   const [parties, setParties] = useState<Party[]>([]);
-  const [suggestedCreators, setSuggestedCreators] = useState<SuggestedCreator[]>([]);
-  const [suggestedCreatorsLoading, setSuggestedCreatorsLoading] = useState(true);
+
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -121,44 +114,7 @@ const WatchParties = () => {
     fetchParties();
   }, []);
 
-  useEffect(() => {
-    let active = true;
-    const fetchCreators = async () => {
-      setSuggestedCreatorsLoading(true);
-      const [{ data: roles }, { data: follows }] = await Promise.all([
-        supabase.from("user_roles").select("user_id").eq("role", "streamer"),
-        user ? supabase.from("follows").select("following_id").eq("follower_id", user.id) : Promise.resolve({ data: [] as { following_id: string }[] }),
-      ]);
-      const followedIds = new Set((follows || []).map((row) => row.following_id));
-      const creatorIds = [...new Set((roles || []).map((row) => row.user_id))].filter((id) => id !== user?.id && !followedIds.has(id));
-      let profiles: SuggestedCreator[] = [];
-      if (creatorIds.length) {
-        const result = await supabase.from("profiles").select("id, username, full_name, avatar_url")
-          .in("id", creatorIds).or("is_deactivated.is.null,is_deactivated.eq.false").limit(40);
-        profiles = result.data || [];
-      }
-      // Some legacy creator profiles predate the user_roles row. Keep the
-      // section useful by falling back to profiles with a public stream link.
-      if (!profiles.length) {
-        const result = await supabase.from("profiles").select("id, username, full_name, avatar_url")
-          .or("is_deactivated.is.null,is_deactivated.eq.false").limit(40);
-        profiles = result.data || [];
-      }
-      if (active) {
-        setSuggestedCreators(profiles.filter((profile) => profile.id !== user?.id && !followedIds.has(profile.id)).slice(0, 8));
-        setSuggestedCreatorsLoading(false);
-      }
-    };
-    void fetchCreators();
-    const channel = supabase.channel(`suggested-creators-${user?.id || "guest"}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "user_roles" }, () => void fetchCreators());
-    if (user) channel.on("postgres_changes", { event: "*", schema: "public", table: "follows", filter: `follower_id=eq.${user.id}` }, () => void fetchCreators());
-    channel.subscribe();
-    return () => {
-      active = false;
-      void supabase.removeChannel(channel);
-    };
-  }, [user?.id]);
+
 
   useEffect(() => {
     const refresh = () => void fetchParties();
@@ -363,20 +319,7 @@ const WatchParties = () => {
           </div>
         </header>
         <main className="px-4 py-4">
-          <section className="mb-5 rounded-2xl border border-border/60 bg-card/50 p-3" aria-label="Creators you may know">
-              <div className="flex items-center gap-2 mb-3">
-                <UserRoundSearch className="w-5 h-5 text-primary" />
-                <h2 className="font-semibold text-foreground">Creators you may know</h2>
-              </div>
-              {suggestedCreators.length > 0 ? <div className="flex gap-3 overflow-x-auto pb-2">
-                {suggestedCreators.map((creator) => (
-                  <button key={creator.id} onClick={() => navigate(`/streamer/${creator.id}`)} className="flex min-w-28 max-w-32 flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 text-center hover:border-primary/50">
-                    <ProfileAvatarImage src={creator.avatar_url || ""} alt={creator.username || creator.full_name || "Creator"} className="h-14 w-14 rounded-full object-cover" />
-                    <span className="w-full truncate text-xs font-medium">@{creator.username || creator.full_name || "creator"}</span>
-                  </button>
-                ))}
-              </div> : <p className="py-2 text-sm text-muted-foreground">{suggestedCreatorsLoading ? "Finding creators for you…" : "New creator suggestions will show here as more streamers join."}</p>}
-          </section>
+          <CreatorSuggestions />
           {/* Sort controls */}
           <div className="flex items-center gap-2 mb-3" role="group" aria-label="Sort parties">
             <button

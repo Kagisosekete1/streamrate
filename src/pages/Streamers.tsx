@@ -1,3 +1,4 @@
+import { CreatorSuggestions } from "@/components/CreatorSuggestions";
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { StreamerCard } from "@/components/StreamerCard";
@@ -371,15 +372,7 @@ const Streamers = () => {
               </Link>
             </section>
           )}
-          {!searchQuery && <section>
-            <h2 className="mb-3 font-semibold">Creators you may know</h2>
-            <div className="flex gap-3 overflow-x-auto">{streamers.slice(0, 12).map(creator =>
-              <Link key={creator.id} to={`/streamer/${creator.id}`} className="w-24 shrink-0 text-center">
-                <ProfileAvatarImage src={creator.avatar_url || ""} alt="" className="mx-auto h-14 w-14 rounded-full object-cover" />
-                <span className="block truncate text-xs">{creator.username || creator.full_name}</span>
-              </Link>)}</div>
-            {!streamers.length && <p className="text-sm text-muted-foreground">{loading ? "Loading creators…" : "No creators available."}</p>}
-          </section>}
+          {!searchQuery && <CreatorSuggestions />}
           {/* Leaderboard Section - Collapsible */}
           {!searchQuery && topStreamers.length > 0 && (
             <section>
