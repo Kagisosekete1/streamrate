@@ -90,7 +90,7 @@ const Leaderboard = () => {
       })
     );
 
-    // Sort by rating
+    // Each row is an actual rating rank; ties break by review count.
     streamersWithRatings.sort((a, b) => {
       if (b.average_rating !== a.average_rating) {
         return b.average_rating - a.average_rating;
@@ -287,7 +287,7 @@ const Leaderboard = () => {
                       {streamer.username || streamer.full_name || "Anonymous"}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {streamer.country || "Unknown"} • {streamer.total_reviews} reviews
+                      Rank #{index + 1} · {streamer.country || "Unknown"} · {streamer.total_reviews} reviews
                     </p>
                   </div>
 

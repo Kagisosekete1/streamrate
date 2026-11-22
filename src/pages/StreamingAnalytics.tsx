@@ -69,28 +69,22 @@ const StreamingAnalytics = () => {
     fetchData();
 
     // Realtime subscription for analytics updates
-    const channel = supabase
-      .channel("streaming-analytics-rt")
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "streaming_analytics",
-        filter: `user_id=eq.${user.id}`,
-      }, (payload) => {
-        setAnalytics(prev => [payload.new as AnalyticsSnapshot, ...prev]);
-      })
+    const channel = supabase.channel(`streaming-analytics-rt-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "streaming_analytics", filter: `user_id=eq.${user.id}` }, () => void fetchData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "connected_platforms", filter: `user_id=eq.${user.id}` }, () => void fetchData())
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [user?.id]);
 
   useEffect(() => {
-    // Auto-sync every 5 minutes
+    // Refresh Twitch data every minute; provider snapshots remain the source
+    // of truth, and database Realtime updates the screen immediately on save.
     const autoSyncInterval = setInterval(() => {
       platforms.forEach(p => {
         if (p.is_active && p.platform === "twitch") syncPlatform(p.platform);
       });
-    }, 5 * 60 * 1000);
+    }, 60 * 1000);
 
     return () => {
       clearInterval(autoSyncInterval);

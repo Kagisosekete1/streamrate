@@ -459,7 +459,7 @@ const ListProductModal = ({
               onChange={(e) => setForm({ ...form, external_url: e.target.value })}
               placeholder="https://your-store.com/product"
             />
-            <p className="text-xs text-muted-foreground mt-1">Users will be redirected to this link when they click "Buy Now".</p>
+            <p className="text-xs text-muted-foreground mt-1">Required. Buyers open this website when they click “Buy Now”.</p>
           </div>
 
           <div>
@@ -559,6 +559,15 @@ const Store = () => {
       return;
     }
 
+    let purchaseUrl: URL;
+    try {
+      purchaseUrl = new URL(form.external_url.trim());
+      if (!['http:', 'https:'].includes(purchaseUrl.protocol)) throw new Error("Unsupported protocol");
+    } catch {
+      toast({ title: "A valid website purchase link is required", description: "Enter a full https:// link to your product checkout page.", variant: "destructive" });
+      return;
+    }
+
     if (form.imageFiles.length === 0) {
       toast({ title: "At least one product image is required", variant: "destructive" });
       return;
@@ -568,7 +577,7 @@ const Store = () => {
 
     // Upload images to product-images bucket
     const uploadedUrls: string[] = [];
-    for (const file of form.imageFiles) {
+    for (const file of form.imageFiles.slice(0, 5)) {
       const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${file.name.split('.').pop() || 'jpg'}`;
       const { error: uploadError } = await supabase.storage
         .from("product-images")
@@ -591,7 +600,7 @@ const Store = () => {
       description: form.description.trim(),
       image_url: uploadedUrls[0],
       images: uploadedUrls,
-      external_url: form.external_url.trim() || null,
+      external_url: purchaseUrl.toString(),
       category: form.category,
     } as any);
 

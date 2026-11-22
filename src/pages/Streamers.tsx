@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { StreamerCard } from "@/components/StreamerCard";
-import { Search, Filter, Users, TrendingUp, Trophy, Contact, Sparkles, ChevronDown, ShoppingBag, Tv, Radio, Gamepad2, Scissors, BarChart3, BarChart } from "lucide-react";
+import { Search, Filter, Users, TrendingUp, Trophy, Sparkles, ChevronDown, ShoppingBag, Tv, Radio, Gamepad2, Scissors, BarChart3, BarChart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -457,25 +457,6 @@ const Streamers = () => {
                 <p className="text-[10px] text-muted-foreground">Top streamers</p>
               </div>
             </Link>
-          </section>
-
-          {/* Add from Contacts - Mobile Only */}
-          <section className="md:hidden isolate transform-gpu">
-            <button 
-              onClick={() => {
-                navigator.vibrate?.(50);
-              }}
-              aria-label="Add streamers from your phone contacts"
-              className="w-full flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 hover:border-primary/40 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                <Contact className="w-5 h-5 text-primary" />
-              </div>
-              <div className="text-left flex-1">
-                <p className="font-medium text-foreground">Add Streamers from Contacts</p>
-                <p className="text-xs text-muted-foreground">Find friends who are on Zyiro</p>
-              </div>
-            </button>
           </section>
 
           {/* Suggested Streamers */}

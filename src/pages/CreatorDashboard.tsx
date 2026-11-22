@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, Users, Star, Eye, Clapperboard, MessageCircle, BarChart3, Loader2 } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
@@ -27,11 +27,13 @@ const CreatorDashboard = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [topRaters, setTopRaters] = useState<{ username: string; stars: number; avatar_url: string | null }[]>([]);
+  const hasLoadedStats = useRef(false);
 
   useEffect(() => {
     if (!user) return;
+    let disposed = false;
     const fetchStats = async () => {
-      setLoading(true);
+      if (!hasLoadedStats.current) setLoading(true);
 
       const [
         { count: followers },
@@ -65,7 +67,9 @@ const CreatorDashboard = () => {
         });
       }
 
+      if (disposed) return;
       setTopRaters(raters);
+      hasLoadedStats.current = true;
       setStats({
         followers: followers || 0,
         ratings: ratings.length,
@@ -78,8 +82,20 @@ const CreatorDashboard = () => {
       });
       setLoading(false);
     };
-    fetchStats();
-  }, [user]);
+    void fetchStats();
+
+    // Refresh from the source tables so inserts, deletes, and edits all update
+    // the dashboard with persisted counts instead of optimistic/fake values.
+    const channel = supabase.channel(`creator-dashboard-${user.id}`);
+    ["follows", "ratings", "reels", "reel_views", "posts", "post_likes", "comments"].forEach((table) => {
+      channel.on("postgres_changes", { event: "*", schema: "public", table }, () => void fetchStats());
+    });
+    channel.subscribe();
+    return () => {
+      disposed = true;
+      void supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   if (loading) {
     return (

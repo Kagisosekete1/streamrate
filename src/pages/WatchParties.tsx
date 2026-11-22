@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useInRouterContext } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Users, Plus, Tv, Radio, Search, X, Flame, TrendingUp, Clock } from "lucide-react";
+import { Users, Plus, Tv, Radio, Search, X, Flame, TrendingUp, Clock, UserRoundSearch } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +14,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { validateStreamUrl, StreamPlatform } from "@/lib/streamLinks";
+import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+
+interface SuggestedCreator {
+  id: string;
+  username: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+}
 
 const SORT_STORAGE_KEY = "wp:sortMode";
 const PAGE_SIZE = 8;
@@ -52,6 +60,7 @@ const WatchParties = () => {
     if (typeof window !== "undefined") window.location.assign(to);
   };
   const [parties, setParties] = useState<Party[]>([]);
+  const [suggestedCreators, setSuggestedCreators] = useState<SuggestedCreator[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -110,6 +119,33 @@ const WatchParties = () => {
   useEffect(() => {
     fetchParties();
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    const fetchCreators = async () => {
+      const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "streamer");
+      const creatorIds = [...new Set((roles || []).map((row) => row.user_id).filter((id) => id !== user?.id))];
+      if (!creatorIds.length) {
+        if (active) setSuggestedCreators([]);
+        return;
+      }
+      const [{ data: profiles }, { data: follows }] = await Promise.all([
+        supabase.from("profiles").select("id, username, full_name, avatar_url").in("id", creatorIds).limit(30),
+        user ? supabase.from("follows").select("following_id").eq("follower_id", user.id) : Promise.resolve({ data: [] as { following_id: string }[] }),
+      ]);
+      const following = new Set((follows || []).map((row) => row.following_id));
+      if (active) setSuggestedCreators((profiles || []).filter((profile) => !following.has(profile.id)).slice(0, 8));
+    };
+    void fetchCreators();
+    const channel = supabase.channel(`suggested-creators-${user?.id || "guest"}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_roles" }, () => void fetchCreators());
+    if (user) channel.on("postgres_changes", { event: "*", schema: "public", table: "follows", filter: `follower_id=eq.${user.id}` }, () => void fetchCreators());
+    channel.subscribe();
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     const refresh = () => void fetchParties();
@@ -314,6 +350,22 @@ const WatchParties = () => {
           </div>
         </header>
         <main className="px-4 py-4">
+          {suggestedCreators.length > 0 && (
+            <section className="mb-5" aria-label="Creators you may know">
+              <div className="flex items-center gap-2 mb-3">
+                <UserRoundSearch className="w-5 h-5 text-primary" />
+                <h2 className="font-semibold text-foreground">Creators you may know</h2>
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {suggestedCreators.map((creator) => (
+                  <button key={creator.id} onClick={() => navigate(`/streamer/${creator.id}`)} className="flex min-w-28 max-w-32 flex-col items-center gap-2 rounded-xl border border-border/60 bg-card p-3 text-center hover:border-primary/50">
+                    <ProfileAvatarImage src={creator.avatar_url || ""} alt={creator.username || creator.full_name || "Creator"} className="h-14 w-14 rounded-full object-cover" />
+                    <span className="w-full truncate text-xs font-medium">@{creator.username || creator.full_name || "creator"}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
           {/* Sort controls */}
           <div className="flex items-center gap-2 mb-3" role="group" aria-label="Sort parties">
             <button
