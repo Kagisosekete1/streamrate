@@ -1,3 +1,4 @@
+import { storedReferralCode } from "@/lib/referralLink";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -196,7 +197,7 @@ const Auth = () => {
     try { pending = localStorage.getItem("pending_referral_code"); } catch {}
     if (!pending) return;
     import("@/integrations/supabase/client").then(({ supabase }) => {
-      supabase.rpc("redeem_referral", { _code: pending! }).then(({ data }) => {
+      supabase.rpc("redeem_referral", { _code: storedReferralCode(pending!) }).then(({ data }) => {
         try { localStorage.removeItem("pending_referral_code"); } catch {}
         const r = data as any;
         if (r?.ok && r.reward_granted) {

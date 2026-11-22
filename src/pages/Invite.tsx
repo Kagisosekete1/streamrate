@@ -1,3 +1,4 @@
+import { displayReferralCode, storedReferralCode, zyiroInviteUrl } from "@/lib/referralLink";
 import { useEffect, useMemo, useState } from "react";
 import { Copy, Check, Share2, Gift, Loader2, Download, ArrowUpDown, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
@@ -22,12 +23,7 @@ const Invite = () => {
   const PAGE_SIZE = 10;
 
   const referralCode = (profile as any)?.referral_code as string | undefined;
-  const referralOrigin = ["localhost", "127.0.0.1"].includes(window.location.hostname)
-    ? "https://streamrateapp.com"
-    : window.location.origin;
-  const referralUrl = referralCode
-    ? `${referralOrigin}/auth?ref=${encodeURIComponent(referralCode)}`
-    : "";
+  const referralUrl = referralCode ? zyiroInviteUrl(referralCode) : "";
 
   useEffect(() => {
     if (!user) return;
@@ -135,7 +131,7 @@ const Invite = () => {
   const handleRedeem = async () => {
     if (!code.trim()) return;
     setRedeeming(true);
-    const { data, error } = await supabase.rpc("redeem_referral", { _code: code.trim() });
+    const { data, error } = await supabase.rpc("redeem_referral", { _code: storedReferralCode(code.trim()) });
     setRedeeming(false);
     if (error) {
       toast({ title: "Couldn't redeem code", description: error.message, variant: "destructive" });
@@ -187,7 +183,7 @@ const Invite = () => {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Or share your code: <span className="font-mono font-bold text-foreground">{referralCode}</span>
+                Or share your code: <span className="font-mono font-bold text-foreground">{displayReferralCode(referralCode)}</span>
               </p>
               <Button onClick={handleShare} variant="gaming" className="w-full">
                 <Share2 className="w-4 h-4 mr-2" />

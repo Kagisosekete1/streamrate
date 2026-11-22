@@ -1,3 +1,4 @@
+import { displayReferralCode, zyiroInviteUrl } from "@/lib/referralLink";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings, LogOut, Edit2, Users, Star, MessageCircle, Camera, X, ImageIcon, Eye, MapPin, ToggleLeft, ToggleRight, Copy, Check, Share2, Gift, Sparkles } from "lucide-react";
@@ -1070,13 +1071,13 @@ const Profile = () => {
             </div>
             <div className="flex items-center gap-2">
               <div className="flex-1 min-w-0 px-3 py-2 rounded-lg bg-muted/40 border border-border text-xs sm:text-sm font-mono text-foreground truncate">
-                {`${window.location.origin}/auth?ref=${(profile as any).referral_code}`}
+                {zyiroInviteUrl((profile as any).referral_code)}
               </div>
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={async () => {
-                  const url = `${window.location.origin}/auth?ref=${(profile as any).referral_code}`;
+                  const url = zyiroInviteUrl((profile as any).referral_code);
                   try {
                     await navigator.clipboard.writeText(url);
                     setReferralCopied(true);
@@ -1094,7 +1095,7 @@ const Profile = () => {
                 variant="gaming"
                 size="sm"
                 onClick={async () => {
-                  const url = `${window.location.origin}/auth?ref=${(profile as any).referral_code}`;
+                  const url = zyiroInviteUrl((profile as any).referral_code);
                   if (navigator.share) {
                     try {
                       await navigator.share({ title: "Join me on Zyiro", text: "Join Zyiro with my invite!", url });
@@ -1110,7 +1111,7 @@ const Profile = () => {
               </Button>
             </div>
             <p className="text-[11px] text-muted-foreground">
-              Code: <span className="font-mono font-semibold text-foreground">{(profile as any).referral_code}</span>
+              Code: <span className="font-mono font-semibold text-foreground">{displayReferralCode((profile as any).referral_code)}</span>
               {" · "}
               <button onClick={() => navigate("/invite")} className="underline hover:text-foreground">View referrals</button>
             </p>

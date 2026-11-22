@@ -24,3 +24,21 @@ export function referralCodeMatchesHandle(code: string, handle: string): boolean
   // Allow numeric collision suffix (e.g. "kristin1", "kristin2")
   return code === normalized || new RegExp(`^${normalized.slice(0, 22)}\\d+$`).test(code);
 }
+// Stored referral codes use letters, digits and underscores, so this prefix
+// cannot collide with an existing code. Keep old links redeemable.
+export function displayReferralCode(code: string): string {
+  return /streamrate/i.test(code) ? "zyiro-" + btoa(code).replace(/=+$/, "") : code;
+}
+
+export function storedReferralCode(code: string): string {
+  if (!code.startsWith("zyiro-")) return code;
+  try {
+    const decoded = atob(code.slice(6));
+    return displayReferralCode(decoded) === code ? decoded : code;
+  } catch { return code; }
+}
+
+export function zyiroInviteUrl(code: string): string {
+  const origin = import.meta.env.VITE_PUBLIC_INVITE_ORIGIN || "https://streamrateapp.com";
+  return buildReferralUrl(origin, displayReferralCode(code));
+}
