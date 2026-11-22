@@ -139,6 +139,7 @@ export const PostCard = ({
   const [showAvatarView, setShowAvatarView] = useState(false);
   const [content, setContent] = useState(initialContent);
   const [imageUrl, setImageUrl] = useState(initialImageUrl);
+  const [imageFailed, setImageFailed] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [showReportBlock, setShowReportBlock] = useState(false);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
@@ -151,7 +152,7 @@ export const PostCard = ({
   useEffect(() => setCommentsCount(comments), [id, comments]);
   useEffect(() => setIsBookmarked(initialIsBookmarked), [id, initialIsBookmarked]);
   useEffect(() => setContent(initialContent), [id, initialContent]);
-  useEffect(() => setImageUrl(initialImageUrl), [id, initialImageUrl]);
+  useEffect(() => { setImageUrl(initialImageUrl); setImageFailed(false); }, [id, initialImageUrl]);
 
   const refreshEngagement = useCallback(async () => {
     const requestedLikeVersion = likeMutationVersion.current;
@@ -480,7 +481,7 @@ export const PostCard = ({
       </div>
 
       {/* Image FIRST - Instagram style (full width, double tap to like) */}
-      {imageUrl && (
+      {imageUrl && !imageFailed && (
         <div 
           className="relative w-full bg-black"
           onDoubleClick={handleDoubleClick}
@@ -489,6 +490,7 @@ export const PostCard = ({
             src={imageUrl}
             alt="Post"
             className="w-full object-contain max-h-[600px]"
+            onError={() => setImageFailed(true)}
           />
           {showHeartAnimation && (
             <motion.div
@@ -576,6 +578,7 @@ export const PostCard = ({
         onSave={(newContent, newImageUrl) => {
           setContent(newContent);
           setImageUrl(newImageUrl);
+          setImageFailed(false);
           onUpdate?.();
         }}
       />
