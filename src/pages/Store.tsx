@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ShoppingBag, Plus, Package, Tag, ExternalLink, Star, Crown, Sparkles,
@@ -506,6 +506,7 @@ const Store = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showListModal, setShowListModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -514,13 +515,22 @@ const Store = () => {
   const checkingSubscription = false;
   const [searchQuery, setSearchQuery] = useState("");
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
+    setLoadError(null);
+    const { data, error } = await supabase
       .from("store_products" as any)
       .select("*")
       .eq("is_active", true)
       .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Unable to load marketplace listings:", error);
+      setProducts([]);
+      setLoadError("Listings could not be loaded. Please try again.");
+      setLoading(false);
+      return;
+    }
 
     if (data && (data as any[]).length > 0) {
       const items = data as any[];
@@ -543,7 +553,11 @@ const Store = () => {
       setProducts([]);
     }
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    void fetchProducts();
+  }, [fetchProducts]);
 
   const handleListProduct = async (form: {
     name: string;
@@ -754,6 +768,15 @@ const Store = () => {
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="aspect-square bg-secondary rounded-xl animate-pulse" />
               ))}
+            </div>
+          ) : loadError ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-20 h-20 rounded-2xl bg-destructive/10 flex items-center justify-center mb-4">
+                <Package className="w-10 h-10 text-destructive" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Could not load listings</h3>
+              <p className="text-muted-foreground text-sm max-w-xs mb-4">{loadError}</p>
+              <Button variant="outline" onClick={() => void fetchProducts()}>Try Again</Button>
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
