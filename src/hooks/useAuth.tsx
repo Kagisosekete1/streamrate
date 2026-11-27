@@ -22,8 +22,10 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   userRole: "fan" | "streamer" | "seller" | null;
+  roleLoading: boolean;
   loading: boolean;
   signUp: (email: string, password: string, fullName: string, role: "fan" | "streamer" | "seller", gender?: string) => Promise<{ error: Error | null }>;
+  chooseRoleOnce: (role: "fan" | "streamer" | "seller") => Promise<{ error: Error | null; assigned: boolean }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error: Error | null }>;
@@ -37,6 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userRole, setUserRole] = useState<"fan" | "streamer" | "seller" | null>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
@@ -68,13 +71,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .from("user_roles")
       .select("role")
       .eq("user_id", userId)
+      .limit(1)
       .maybeSingle();
 
     if (roleError) {
       console.error("Unable to load the signed-in role:", roleError);
-    } else if (roleData) {
-      setUserRole(roleData.role as "fan" | "streamer" | "seller");
     }
+    setUserRole(!roleError && roleData ? roleData.role as "fan" | "streamer" | "seller" : null);
+    setRoleLoading(false);
   };
 
   const refreshProfile = async () => {
@@ -92,6 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
 
         if (session?.user) {
+          setRoleLoading(true);
           setTimeout(() => {
             fetchProfile(session.user.id);
             
@@ -99,6 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else {
           setProfile(null);
           setUserRole(null);
+          setRoleLoading(false);
         }
         // Do not let the auth callback race the initial persisted-session read.
         // Otherwise the auth screen can flash before the saved session is restored.
@@ -137,6 +143,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         emailRedirectTo: redirectUrl,
         data: {
           full_name: fullName,
+          app_role: role,
+          gender: gender ?? null,
         },
       },
     });
@@ -145,30 +153,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { error };
     }
 
-    if (data.user) {
-      // Insert user role
-      const { error: roleError } = await supabase
-        .from("user_roles")
-        .insert({ user_id: data.user.id, role });
-
-      if (roleError) {
-        console.error("Error inserting role:", roleError);
-      }
-
-      const profileUpdates: { full_name: string; gender?: string } = { full_name: fullName };
-      if (gender) profileUpdates.gender = gender;
-
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update(profileUpdates)
-        .eq("id", data.user.id);
-
-      if (profileError) {
-        console.error("Error updating profile:", profileError);
-      }
-    }
-
     return { error: null };
+  };
+
+  const chooseRoleOnce = async (role: "fan" | "streamer" | "seller") => {
+    const { data, error } = await supabase.rpc("choose_my_role_once", { _role: role });
+    return {
+      error: error ?? null,
+      assigned: data === true,
+    };
   };
 
   const signIn = async (email: string, password: string) => {
@@ -185,6 +178,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setSession(null);
     setProfile(null);
     setUserRole(null);
+    setRoleLoading(false);
   };
 
   const updateProfile = async (updates: Partial<Profile>) => {
@@ -211,8 +205,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         session,
         profile,
         userRole,
+        roleLoading,
         loading,
         signUp,
+        chooseRoleOnce,
         signIn,
         signOut,
         updateProfile,

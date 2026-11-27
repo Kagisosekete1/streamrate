@@ -17,10 +17,11 @@ type UserRole = "fan" | "streamer" | "seller";
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, signIn, signUp, loading: authLoading } = useAuth();
+  const { user, userRole, roleLoading, signIn, signUp, chooseRoleOnce, refreshProfile, loading: authLoading } = useAuth();
   const [mode, setMode] = useState<AuthMode>("login");
   const [role, setRole] = useState<UserRole | null>(null);
   const [showRoleSelect, setShowRoleSelect] = useState(false);
+  const [roleSelectionForSignedInUser, setRoleSelectionForSignedInUser] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showVerifyEmail, setShowVerifyEmail] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
@@ -36,10 +37,15 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    if (user && !authLoading && !passwordRecovery) {
-      navigate("/home");
+    if (user && !authLoading && !roleLoading && !passwordRecovery) {
+      if (userRole) {
+        navigate("/home");
+      } else {
+        setRoleSelectionForSignedInUser(true);
+        setShowRoleSelect(true);
+      }
     }
-  }, [user, authLoading, passwordRecovery, navigate]);
+  }, [user, userRole, roleLoading, authLoading, passwordRecovery, navigate]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
@@ -67,7 +73,7 @@ const Auth = () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: native ? "com.semogrouptech.streamrateapp://auth/callback" : `${window.location.origin}/home`,
+        redirectTo: native ? "com.semogrouptech.streamrateapp://auth/callback" : `${window.location.origin}/auth`,
         skipBrowserRedirect: native,
       },
     });
@@ -146,9 +152,8 @@ const Auth = () => {
       } else {
         toast({
           title: "Welcome back!",
-          description: "Redirecting to home...",
+          description: "Signing you in...",
         });
-        navigate("/home");
       }
     }
 
@@ -158,6 +163,24 @@ const Auth = () => {
   const handleRoleSelect = async (selectedRole: UserRole) => {
     setRole(selectedRole);
     setIsSubmitting(true);
+
+    if (roleSelectionForSignedInUser) {
+      const { error, assigned } = await chooseRoleOnce(selectedRole);
+      if (error) {
+        toast({ title: "Could not save your role", description: error.message, variant: "destructive" });
+        setIsSubmitting(false);
+        return;
+      }
+      await refreshProfile();
+      if (!assigned) {
+        toast({ title: "Role already selected", description: "Your account already has a role saved." });
+      } else {
+        toast({ title: "Role saved", description: "Your account is ready." });
+      }
+      navigate("/home");
+      setIsSubmitting(false);
+      return;
+    }
 
     const { error } = await signUp(
       formData.email,
@@ -474,11 +497,13 @@ const Auth = () => {
                 Choose your role
               </h1>
               <p className="text-muted-foreground mb-4 text-center">
-                What brings you to Zyiro?
+                {roleSelectionForSignedInUser
+                  ? "Choose the account type you want to use. You can only choose once."
+                  : "What brings you to Zyiro?"}
               </p>
               <div className="mb-6 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
                 <p className="text-sm text-amber-500 text-center font-medium">
-                  ⚠️ Your role cannot be changed after registration
+                  ⚠️ Your role can only be selected once
                 </p>
               </div>
 

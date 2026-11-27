@@ -2640,6 +2640,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      choose_my_role_once: {
+        Args: { _role: string }
+        Returns: boolean
+      }
       increment_hashtag_use_count: {
         Args: { _hashtag_id: string }
         Returns: undefined

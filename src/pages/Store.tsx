@@ -761,7 +761,7 @@ const Store = () => {
                 <Package className="w-10 h-10 text-primary" />
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">
-                {products.length === 0 ? "Market Opening Soon" : "No products in this category"}
+                {products.length === 0 ? "No Listings" : "No products in this category"}
               </h3>
               <p className="text-muted-foreground text-sm max-w-xs">
                 Gaming gear, streaming equipment, and accessories from sellers in the community.
