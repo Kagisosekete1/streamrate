@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { TrendingStreamersSection } from "@/components/TrendingStreamersSection";
-import { useIsSeenAdmin } from "@/hooks/useIsSeenAdmin";
 
 import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
 
@@ -35,7 +34,6 @@ interface Hashtag {
 }
 
 const Streamers = () => {
-  const isSeenAdmin = useIsSeenAdmin();
   const [streamers, setStreamers] = useState<Streamer[]>([]);
   const [filteredStreamers, setFilteredStreamers] = useState<Streamer[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -160,13 +158,14 @@ const Streamers = () => {
   
   useEffect(() => {
     const fetchNewMembers = async () => {
-      const threeDaysAgo = new Date();
-      threeDaysAgo.setDate(threeDaysAgo.getDate() - 7);
+      const fortyEightHoursAgo = new Date();
+      fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48);
       
       const { data } = await supabase
         .from("profiles")
         .select("id, username, full_name, avatar_url, created_at")
-        .gte("created_at", threeDaysAgo.toISOString())
+        .or("is_deactivated.is.null,is_deactivated.eq.false")
+        .gte("created_at", fortyEightHoursAgo.toISOString())
         .order("created_at", { ascending: false })
         .limit(20);
       
@@ -312,8 +311,8 @@ const Streamers = () => {
         {!searchQuery && <TrendingStreamersSection trendingStreamers={trendingStreamers} />}
 
         <main className="px-4 py-4 space-y-6">
-          {/* New Members Section - visible only to the seen-by admin */}
-          {!searchQuery && isSeenAdmin && newMembers.length > 0 && (
+          {/* Show recent members to everyone on Explore. */}
+          {!searchQuery && newMembers.length > 0 && (
             <section>
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="w-5 h-5 text-green-500" />

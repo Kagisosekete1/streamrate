@@ -1,4 +1,4 @@
-import { formatRelativeTimeSafe } from "@/lib/formatRelativeTimeSafe";
+import { formatNotificationReceivedAt } from "@/lib/formatNotificationReceivedAt";
 import { useState, useEffect } from "react";
 import { Bell } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -213,9 +213,7 @@ export const NotificationBell = () => {
                         {notification.message}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {formatRelativeTimeSafe(new Date(notification.created_at), {
-                          addSuffix: true,
-                        })}
+                        {formatNotificationReceivedAt(notification.created_at)}
                       </p>
                     </div>
                     {!notification.is_read && (

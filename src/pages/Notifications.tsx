@@ -1,4 +1,4 @@
-import { formatRelativeTimeSafe } from "@/lib/formatRelativeTimeSafe";
+import { formatNotificationReceivedAt } from "@/lib/formatNotificationReceivedAt";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -384,7 +384,7 @@ const Notifications = () => {
                             <p className="text-sm font-semibold text-foreground">New Followers</p>
                             <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">{message}</p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              {formatRelativeTimeSafe(new Date(notification.created_at), { addSuffix: true })}
+                              {formatNotificationReceivedAt(notification.created_at)}
                             </p>
                           </>
                         );
@@ -395,9 +395,7 @@ const Notifications = () => {
                         {notification.message}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {formatRelativeTimeSafe(new Date(notification.created_at), {
-                          addSuffix: true,
-                        })}
+                        {formatNotificationReceivedAt(notification.created_at)}
                       </p>
                         </>
                       )}
@@ -497,7 +495,7 @@ const Notifications = () => {
                               @{f.from_user?.username || "Someone"}
                             </h3>
                             <p className="text-xs text-muted-foreground">
-                              {formatRelativeTimeSafe(new Date(f.created_at), { addSuffix: true })}
+                              {formatNotificationReceivedAt(f.created_at)}
                             </p>
                           </div>
                         </motion.button>

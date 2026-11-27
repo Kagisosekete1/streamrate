@@ -13,6 +13,7 @@ android/.gradle/
 android/build/
 android/app/build/
 build-output/
+supabase/.temp/
 android/local.properties
 dist
 dist-ssr
