@@ -41,6 +41,7 @@ const Streamers = () => {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [trendingHashtags, setTrendingHashtags] = useState<Hashtag[]>([]);
+  const [newMembersError, setNewMembersError] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     leaderboard: false,
     suggested: false,
@@ -157,21 +158,41 @@ const Streamers = () => {
   const [newMembers, setNewMembers] = useState<Array<{id: string; username: string | null; full_name: string | null; avatar_url: string | null; created_at: string | null}>>([]);
   
   useEffect(() => {
+    let active = true;
     const fetchNewMembers = async () => {
       const fortyEightHoursAgo = new Date();
       fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48);
       
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .select("id, username, full_name, avatar_url, created_at")
         .or("is_deactivated.is.null,is_deactivated.eq.false")
         .gte("created_at", fortyEightHoursAgo.toISOString())
         .order("created_at", { ascending: false })
         .limit(20);
-      
-      if (data) setNewMembers(data);
+
+      if (!active) return;
+      if (error) {
+        console.error("Unable to load new Explore members:", error);
+        setNewMembersError(true);
+        return;
+      }
+      setNewMembersError(false);
+      setNewMembers(data || []);
     };
-    fetchNewMembers();
+
+    void fetchNewMembers();
+    const channel = supabase
+      .channel("explore-new-members")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "profiles" }, () => {
+        void fetchNewMembers();
+      })
+      .subscribe();
+
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+    };
   }, []);
 
   const filterStreamers = () => {
@@ -312,7 +333,7 @@ const Streamers = () => {
 
         <main className="px-4 py-4 space-y-6">
           {/* Show recent members to everyone on Explore. */}
-          {!searchQuery && newMembers.length > 0 && (
+          {!searchQuery && (
             <section>
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="w-5 h-5 text-green-500" />
@@ -321,6 +342,15 @@ const Streamers = () => {
                   {newMembers.length}
                 </span>
               </div>
+              {newMembersError ? (
+                <div className="rounded-xl border border-border/60 bg-card/40 p-4 text-sm text-muted-foreground">
+                  New members are temporarily unavailable. Please try again shortly.
+                </div>
+              ) : newMembers.length === 0 ? (
+                <div className="rounded-xl border border-border/60 bg-card/40 p-4 text-sm text-muted-foreground">
+                  No one joined in the last 48 hours. New accounts will appear here with a New badge.
+                </div>
+              ) : (
               <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                 {newMembers.slice(0, 15).map((member) => (
                   <Link
@@ -347,6 +377,7 @@ const Streamers = () => {
                   </Link>
                 ))}
               </div>
+              )}
             </section>
           )}
           {/* Watch Parties promo - right under New Members so everyone can jump in & post */}
