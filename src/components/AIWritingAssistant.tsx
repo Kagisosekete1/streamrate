@@ -19,6 +19,23 @@ const actions = [
   { id: "expand", label: "Expand", icon: "📖" },
 ];
 
+const describeInvokeError = async (error: unknown) => {
+  if (error && typeof error === "object" && "context" in error) {
+    const context = (error as { context?: unknown }).context;
+    if (context instanceof Response) {
+      const payload = await context.clone().json().catch(() => null) as { error?: unknown } | null;
+      if (typeof payload?.error === "string") return payload.error;
+      if (context.status === 404) return "The AI writing function is not deployed to Supabase yet.";
+    }
+  }
+
+  const message = error instanceof Error ? error.message : "Unexpected AI assistant error";
+  if (/failed to send a request|fetch failed|networkerror/i.test(message)) {
+    return "Could not reach the AI writing function. Check your internet connection and Supabase deployment.";
+  }
+  return message;
+};
+
 export const AIWritingAssistant = ({ text, onApply }: AIWritingAssistantProps) => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
@@ -56,7 +73,7 @@ export const AIWritingAssistant = ({ text, onApply }: AIWritingAssistantProps) =
       console.error("AI assistant error:", error);
       toast({
         title: "AI Assistant Error",
-        description: error instanceof Error ? error.message : "Failed to process text",
+        description: await describeInvokeError(error),
         variant: "destructive",
       });
     } finally {

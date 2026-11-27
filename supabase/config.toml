@@ -13,3 +13,5 @@ project_id = "oczrdiyvubwxttrrajhe"
   verify_jwt = false
   [functions.admin-password-recovery]
     verify_jwt = true
+  [functions.ai-writing-assistant]
+    verify_jwt = true
