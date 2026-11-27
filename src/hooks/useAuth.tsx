@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import type { AppRole, UserRole } from "@/lib/userRole";
 
 import { useNavigate } from "react-router-dom";
 
@@ -21,11 +22,11 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
-  userRole: "fan" | "streamer" | "seller" | null;
+  userRole: AppRole | null;
   roleLoading: boolean;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string, role: "fan" | "streamer" | "seller", gender?: string) => Promise<{ error: Error | null }>;
-  chooseRoleOnce: (role: "fan" | "streamer" | "seller") => Promise<{ error: Error | null; assigned: boolean }>;
+  signUp: (email: string, password: string, fullName: string, role: UserRole, gender?: string) => Promise<{ error: Error | null }>;
+  chooseRoleOnce: (role: UserRole) => Promise<{ error: Error | null; assigned: boolean }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error: Error | null }>;
@@ -38,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [userRole, setUserRole] = useState<"fan" | "streamer" | "seller" | null>(null);
+  const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [roleLoading, setRoleLoading] = useState(true);
   const [loading, setLoading] = useState(true);
 
@@ -77,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (roleError) {
       console.error("Unable to load the signed-in role:", roleError);
     }
-    setUserRole(!roleError && roleData ? roleData.role as "fan" | "streamer" | "seller" : null);
+    setUserRole(!roleError && roleData ? roleData.role as AppRole : null);
     setRoleLoading(false);
   };
 
@@ -133,7 +134,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string, role: "fan" | "streamer" | "seller", gender?: string) => {
+  const signUp = async (email: string, password: string, fullName: string, role: UserRole, gender?: string) => {
     const redirectUrl = "https://streamrateapp.com/auth";
 
     const { data, error } = await supabase.auth.signUp({
@@ -156,7 +157,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error: null };
   };
 
-  const chooseRoleOnce = async (role: "fan" | "streamer" | "seller") => {
+  const chooseRoleOnce = async (role: UserRole) => {
     const { data, error } = await supabase.rpc("choose_my_role_once", { _role: role });
     return {
       error: error ?? null,

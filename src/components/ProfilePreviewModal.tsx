@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Star, Users, MessageCircle } from "lucide-react";
+import { getRoleLabel } from "@/lib/userRole";
 
 interface ProfilePreviewModalProps {
   isOpen: boolean;
@@ -87,7 +88,7 @@ export const ProfilePreviewModal = ({
                 
                 {userRole && (
                   <span className="px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-medium mt-1 capitalize">
-                    {userRole}
+                    {getRoleLabel(userRole)}
                   </span>
                 )}
                 

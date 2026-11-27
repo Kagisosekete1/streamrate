@@ -24,6 +24,7 @@ import { TwitchLiveEmbed } from "@/components/TwitchLiveEmbed";
 import { StreamPolls } from "@/components/StreamPolls";
 import { resolveProfileRouteParam } from "@/lib/profileQr";
 import { trackEvent } from "@/lib/analytics";
+import { getRoleLabel } from "@/lib/userRole";
 
 interface StreamerData {
   id: string;
@@ -43,6 +44,7 @@ interface StreamerData {
   show_discord: boolean;
   show_kick: boolean;
   show_youtube_gaming: boolean;
+  role: string | null;
 }
 
 interface Review {
@@ -151,7 +153,17 @@ const StreamerProfile = () => {
       show_discord: (profileData as any).show_discord ?? true,
       show_kick: (profileData as any).show_kick ?? true,
       show_youtube_gaming: (profileData as any).show_youtube_gaming ?? true,
+      role: null,
     });
+
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", profileId)
+      .in("role", ["fan", "streamer", "gamer", "seller"])
+      .limit(1)
+      .maybeSingle();
+    setStreamer((current) => current?.id === profileId ? { ...current, role: roleData?.role ?? "fan" } : current);
 
     // Check profile visibility
     const visibility = (profileData as any).profile_visibility || "public";
@@ -447,6 +459,9 @@ const StreamerProfile = () => {
                 </span>
               )}
             </div>
+            <span className="px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-medium mt-1">
+              {getRoleLabel(streamer.role)}
+            </span>
             {streamer.country && (
               <div className="flex items-center gap-1 text-muted-foreground mt-1">
                 <MapPin className="w-4 h-4" />

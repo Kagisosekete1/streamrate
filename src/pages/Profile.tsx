@@ -28,6 +28,7 @@ import { getDefaultAvatar } from "@/utils/defaultAvatar";
 import { removeStorageMedia } from "@/lib/removeStorageMedia";
 
 import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+import { getRoleLabel } from "@/lib/userRole";
 
 interface Post {
   id: string;
@@ -918,7 +919,7 @@ const Profile = () => {
               )}
             </div>
             <span className="px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-medium mt-1 capitalize">
-              {userRole || "User"}
+              {getRoleLabel(userRole)}
             </span>
             
             {/* Country & Last Seen */}

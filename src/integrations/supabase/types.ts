@@ -2644,6 +2644,14 @@ export type Database = {
         Args: { _role: string }
         Returns: boolean
       }
+      has_used_my_role_change: {
+        Args: never
+        Returns: boolean
+      }
+      change_my_role_once: {
+        Args: { _role: string }
+        Returns: boolean
+      }
       increment_hashtag_use_count: {
         Args: { _hashtag_id: string }
         Returns: undefined
@@ -2660,7 +2668,7 @@ export type Database = {
       xp_for_level: { Args: { lvl: number }; Returns: number }
     }
     Enums: {
-      app_role: "fan" | "streamer" | "seller" | "admin"
+      app_role: "fan" | "streamer" | "gamer" | "seller" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never

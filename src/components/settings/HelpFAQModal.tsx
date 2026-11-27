@@ -47,7 +47,7 @@ const FAQ_CATEGORIES = [
       },
       {
         q: "What's the difference between Fan and Streamer accounts?",
-        a: "Fan accounts are designed for users who want to follow, rate, and engage with streamers. Streamer accounts include additional features like analytics, leaderboard eligibility, and the ability to receive ratings and reviews. Your role determines your experience on the platform and cannot be changed after signup to maintain authenticity."
+        a: "Fan accounts are for following and rating creators. Streamer accounts include creator tools, analytics, and reviews. Gamer accounts focus on finding players and sharing gaming moments. Seller accounts can list products in the marketplace. You can change your role once in Settings; the role shown on your profile updates with it."
       },
       {
         q: "Is Zyiro free to use?",

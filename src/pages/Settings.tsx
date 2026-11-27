@@ -51,6 +51,7 @@ import { ReportProblemModal } from "@/components/settings/ReportProblemModal";
 import { AppLockModal } from "@/components/settings/AppLockModal";
 
 import { ProfileAvatarImage } from "@/components/ProfileAvatarImage";
+import { getRoleLabel, type UserRole, USER_ROLES } from "@/lib/userRole";
 
 // Detect Median.co native webview
 const isMedianApp = () => !!(window as any).median || !!(window as any).gonative;
@@ -269,6 +270,7 @@ type ModalType =
   | "deactivateAccount"
   | "appUpdate"
   | "appLock"
+  | "role"
   | "lastSeenVisibility"
   | null;
 
@@ -335,6 +337,8 @@ const Settings = () => {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { toast } = useToast();
   const [activeModal, setActiveModal] = useState<ModalType>(null);
+  const [selectedRole, setSelectedRole] = useState<UserRole>("fan");
+  const [isChangingRole, setIsChangingRole] = useState(false);
   const [editForm, setEditForm] = useState({
     username: "",
     bio: "",
@@ -371,6 +375,44 @@ const Settings = () => {
       goLive: true,
     };
   });
+
+  const openRoleChange = async () => {
+    if (!user) return;
+    const { data: alreadyChanged, error } = await supabase.rpc("has_used_my_role_change");
+    if (error) {
+      toast({ title: "Could not check role settings", description: error.message, variant: "destructive" });
+      return;
+    }
+    if (alreadyChanged) {
+      toast({ title: "Role change already used", description: "You can change your account role one time." });
+      return;
+    }
+    setSelectedRole((userRole === "fan" || userRole === "streamer" || userRole === "gamer" || userRole === "seller") ? userRole : "fan");
+    setActiveModal("role");
+  };
+
+  const handleRoleChange = async () => {
+    if (!user || !userRole) return;
+    if (selectedRole === userRole) {
+      setActiveModal(null);
+      return;
+    }
+    setIsChangingRole(true);
+    const { data: changed, error } = await supabase.rpc("change_my_role_once", { _role: selectedRole });
+    setIsChangingRole(false);
+    if (error) {
+      toast({ title: "Could not update role", description: error.message, variant: "destructive" });
+      return;
+    }
+    if (!changed) {
+      setActiveModal(null);
+      toast({ title: "Role change already used", description: "Your account role can only be changed once." });
+      return;
+    }
+    await refreshProfile();
+    setActiveModal(null);
+    toast({ title: "Role updated", description: `Your account is now set to ${getRoleLabel(selectedRole)}.` });
+  };
 
   useEffect(() => {
     localStorage.setItem("notification_prefs", JSON.stringify(notifications));
@@ -739,8 +781,8 @@ const Settings = () => {
           <SettingItem
             icon={Shield}
             title="Role"
-            subtitle={userRole === "streamer" ? "Streamer" : userRole === "seller" ? "Seller" : "Fan"}
-            onClick={() => toast({ title: "Your role cannot be changed after signup." })}
+            subtitle={`${getRoleLabel(userRole)} · Change once`}
+            onClick={() => void openRoleChange()}
           />
         </div>
 
@@ -1013,6 +1055,36 @@ const Settings = () => {
 
         {activeModal === "appLock" && (
           <AppLockModal onClose={() => setActiveModal(null)} />
+        )}
+
+        {activeModal === "role" && (
+          <Modal onClose={() => setActiveModal(null)} title="Change account role">
+            <p className="text-sm text-muted-foreground mb-4">
+              Choose Fan, Streamer, Gamer, or Seller. You can change your role one time; the selected role is shown on your profile.
+            </p>
+            <div className="space-y-2">
+              {USER_ROLES.map((role) => (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => setSelectedRole(role)}
+                  disabled={isChangingRole}
+                  aria-pressed={selectedRole === role}
+                  className={`w-full rounded-xl border p-4 text-left transition-colors ${selectedRole === role ? "border-primary bg-primary/10" : "border-border bg-secondary/30 hover:bg-secondary/60"}`}
+                >
+                  <span className="font-semibold text-foreground">{getRoleLabel(role)}</span>
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-3 mt-5">
+              <Button variant="outline" className="flex-1" onClick={() => setActiveModal(null)} disabled={isChangingRole}>
+                Cancel
+              </Button>
+              <Button variant="gaming" className="flex-1" onClick={() => void handleRoleChange()} disabled={isChangingRole}>
+                {isChangingRole ? "Saving…" : "Save role"}
+              </Button>
+            </div>
+          </Modal>
         )}
 
         {activeModal === "email" && (

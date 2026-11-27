@@ -7,13 +7,12 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import type { UserRole } from "@/lib/userRole";
 import { supabase } from "@/integrations/supabase/client";
 import { Capacitor } from "@capacitor/core";
 import { Browser } from "@capacitor/browser";
 
 type AuthMode = "login" | "signup";
-type UserRole = "fan" | "streamer" | "seller";
-
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -498,12 +497,12 @@ const Auth = () => {
               </h1>
               <p className="text-muted-foreground mb-4 text-center">
                 {roleSelectionForSignedInUser
-                  ? "Choose the account type you want to use. You can only choose once."
+                  ? "Choose the account type you want to use. You can change it one time later in Settings."
                   : "What brings you to Zyiro?"}
               </p>
               <div className="mb-6 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
                 <p className="text-sm text-amber-500 text-center font-medium">
-                  ⚠️ Your role can only be selected once
+                  ⚠️ You can change your role one time in Settings
                 </p>
               </div>
 
@@ -527,6 +526,30 @@ const Auth = () => {
                       <h3 className="text-lg font-semibold text-foreground">I'm a Fan</h3>
                       <p className="text-sm text-muted-foreground mt-1">
                         Rate and review your favorite streamers, follow them, and join the community.
+                      </p>
+                    </div>
+                  </div>
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleRoleSelect("gamer")}
+                  disabled={isSubmitting}
+                  className={cn(
+                    "w-full p-6 rounded-xl border-2 text-left transition-all",
+                    "bg-card hover:bg-card/80 border-border hover:border-primary/50",
+                    isSubmitting && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
+                      <Gamepad2 className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-foreground">I'm a Gamer</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Find players, share gaming moments, and connect with the community.
                       </p>
                     </div>
                   </div>
